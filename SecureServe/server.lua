@@ -1120,36 +1120,14 @@ initialize_protections_entity_spam = LPH_JIT_MAX(function()
     local SV_Userver = {}
 
 
-    -- AddEventHandler('entityCreated', function (entity)
-    --     if DoesEntityExist(entity) then
-    --         local POPULATION = GetEntityPopulationType(entity)
-    --         local entityExists = DoesEntityExist(entity)
-    --         local entityVisible = IsEntityVisible(entity)
-    --         local entityModel = GetEntityModel(entity)
-    --         local entityType = GetEntityType(entity)
-    --         local entityNetworkId = NetworkGetNetworkIdFromEntity(entity)
-    --         local entityScript = GetEntityScript(entity)
-    --         local entityPopulationType = GetEntityPopulationType(entity)
-    --         local entityScriptHash = GetHashKey(entity)
-    --         local entityEntityModel = GetEntityModel(entity)
-
-    --         if POPULATION == 7 or POPULATION == 0 then
-    --             print('[ANTICHEAT: DEBUG] Created entity by source: ' .. source ..
-    --             ' | Used pop type: ' .. POPULATION ..
-    --             ' | Created using script: ' .. entityScript ..
-    --             ' | Entity exists: ' .. tostring(entityExists) ..
-    --             ' | Entity visible: ' .. tostring(entityVisible) ..
-    --             ' | Entity model: ' .. entityModel ..
-    --             ' | Entity type: ' .. entityType ..
-    --             ' | Entity network ID: ' .. entityNetworkId ..
-    --             ' | Entity population type: ' .. entityPopulationType ..
-    --             ' | Entity script hash: ' .. entityScriptHash ..
-    --             ' | Entity entity model: ' .. entityEntityModel)
-          
-    --             TriggerClientEvent('checkMe', -1)
-    --         end
-    --     end
-    -- end)
+    AddEventHandler('entityCreated', function (entity)
+        if DoesEntityExist(entity) then
+            local POPULATION = GetEntityPopulationType(entity)
+            if POPULATION == 7 or POPULATION == 0 then
+                TriggerClientEvent('checkMe', -1)
+            end
+        end
+    end)
 
     AddEventHandler("entityCreated", function(ENTITY)
         if DoesEntityExist(ENTITY) then
