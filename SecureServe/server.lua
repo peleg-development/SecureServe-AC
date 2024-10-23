@@ -1645,7 +1645,6 @@ Citizen.CreateThread(function()
 ^0]])
     
     sm_print("Light Blue", "Authenticating with server...")
-    repeat
 
         
         Citizen.Wait(1000)
@@ -1666,7 +1665,7 @@ Citizen.CreateThread(function()
     initialize_protections_damage()
     initialize_protections_entity_lockdown()
     initialize_protections_ptfx()
-
+    
 end)
 
 local function replaceEventRegistrations(filePath)
