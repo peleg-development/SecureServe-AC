@@ -8,7 +8,7 @@ function LPH_NO_VIRTUALIZE(func)
         return func(...)
     end
 end
-
+-- please dont steel codes for your own anticheat 
 local alive = {}
 local allowedStop = {}
 local failureCount = {}
