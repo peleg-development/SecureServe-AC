@@ -116,6 +116,7 @@ local fxEvents = {
     ["giveWeaponEvent"] = true,
     ["removeWeaponEvent"] = true,
     ["clearPedTasksEvent"] = true,
+	["msk_core:server:triggerCallback"] = true,
 }
 
 
