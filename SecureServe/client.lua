@@ -9,72 +9,8 @@ function LPH_NO_VIRTUALIZE(func)
     end
 end
 
-local PlayerCache = {}
-local UpdateInterval = 5000 -- 5 seconds, adjust as needed
 
 code = GlobalState.SecureServe_events;
-
--- Function to update cache data for a player
-local function UpdatePlayerCache(playerId)
-    if not PlayerCache[playerId] then
-        PlayerCache[playerId] = {}
-    end
-    
-    local cache = PlayerCache[playerId]
-    local ped = GetPlayerPed(playerId)
-    
-    -- Player identifiers
-    cache.playerId = playerId
-    cache.serverId = GetPlayerServerId(playerId)
-    cache.ped = ped
-    cache.pedId = PedToNet(ped)
-    
-    -- Frequently updated data
-    cache.position = GetEntityCoords(ped)
-    cache.health = GetEntityHealth(ped)
-    cache.armor = GetPedArmour(ped)
-    cache.currentWeapon = GetSelectedPedWeapon(ped)
-end
-
--- Function to get cached player data
-function GetCachedPlayerData(playerId)
-    return PlayerCache[playerId] or {}
-end
-
--- Function to remove player from cache (call this when a player disconnects)
-function RemovePlayerFromCache(playerId)
-    PlayerCache[playerId] = nil
-end
-
--- Staggered update function to spread processing over time
-local function StaggeredUpdate()
-    local playerList = GetPlayers()
-    local playerCount = #playerList
-    local updateInterval = math.max(50, math.floor(UpdateInterval / playerCount))
-    
-    for i, playerId in ipairs(playerList) do
-        SetTimeout(i * updateInterval, function()
-            UpdatePlayerCache(playerId)
-        end)
-    end
-end
-
--- Start the cache update loop
-CreateThread(function()
-    while true do
-        StaggeredUpdate()
-        Wait(UpdateInterval)
-    end
-end)
-function CheckPlayer(playerId)
-    local data = GetCachedPlayerData(playerId)
-    -- Your anticheat logic here, using 'data'
-    -- e.g., if data.pedId ~= PedToNet(GetPlayerPed(playerId)) then -- potential ped change
-end
-AddEventHandler('playerDropped', function(reason)
-    local playerId = source
-    RemovePlayerFromCache(playerId)
-end)
 
 
 
