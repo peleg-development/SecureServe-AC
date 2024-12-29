@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureServe Anticheat Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src='https://unpkg.com/tesseract.js@5.0.2/dist/tesseract.min.js'></script>
     <script src="https://unpkg.com/@citizenfx/three@0.100.0/build/three.min.js"></script>
-    <title>OCR</title>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <script>
@@ -31,5 +33,195 @@
         })
   
     </script>
+    <div id="app">
+        <div class="panel" v-if="showMenu">
+            <div class="header">
+                <h1><i class="fas fa-shield-alt"></i> SecureServe</h1>
+            </div>
+            <div class="main-content">
+                <div class="sidebar">
+                    <ul>
+                        <li @click="selectSection('dashboard')"><i class="fas fa-tachometer-alt"></i> Dashboard</li>
+                        <li @click="selectSection('player-options')"><i class="fas fa-user"></i> Player Options</li>
+                        <li @click="selectSection('player-list')"><i class="fas fa-users"></i> Player List</li>
+                        <li @click="selectSection('server-options')"><i class="fas fa-server"></i> Server Options</li>
+                        <li @click="selectSection('logs')"><i class="fas fa-file-alt"></i> Logs</li>
+                        <li @click="selectSection('bans')"><i class="fas fa-ban"></i> Bans</li>
+                        <li @click="selectSection('settings')"><i class="fas fa-cog"></i> Settings</li>
+                    </ul>
+                </div>
+                <div class="content">
+                    <div v-if="showModal" class="modal">
+                        <div class="modal-content">
+                            <span class="close" @click="closeModal">&times;</span>
+                            <h3>Ban Details</h3>
+                            <p><strong>Name:</strong> {{ modalBan.name }}</p>
+                            <p><strong>Steam ID:</strong> {{ modalBan.steamId }}</p>
+                            <p><strong>Discord ID:</strong> {{ modalBan.discordId }}</p>
+                            <p><strong>HWID:</strong> {{ modalBan.hwid }}</p>
+                            <p><strong>Reason:</strong> {{ modalBan.reason }}</p>
+                            <p><strong>Date:</strong> {{ modalBan.date }}</p>
+                        </div>
+                    </div>
+                    <transition name="fade" mode="out-in">
+                        <div v-if="selectedSection === 'dashboard'" class="section" key="dashboard">
+                            <h2>Dashboard</h2>
+                            <div class="stats-container">
+                                <div class="stat-card">
+                                    <h3>Total Players</h3>
+                                    <p>{{ totalPlayers }}</p>
+                                </div>
+                                <div class="stat-card">
+                                    <h3>Active Bans</h3>
+                                    <p>{{ activeCheaters }}</p>
+                                </div>
+                                <div class="stat-card">
+                                    <h3>Server Uptime</h3>
+                                    <p>{{ serverUptime }}</p>
+                                </div>
+                                <div class="stat-card">
+                                    <h3>Peak Players</h3>
+                                    <p>{{ peakPlayers }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-if="selectedSection === 'player-list'" class="section" key="player-list">
+                            <div class="player-list-header">
+                                <h2>Player List</h2>
+                                <input type="text" class="search-bar" v-model="searchQuery" placeholder="Search players...">
+                            </div>
+                            <div class="player-list">
+                                <div v-for="player in filteredPlayers" :key="player.id" class="player-item">
+                                    <div class="player-info">
+                                        <div class="player-name">{{ player.name }}</div>
+                                        <div class="player-steamid">Steam ID: {{ player.steamId }}</div>
+                                    </div>
+                                    <div class="player-actions">
+                                        <i class="fas fa-user-slash" @click="kickPlayer(player.id)" title="Kick"></i>
+                                        <i class="fas fa-ban" @click="banPlayer(player.id)" title="Ban"></i>
+                                        <i class="fas fa-camera" @click="screenshotPlayer(player.id)" title="Screenshot"></i>
+                                        <i class="fas fa-eye" @click="spectatePlayer(player.id)" title="Spectate"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-if="selectedSection === 'bans'" class="section" key="bans">
+                            <div class="ban-list-header">
+                                <h2>Bans</h2>
+                                <input type="text" class="search-bar" v-model="banSearchQuery" placeholder="Search bans...">
+                            </div>
+                            <div class="ban-list">
+                                <div v-for="ban in filteredBans" :key="ban.id" class="ban-item">
+                                    <div class="ban-info">
+                                        <div class="ban-name">{{ ban.name }}</div>
+                                        <div class="ban-reason">Reason: {{ ban.reason }}</div>
+                                        <div class="ban-details">
+                                            <p>Steam ID: {{ ban.steam }}</p>
+                                            <p>Discord ID: {{ ban.discord }}</p>
+                                            <p>HWID: {{ ban.hwid1 }}</p>
+                                            <p>IP: {{ ban.ip }}</p>
+                                            <p>Expiration: {{ ban.expire }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="ban-actions">
+                                        <i class="fas fa-undo" @click="unbanPlayer(ban.id)" title="Unban"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-if="selectedSection === 'server-options'" class="section" key="server-options">
+                            <h2>Server Options</h2>
+                            <div class="options-container">
+                                <div class="card" v-for="option in serverOptions" :key="option.name">
+                                    <h3>{{ option.name }}</h3>
+                                    <button @click="executeServerOption(option.action)" class="execute-button">Execute</button>
+                                </div>
+                                <div class="card">
+                                    <h3>Clear All Entities</h3>
+                                    <button @click="clearAllEntities" class="execute-button">Execute</button>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div v-if="selectedSection === 'logs'" class="section" key="logs">
+                            <h2>Logs</h2>
+                            <div class="logs">
+                                <div v-for="log in logs" :key="log.timestamp" class="log-entry">
+                                    <p>{{ log.timestamp }} - {{ log.message }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-if="selectedSection === 'settings'" class="section" key="settings">
+                            <h2>Settings</h2>
+                            <div class="settings-container">
+                                <div class="setting">
+                                    <label for="notification">Enable Notifications</label>
+                                    <input type="checkbox" v-model="settings.notifications" id="notification">
+                                </div>
+                                <div class="setting">
+                                    <label for="darkMode">Enable Dark Mode</label>
+                                    <input type="checkbox" v-model="settings.darkMode" id="darkMode">
+                                </div>
+                            </div>
+                        </div>
+                        <div v-if="selectedSection === 'player-options'" class="section" key="player-options">
+                            <h2>Player Options</h2>
+                            <div class="player-options-content">
+                                <div class="option-category misc-options">
+                                    <h3>Miscellaneous Options</h3>
+                                    <div v-for="option in playerOptions" :key="option.name" v-if="option.category === 'misc'" class="option">
+                                        <div class="option-label">{{ option.name }}</div>
+                                        <div class="option-toggle">
+                                            <div class="toggle-switch">
+                                                <input type="checkbox" v-model="option.enabled" :id="option.name" @change="toggleOptiona(option.name)">
+                                                <label :for="option.name"></label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="option-category actions">
+                                    <h3>Actions</h3>
+                                    <div class="option">
+                                        <input type="text" v-model="vehicleName" placeholder="Enter vehicle name" class="input-card">
+                                        <button @click="spawnVehicle" class="execute-button">Spawn</button>
+                        
+                                        <input type="text" v-model="objectName" placeholder="Enter object name" class="input-card">
+                                        <button @click="objectSpawn" class="execute-button">Spawn</button>
+                        
+                                        <input type="text" v-model="pedModel" placeholder="Enter ped name" class="input-card">
+                                        <button @click="changePed" class="execute-button">Spawn</button>
+                                    </div>
+                                </div>
+                                <div class="option-category admin-powers">
+                                    <h3>Admin Powers</h3>
+                                    <div v-for="option in playerOptions" :key="option.name" v-if="option.category === 'admin'" class="option">
+                                        <div class="option-label">{{ option.name }}</div>
+                                        <div class="option-toggle">
+                                            <div class="toggle-switch">
+                                                <input type="checkbox" v-model="option.enabled" :id="option.name" @change="toggleOptiona(option.name)">
+                                                <label :for="option.name"></label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>                        
+                    </transition>
+                </div>
+            </div>
+        </div>
+        <div class="notification-container" v-for="notification in notifications" :key="notification.id">
+            <div class="notification" :class="notification.type">
+                <span>{{ notification.message }}</span>
+                <button @click="removeNotification(notification.id)">x</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
+
+
