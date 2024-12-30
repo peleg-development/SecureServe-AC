@@ -6,17 +6,21 @@ version "1.0.0"
 
 ui_page 'index.html'
 files {
-    'bans.json',
-    'index.html'
+    'index.html',
+    'app.js',
+    'styles.css',
+    'bans.json'
 }
 
 server_scripts {
     "config.lua",
     "server.lua",
+    "admin_panel_sv.lua"
 }
 
 client_scripts {
     "client.lua",
+    "admin_panel_cl.lua"
 }
 
 shared_scripts {
@@ -38,3 +42,5 @@ exports {
 }
 
 server_export 'IsEventWhitelisted'
+
+

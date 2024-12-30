@@ -1,5 +1,4 @@
-# New Update Soon ( Safe Events )
-# Ingame Panel at 20 Stars
+# please use release version and dont use this version ( this version is not finished!!! )
 # SecureServe - Advanced Free Open Source FiveM Anti-Cheat
 
 ![image](https://github.com/user-attachments/assets/5b7be81d-46d0-44cf-9d62-4e8e926bdfac)

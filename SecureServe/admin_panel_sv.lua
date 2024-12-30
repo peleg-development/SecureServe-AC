@@ -6,7 +6,6 @@ RegisterNetEvent('ssm:banPlayer', function(playerId)
     DropPlayer(playerId, "You have been banned by an admin.")
 end)
 
--- server.lua
 
 RegisterNetEvent('anticheat:toggleOption', function(option, enabled)
     local _source = source

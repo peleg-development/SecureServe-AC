@@ -9,17 +9,11 @@ function LPH_NO_VIRTUALIZE(func)
     end
 end
 
-<<<<<<< HEAD
-
-code = GlobalState.SecureServe_events;
-
-=======
 
 
 code = GlobalState.SecureServe_events;
 
 
->>>>>>> f8611f3859f42aa914003eca2db18c99155b6d28
 
 
 RegisterNetEvent("checkalive", LPH_NO_VIRTUALIZE(function ()
