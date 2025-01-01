@@ -535,6 +535,15 @@ function IsAdmin(player)
     return isAdmin
 end
 
+function IsMenuAdmin(player) 
+    TriggerServerEvent('SecureServe:Server_Callbacks:Protections:IsMenuAdmin', player)
+
+    RegisterNetEvent('IsMenuAdmin', function(result)
+        isAdmin = result
+    end)
+    return isAdmin
+end
+
 function client_methods_notify(title, description)
     SendNUIMessage({
         type = 'notify',

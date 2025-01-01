@@ -566,9 +566,36 @@ Isadmin = function(pl)
     return SecureServe.IsAdmin(source) or admins[pl] == true
 end
 
+IsMenuAdmin = function(pl)
+    local identifiers = GetPlayerIdentifiers(pl)
+    for _, id in ipairs(identifiers) do
+        if string.sub(id, 1, 6) == "steam:" then
+            for _, adminID in ipairs(SecureServe.Admins) do
+                if id == adminID then
+                    return true 
+                end
+            end
+        end
+    end
+    return false
+end
+
+
 RegisterNetEvent("SecureServe:Server_Callbacks:Protections:IsAdmin2", function (player)
     TriggerClientEvent('isAdminResult', source, Isadmin(source))
 end)
+
+RegisterNetEvent("SecureServe:Server_Callbacks:Protections:IsMenuAdmin", function (player)
+    TriggerClientEvent('IsMenuAdmin', source, IsMenuAdmin(source))
+end)
+
+
+RegisterServerCallback {
+    eventName = 'SecureServe:Server_Callbacks:Protections:IsMenuAdmin',
+    eventCallback = function(source)
+        return SecureServe.IsMenuAdmin(source)
+    end
+}
 
 RegisterServerCallback {
     eventName = 'SecureServe:Server_Callbacks:Protections:IsAdmin',

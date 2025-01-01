@@ -45,11 +45,19 @@ SecureServe.IsAdmin = function(Player)
     -- return false
 end
 
+SecureServe.Admins = { 
+	"steam:110000112345678",
+	"steam:110000112345679",
+	"steam:110000112345680"
+}
+
 SecureServe.BanTimes = { -- Preset ban times, preset name can be used in the protections.
 	["Ban"] = 2147483647, -- Perm
 	["Kick"] = -1,        -- Kick
 	["Warn"] = 0,         -- Warn
 }
+
+
 
 SecureServe.Webhooks.Simple = ""
 SecureServe.Protection.Simple = {     

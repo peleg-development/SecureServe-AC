@@ -1,6 +1,8 @@
 RegisterCommand('ssm', function()
-    SetNuiFocus(true, true)
-    SendNUIMessage({ action = 'open' })
+    if IsMenuAdmin(GetPlayerServerId(PlayerId())) then
+        SetNuiFocus(true, true)
+        SendNUIMessage({ action = 'open' })
+    end
 end, false)
 
 RegisterNUICallback('close', function(data, cb)
