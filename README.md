@@ -1,4 +1,4 @@
-# please use release version and dont use this version ( this version is not finished!!! )
+# 50 Stars and i'll start making web panel 
 # SecureServe - Advanced Free Open Source FiveM Anti-Cheat
 
 ![image](https://github.com/user-attachments/assets/5b7be81d-46d0-44cf-9d62-4e8e926bdfac)
