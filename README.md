@@ -87,7 +87,4 @@ SecureServe is released under the [GNU Affero General Public License v3.0](https
 ## Contact
 - **Discord**: [Join our server](https://discord.gg/z6qGGtbcr4) to connect with the developer and the community.
 
-## Goals
-- **40 GitHub Stars**: Release of the in-game admin panel upon reaching the milestone.
-
 ### Enjoy a secure FiveM experience with SecureServe!
