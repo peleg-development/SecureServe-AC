@@ -1,4 +1,4 @@
-# 50 Stars and i'll start making web panel 
+# 50 Stars and i'll start making a web panel 
 # SecureServe - Advanced Free Open Source FiveM Anti-Cheat
 
 ![image](https://github.com/user-attachments/assets/5b7be81d-46d0-44cf-9d62-4e8e926bdfac)
