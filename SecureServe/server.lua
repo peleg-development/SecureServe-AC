@@ -581,12 +581,16 @@ IsMenuAdmin = function(pl)
 end
 
 
-RegisterNetEvent("SecureServe:Server_Callbacks:Protections:IsAdmin2", function (player)
-    TriggerClientEvent('isAdminResult', source, Isadmin(source))
+RegisterNetEvent('SecureServe:RequestAdminStatus', function(player, cb)
+    local src = source
+    local isAdmin = IsAdmin(src) 
+    cb(isAdmin)
 end)
 
-RegisterNetEvent("SecureServe:Server_Callbacks:Protections:IsMenuAdmin", function (player)
-    TriggerClientEvent('IsMenuAdmin', source, IsMenuAdmin(source))
+RegisterNetEvent('SecureServe:RequestMenuAdminStatus', function(player, cb)
+    local src = source
+    local isMenuAdmin = IsMenuAdmin(src) 
+    cb(isMenuAdmin)
 end)
 
 

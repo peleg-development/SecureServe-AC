@@ -1,10 +1,3 @@
-RegisterNetEvent('ssm:kickPlayer', function(playerId)
-    DropPlayer(playerId, "You have been kicked by an admin.")
-end)
-
-RegisterNetEvent('ssm:banPlayer', function(playerId)
-    DropPlayer(playerId, "You have been banned by an admin.")
-end)
 
 
 RegisterNetEvent('anticheat:toggleOption', function(option, enabled)
@@ -28,7 +21,7 @@ RegisterNetEvent('anticheat:clearAllEntities', function()
     end
 end)
 
--- server.lua
+
 
 local function loadBans()
     local bansFile = LoadResourceFile(GetCurrentResourceName(), 'bans.json')
@@ -83,12 +76,28 @@ RegisterNetEvent('getPlayers', function()
     TriggerClientEvent('receivePlayers', _source, playerList)
 end)
 
-RegisterNetEvent('kickPlayer', function(playerId)
-    DropPlayer(playerId, "You have been kicked from the server.")
+RegisterNetEvent('kickPlayer', function(targetId)
+    local src = source
+    if not IsAdmin(src) then
+        print(("Unauthorized kick attempt by %s"):format(GetPlayerName(src)))
+        return
+    end
+    if targetId then
+        DropPlayer(targetId, "You have been kicked by an admin.")
+        print(("Player %s was kicked by admin %s"):format(GetPlayerName(targetId), GetPlayerName(src)))
+    end
 end)
 
-RegisterNetEvent('banPlayer', function(playerId)
-    local identifiers = GetPlayerIdentifiers(playerId)
-    punish_player(source, "You have been banned" , webhook, time)
+RegisterNetEvent('banPlayer', function(targetId)
+    local src = source
+    if not IsAdmin(src) then
+        print(("Unauthorized ban attempt by %s"):format(GetPlayerName(src)))
+        return
+    end
+    if targetId then
+        local identifiers = GetPlayerIdentifiers(targetId)
+        punish_player(src, "You have been banned by an admin.", webhook, time) 
+        DropPlayer(targetId, "You have been banned by an admin.")
+        print(("Player %s was banned by admin %s"):format(GetPlayerName(targetId), GetPlayerName(src)))
+    end
 end)
-

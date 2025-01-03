@@ -526,23 +526,25 @@ end
 local isAdmin = false
 
 function IsAdmin(player)
-
-    TriggerServerEvent('SecureServe:Server_Callbacks:Protections:IsAdmin2', player)
-
-    RegisterNetEvent('isAdminResult', function(result)
-        isAdmin = result
+    local promise = promise.new()
+    
+    TriggerServerEvent('SecureServe:RequestAdminStatus', player, function(result)
+        promise:resolve(result)
     end)
-    return isAdmin
+    
+    return Citizen.Await(promise)
 end
+    
+function IsMenuAdmin(player)
+    local promise = promise.new()
 
-function IsMenuAdmin(player) 
-    TriggerServerEvent('SecureServe:Server_Callbacks:Protections:IsMenuAdmin', player)
-
-    RegisterNetEvent('IsMenuAdmin', function(result)
-        isAdmin = result
+    TriggerServerEvent('SecureServe:RequestMenuAdminStatus', player, function(result)
+        promise:resolve(result)
     end)
-    return isAdmin
+
+    return Citizen.Await(promise)
 end
+    
 
 function client_methods_notify(title, description)
     SendNUIMessage({

@@ -10,10 +10,6 @@ RegisterNUICallback('close', function(data, cb)
     cb('ok')
 end)
 
-RegisterNUICallback('kickPlayer', function(data, cb)
-    TriggerServerEvent('ssm:kickPlayer', data.playerId)
-    cb('ok')
-end)
 
 RegisterNUICallback("clearAllEntities", function(data, cb)
     TriggerServerEvent('anticheat:clearAllEntities')
@@ -21,10 +17,6 @@ RegisterNUICallback("clearAllEntities", function(data, cb)
 end)
 
 
-RegisterNUICallback('banPlayer', function(data, cb)
-    TriggerServerEvent('ssm:banPlayer', data.playerId)
-    cb('ok')
-end)
 local playerOptions = {
     ESP = false,
     PlayerNames = false,

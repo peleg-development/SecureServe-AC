@@ -20,7 +20,6 @@ SecureServe.Setup = {}
 SecureServe.Webhooks = {}
 SecureServe.Protection = {}
 
-SecureServe.License = ""                                                                      -- The license you have recieved to redeem.
 SecureServe.ServerName = ""                                                                   -- The name of the server.
 SecureServe.DiscordLink = ""                                                                  -- The link to your discord server.
 SecureServe.GlobalBans = false                                                                -- [NOTE: this will still not do anyting but will add them to our database so when the system is ready global bans that has collected will work ]Enables the global bans system (Only on join, Cheaters are still able to get global bans from your server).
