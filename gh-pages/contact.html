@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="description" content="Contact information, License, and Contributing details for SecureServe" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SecureServe | Contact & License</title>
+
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    integrity="sha512-Fo3rlrZj/k7ujTnHg4CGR2DyQsXbU7uyKPoAbDOcoLlOkYXLQc8hK8Z79D4AHl13eg9yuIAZyM0Atf+VInDZIQ=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <style>
+    :root {
+      --bg-color: #0d1117;
+      --header-color: #161b22;
+      --border-color: #21262d;
+      --accent-color: #58a6ff;
+      --secondary-text-color: #8b949e;
+      --primary-text-color: #c9d1d9;
+      --button-bg-color: #238636;
+      --button-bg-hover-color: #2ea043;
+      --section-bg-color: #161b22;
+      --section-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      --card-bg-color: #21262d;
+      --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      --border-radius: 10px;
+      --transition-time: 0.3s;
+      --font-family: 'Montserrat', sans-serif;
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: var(--font-family);
+      background-color: var(--bg-color);
+      color: var(--primary-text-color);
+      line-height: 1.6;
+    }
+    header {
+      background-color: var(--header-color);
+      padding: 1.5rem 4vw;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 999;
+    }
+    header h1 {
+      font-size: 1.8rem;
+      color: var(--accent-color);
+      font-weight: 700;
+    }
+    nav a {
+      color: var(--primary-text-color);
+      text-decoration: none;
+      margin: 0 1rem;
+      font-size: 1rem;
+      font-weight: 500;
+      transition: color var(--transition-time);
+    }
+    nav a:hover {
+      color: var(--accent-color);
+    }
+    .container {
+      max-width: 1200px;
+      margin: 3rem auto;
+      padding: 0 2vw;
+    }
+    .section {
+      background-color: var(--section-bg-color);
+      padding: 2rem 4vw;
+      border-radius: var(--border-radius);
+      box-shadow: var(--section-shadow);
+      margin-bottom: 4rem;
+    }
+    .section h2 {
+      color: var(--accent-color);
+      margin-bottom: 1rem;
+      font-size: 1.8rem;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 0.5rem;
+    }
+    .btn {
+      display: inline-block;
+      padding: 1rem 2rem;
+      background-color: var(--button-bg-color);
+      color: #fff;
+      text-decoration: none;
+      border-radius: var(--border-radius);
+      font-weight: bold;
+      transition: background-color var(--transition-time), transform var(--transition-time);
+      margin-top: 2rem;
+    }
+    .btn:hover {
+      background-color: var(--button-bg-hover-color);
+      transform: translateY(-3px);
+    }
+    footer {
+      background-color: var(--header-color);
+      color: var(--secondary-text-color);
+      text-align: center;
+      padding: 2rem 0;
+      border-top: 1px solid var(--border-color);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>SecureServe</h1>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="features.html">Features</a>
+      <a href="preview.html">Preview</a>
+      <a href="installation.html">Installation</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <section class="section">
+      <h2>Contact & Support</h2>
+      <p>
+        If you have any questions, issues, or suggestions, please join our official
+        Discord server:
+      </p>
+      <p>
+        <a href="https://discord.gg/z6qGGtbcr4" target="_blank" class="btn">Join Our Discord</a>
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>Contributing</h2>
+      <p>
+        We welcome contributions from the community! If you would like to report
+        issues, suggest features, or contribute code, please feel free to create a
+        pull request or start a discussion in our GitHub repository.
+      </p>
+      <p>
+        <a href="https://github.com/peleg-development/SecureServe" target="_blank" class="btn">GitHub Repository</a>
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>License</h2>
+      <p>
+        SecureServe is released under the 
+        <a href="https://www.gnu.org/licenses/agpl-3.0.en.html" target="_blank">GNU Affero General Public License v3.0</a>.
+        You are free to use, modify, and distribute it as per the terms of the license.
+      </p>
+      <p>
+        Please note that any modifications or derivative works must also be
+        distributed under the AGPLv3 license when publicly hosted or run as a service.
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>Disclaimer</h2>
+      <p>
+        <strong>Anti Internal</strong> has been temporarily removed due to high MS usage
+        but will be added again soon after further optimization. We are also using
+        mouse position and movement tracking to detect cheats, and this code will be
+        uploaded shortly.
+      </p>
+      <p>
+        By using SecureServe, you agree that you understand the limitations and that
+        you will configure the scripts responsibly to avoid false bans.
+      </p>
+    </section>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 SecureServe. All rights reserved.</p>
+  </footer>
+</body>
+</html>

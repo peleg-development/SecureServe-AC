@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="description" content="SecureServe - Advanced Free Open Source FiveM Anti-Cheat" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SecureServe | Home</title>
+
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    integrity="sha512-Fo3rlrZj/k7ujTnHg4CGR2DyQsXbU7uyKPoAbDOcoLlOkYXLQc8hK8Z79D4AHl13eg9yuIAZyM0Atf+VInDZIQ=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <style>
+    :root {
+      --bg-color: #0d1117;
+      --header-color: #161b22;
+      --border-color: #21262d;
+      --accent-color: #58a6ff;
+      --secondary-text-color: #8b949e;
+      --primary-text-color: #c9d1d9;
+      --button-bg-color: #238636;
+      --button-bg-hover-color: #2ea043;
+      --section-bg-color: #161b22;
+      --section-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      --card-bg-color: #21262d;
+      --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      --border-radius: 10px;
+      --transition-time: 0.3s;
+      --font-family: 'Montserrat', sans-serif;
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: var(--font-family);
+      background-color: var(--bg-color);
+      color: var(--primary-text-color);
+      line-height: 1.6;
+    }
+
+    header {
+      background-color: var(--header-color);
+      padding: 1.5rem 4vw;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 999;
+    }
+    header h1 {
+      font-size: 1.8rem;
+      color: var(--accent-color);
+      font-weight: 700;
+    }
+    nav a {
+      color: var(--primary-text-color);
+      text-decoration: none;
+      margin: 0 1rem;
+      font-size: 1rem;
+      font-weight: 500;
+      transition: color var(--transition-time);
+    }
+    nav a:hover {
+      color: var(--accent-color);
+    }
+
+    .hero {
+      text-align: center;
+      padding: 5rem 2vw;
+      background: linear-gradient(135deg, #161b22 20%, #21262d 80%);
+      color: var(--accent-color);
+      box-shadow: var(--section-shadow);
+      border-bottom: 1px solid var(--border-color);
+    }
+    .hero h2 {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    .hero p {
+      font-size: 1.3rem;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 3rem auto;
+      padding: 0 2vw;
+    }
+
+    .section {
+      background-color: var(--section-bg-color);
+      padding: 2rem 4vw;
+      border-radius: var(--border-radius);
+      box-shadow: var(--section-shadow);
+      margin-bottom: 4rem;
+    }
+    .section h2 {
+      color: var(--accent-color);
+      margin-bottom: 1rem;
+      font-size: 1.8rem;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 0.5rem;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 1rem 2rem;
+      background-color: var(--button-bg-color);
+      color: #fff;
+      text-decoration: none;
+      border-radius: var(--border-radius);
+      font-weight: bold;
+      transition: background-color var(--transition-time), transform var(--transition-time);
+      margin-top: 2rem;
+    }
+    .btn:hover {
+      background-color: var(--button-bg-hover-color);
+      transform: translateY(-3px);
+    }
+
+    footer {
+      background-color: var(--header-color);
+      color: var(--secondary-text-color);
+      text-align: center;
+      padding: 2rem 0;
+      border-top: 1px solid var(--border-color);
+    }
+    footer p {
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>SecureServe</h1>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="features.html">Features</a>
+      <a href="preview.html">Preview</a>
+      <a href="installation.html">Installation</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div class="hero-content">
+      <h2 class="hero-title">Welcome to SecureServe</h2>
+      <p class="hero-subtitle">Advanced Free Open Source FiveM Anti-Cheat</p>
+      <a href="features.html" class="btn hero-btn">Explore Features</a>
+    </div>
+  </section>
+
+  <div class="container">
+    <section class="section about-section">
+      <h2>About SecureServe</h2>
+      <p>
+        SecureServe is a comprehensive and advanced anti-cheat solution for FiveM, 
+        designed to keep your server secure and ensure a fair gameplay environment.
+        Completely free and open-source, SecureServe aims to provide top-notch 
+        protection against malicious scripts, exploits, and unauthorized triggers.
+      </p>
+      <p>
+        <strong>Announcement:</strong> We plan to introduce an 
+        <em>In-Game Admin Panel</em> if we reach 50 GitHub stars! 
+        Help us grow by starring the project and encouraging others to do the same.
+      </p>
+    </section>
+
+    <section class="section why-choose-section">
+      <h2>Why Choose SecureServe?</h2>
+      <div class="why-cards">
+        <div class="why-card">
+          <i class="fas fa-shield-alt why-icon"></i>
+          <h3>Robust Protection</h3>
+          <p>
+            Detects and prevents unauthorized events, resources, and entities — 
+            ensuring your server’s integrity remains intact.
+          </p>
+        </div>
+        <div class="why-card">
+          <i class="fas fa-users-cog why-icon"></i>
+          <h3>Configurable Whitelisting</h3>
+          <p>
+            Whitelist your safe events to avoid false bans and maintain a flexible 
+            environment that fits your server’s unique needs.
+          </p>
+        </div>
+        <div class="why-card">
+          <i class="fas fa-code-branch why-icon"></i>
+          <h3>Open-Source & Free</h3>
+          <p>
+            Hosted on GitHub under the AGPL-3.0 license. Contributions and 
+            community involvement are always welcome.
+          </p>
+        </div>
+        <div class="why-card">
+          <i class="fas fa-headset why-icon"></i>
+          <h3>Active Support</h3>
+          <p>
+            Join our community Discord server for real-time support, updates, 
+            and feedback from fellow server owners.
+          </p>
+        </div>
+      </div>
+      <div class="center-content">
+        <a href="preview.html" class="btn cta-btn">View Previews</a>
+      </div>
+    </section>
+
+    <section class="section cta-section">
+      <h2>Ready to Get Started?</h2>
+      <p>Head over to our installation guide and secure your FiveM server today.</p>
+      <a href="installation.html" class="btn">Installation Guide</a>
+    </section>
+
+  </div>
+
+  <footer>
+    <p>&copy; 2025 SecureServe. All rights reserved.</p>
+  </footer>
+</body>
+</html>

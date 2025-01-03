@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="description" content="Preview of SecureServe Anti-Cheat for FiveM" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SecureServe | Preview</title>
+
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    integrity="sha512-Fo3rlrZj/k7ujTnHg4CGR2DyQsXbU7uyKPoAbDOcoLlOkYXLQc8hK8Z79D4AHl13eg9yuIAZyM0Atf+VInDZIQ=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <style>
+    :root {
+      --bg-color: #0d1117;
+      --header-color: #161b22;
+      --border-color: #21262d;
+      --accent-color: #58a6ff;
+      --secondary-text-color: #8b949e;
+      --primary-text-color: #c9d1d9;
+      --button-bg-color: #238636;
+      --button-bg-hover-color: #2ea043;
+      --section-bg-color: #161b22;
+      --section-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      --card-bg-color: #21262d;
+      --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      --border-radius: 10px;
+      --transition-time: 0.3s;
+      --font-family: 'Montserrat', sans-serif;
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: var(--font-family);
+      background-color: var(--bg-color);
+      color: var(--primary-text-color);
+      line-height: 1.6;
+    }
+    header {
+      background-color: var(--header-color);
+      padding: 1.5rem 4vw;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 999;
+    }
+    header h1 {
+      font-size: 1.8rem;
+      color: var(--accent-color);
+      font-weight: 700;
+    }
+    nav a {
+      color: var(--primary-text-color);
+      text-decoration: none;
+      margin: 0 1rem;
+      font-size: 1rem;
+      font-weight: 500;
+      transition: color var(--transition-time);
+    }
+    nav a:hover {
+      color: var(--accent-color);
+    }
+    .container {
+      max-width: 1200px;
+      margin: 3rem auto;
+      padding: 0 2vw;
+    }
+    .section {
+      background-color: var(--section-bg-color);
+      padding: 2rem 4vw;
+      border-radius: var(--border-radius);
+      box-shadow: var(--section-shadow);
+      margin-bottom: 4rem;
+    }
+    .section h2 {
+      color: var(--accent-color);
+      margin-bottom: 1rem;
+      font-size: 1.8rem;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 0.5rem;
+    }
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+    .preview-img {
+      width: 100%;
+      border-radius: var(--border-radius);
+      box-shadow: var(--section-shadow);
+      transition: transform var(--transition-time);
+    }
+    .preview-img:hover {
+      transform: scale(1.03);
+    }
+    .btn {
+      display: inline-block;
+      padding: 1rem 2rem;
+      background-color: var(--button-bg-color);
+      color: #fff;
+      text-decoration: none;
+      border-radius: var(--border-radius);
+      font-weight: bold;
+      transition: background-color var(--transition-time), transform var(--transition-time);
+      margin-top: 2rem;
+    }
+    .btn:hover {
+      background-color: var(--button-bg-hover-color);
+      transform: translateY(-3px);
+    }
+    footer {
+      background-color: var(--header-color);
+      color: var(--secondary-text-color);
+      text-align: center;
+      padding: 2rem 0;
+      border-top: 1px solid var(--border-color);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>SecureServe</h1>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="features.html">Features</a>
+      <a href="preview.html">Preview</a>
+      <a href="installation.html">Installation</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <section class="section">
+      <h2>In-Game Preview</h2>
+      <p>
+        Below are some screenshots and previews showcasing SecureServe in action.
+        Observe the detection logs, ban messages, and admin notifications generated
+        by unauthorized actions.
+      </p>
+      <div class="preview-grid">
+        <img
+          class="preview-img"
+          src="https://github.com/user-attachments/assets/37b39ce0-a7ee-4ac1-a9c7-6033c086ce9b"
+          alt="SecureServe Preview 1"
+        />
+        <img
+          class="preview-img"
+          src="https://github.com/user-attachments/assets/6d381556-3273-4b45-b2c6-fd1e07c836b9"
+          alt="SecureServe Preview 2"
+        />
+        <img
+          class="preview-img"
+          src="https://github.com/user-attachments/assets/f7f51ae5-0229-4261-a91f-525cd64afd6d"
+          alt="SecureServe Preview 3"
+        />
+        <img
+          class="preview-img"
+          src="https://github.com/user-attachments/assets/7ff2e07e-5f4c-4caa-b308-fedb87e44aa3"
+          alt="SecureServe Preview 4"
+        />
+        <img
+          class="preview-img"
+          src="https://github.com/user-attachments/assets/7a73d5ec-bd6f-441e-9761-7f4734d8c471"
+          alt="SecureServe Preview 5"
+        />
+        <img
+          class="preview-img"
+          src="https://github.com/user-attachments/assets/14964ca5-85eb-4df1-8aa1-b8b000790d8c"
+          alt="SecureServe Preview 6"
+        />
+        <img
+          class="preview-img"
+          src="https://github.com/user-attachments/assets/788300fa-0c1b-4361-bf84-c0d066af9cba"
+          alt="SecureServe Preview 7"
+        />
+        <img
+          class="preview-img"
+          src="https://github.com/user-attachments/assets/74bbe83a-1967-4f2f-8ec6-0b9bc85604eb"
+          alt="SecureServe Preview 8"
+        />
+      </div>
+      <a class="btn" href="installation.html">View Installation Guide</a>
+    </section>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 SecureServe. All rights reserved.</p>
+  </footer>
+</body>
+</html>

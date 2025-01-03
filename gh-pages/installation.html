@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="description" content="Installation instructions for SecureServe Anti-Cheat for FiveM" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SecureServe | Installation</title>
+
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    integrity="sha512-Fo3rlrZj/k7ujTnHg4CGR2DyQsXbU7uyKPoAbDOcoLlOkYXLQc8hK8Z79D4AHl13eg9yuIAZyM0Atf+VInDZIQ=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <style>
+    :root {
+      --bg-color: #0d1117;
+      --header-color: #161b22;
+      --border-color: #21262d;
+      --accent-color: #58a6ff;
+      --secondary-text-color: #8b949e;
+      --primary-text-color: #c9d1d9;
+      --button-bg-color: #238636;
+      --button-bg-hover-color: #2ea043;
+      --section-bg-color: #161b22;
+      --section-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      --card-bg-color: #21262d;
+      --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      --border-radius: 10px;
+      --transition-time: 0.3s;
+      --font-family: 'Montserrat', sans-serif;
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: var(--font-family);
+      background-color: var(--bg-color);
+      color: var(--primary-text-color);
+      line-height: 1.6;
+    }
+    header {
+      background-color: var(--header-color);
+      padding: 1.5rem 4vw;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 999;
+    }
+    header h1 {
+      font-size: 1.8rem;
+      color: var(--accent-color);
+      font-weight: 700;
+    }
+    nav a {
+      color: var(--primary-text-color);
+      text-decoration: none;
+      margin: 0 1rem;
+      font-size: 1rem;
+      font-weight: 500;
+      transition: color var(--transition-time);
+    }
+    nav a:hover {
+      color: var(--accent-color);
+    }
+    .container {
+      max-width: 1200px;
+      margin: 3rem auto;
+      padding: 0 2vw;
+    }
+    .section {
+      background-color: var(--section-bg-color);
+      padding: 2rem 4vw;
+      border-radius: var(--border-radius);
+      box-shadow: var(--section-shadow);
+      margin-bottom: 4rem;
+    }
+    .section h2 {
+      color: var(--accent-color);
+      margin-bottom: 1rem;
+      font-size: 1.8rem;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 0.5rem;
+    }
+    ol {
+      margin: 1rem 0 0 1.5rem;
+      padding-left: 1rem;
+      list-style: decimal;
+    }
+    li {
+      margin: 0.5rem 0;
+    }
+    .btn {
+      display: inline-block;
+      padding: 1rem 2rem;
+      background-color: var(--button-bg-color);
+      color: #fff;
+      text-decoration: none;
+      border-radius: var(--border-radius);
+      font-weight: bold;
+      transition: background-color var(--transition-time), transform var(--transition-time);
+      margin-top: 2rem;
+    }
+    .btn:hover {
+      background-color: var(--button-bg-hover-color);
+      transform: translateY(-3px);
+    }
+    footer {
+      background-color: var(--header-color);
+      color: var(--secondary-text-color);
+      text-align: center;
+      padding: 2rem 0;
+      border-top: 1px solid var(--border-color);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>SecureServe</h1>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="features.html">Features</a>
+      <a href="preview.html">Preview</a>
+      <a href="installation.html">Installation</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <section class="section">
+      <h2>Installation Guide</h2>
+      <p>Follow these steps to get SecureServe up and running on your server:</p>
+      <ol>
+        <li>Set up logs webhooks for event logging.</li>
+        <li>
+          <strong>Initial Ban Notice:</strong> You may see a ban reason for 
+          <em>"Trigger Event with an executor (name of the event)"</em> upon first install.
+        </li>
+        <li>Open the configuration file and copy the event name causing the ban.</li>
+        <li>Add this event name to the <strong>whitelisted events list</strong> in the config.</li>
+        <li>This resolves the issue caused by encrypted and decrypted scripts running the same events.</li>
+        <li>Adjust explosion <strong>max/min</strong> settings to fit your server’s needs. Don’t simply whitelist all staff events.</li>
+      </ol>
+      <p>
+        <strong>Pro Tip:</strong> Keep your config up to date, especially if you use
+        other scripts that might conflict with event triggers.
+      </p>
+      <a class="btn" href="contact.html">Next: Contact & License</a>
+    </section>
+
+    <section class="section">
+      <h2>Upcoming Updates</h2>
+      <ul style="list-style-type: disc; margin-left: 2rem;">
+        <li><strong>In-Game Admin Panel</strong> (available once we reach 50 GitHub stars)</li>
+        <li>Reintroducing <strong>Anti Internal</strong> with better performance</li>
+        <li>Enhanced <strong>mouse position</strong> & movement detection code for cheats</li>
+      </ul>
+      <p>Check out our video previews:</p>
+      <ul style="list-style-type: square; margin-left: 2rem;">
+        <li><a href="https://www.youtube.com/watch?v=xgFFfGNQehk" target="_blank">First Preview</a></li>
+        <li><a href="https://youtu.be/BfSHgVtE3eE" target="_blank">Second Preview</a></li>
+      </ul>
+    </section>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 SecureServe. All rights reserved.</p>
+  </footer>
+</body>
+</html>
