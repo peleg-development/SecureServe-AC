@@ -1088,8 +1088,40 @@ end)
 initialize_protections_magic_bullet = function()
 end
 
+-- Credits: @stormm1997 ( discord )
 initialize_protections_no_ragdoll = LPH_JIT_MAX(function()
     if Anti_No_Ragdoll_enabled then
+        local ragdollFlags = 0
+        CreateThread(function()
+            while true do
+                Citizen.Wait(5000)
+
+                local playerPed = PlayerPedId()
+                local canRagdoll = CanPedRagdoll(playerPed)
+
+                if  not canRagdoll and not IsEntityPositionFrozen(playerPed) and not IsPedInAnyVehicle(playerPed, false) 
+                and not IsEntityDead(playerPed) and GetPedParachuteState(playerPed) ~= 2 and not IsEntityAttached(playerPed)
+                and not IsPedJacking(playerPed) and not IsPedJumpingOutOfVehicle(playerPed) then
+
+                    Citizen.Wait(250) 
+
+                    playerPed = PlayerPedId()
+                    canRagdoll = CanPedRagdoll(playerPed)
+
+                    if not canRagdoll and not IsEntityPositionFrozen(playerPed) and not IsPedInAnyVehicle(playerPed, false)
+                    and not IsEntityDead(playerPed) and GetPedParachuteState(playerPed) ~= 2 and not IsEntityAttached(playerPed)
+                    and not IsPedJacking(playerPed) and not IsPedJumpingOutOfVehicle(playerPed) then
+
+                        ragdollFlags = ragdollFlags + 1
+
+                        if ragdollFlags >= 3 then
+                            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "No Ragdoll", webhook, time)
+                            ragdollFlags = 0
+                        end
+                    end
+                end
+            end
+        end)
     end
 end)
 
@@ -1256,7 +1288,7 @@ initialize_protections_speed_hack = LPH_JIT_MAX(function()
     if Anti_Speed_Hack_enabled then
         Citizen.CreateThread(function()
             while (true) do
-                Wait(2750)
+                Citizen.Wait(2750)
 
                 local ped = PlayerPedId()
                 if (IsPedInAnyVehicle(ped, false)) then
@@ -1379,7 +1411,7 @@ end)
 initialize_blacklists_weapon = LPH_JIT_MAX(function()
         Citizen.CreateThread(function()
         while (true) do
-         Wait(9000)
+            Citizen.Wait(9000)
 
             local player = PlayerPedId()
             local weapon = GetSelectedPedWeapon(player)
