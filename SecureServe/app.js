@@ -2,7 +2,7 @@
 new Vue({
     el: '#app',
     data: {
-        showMenu: true,
+        showMenu: false,
         selectedSection: 'dashboard',
         totalPlayers: 100,
         activeCheaters: 3,
