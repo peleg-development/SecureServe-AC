@@ -1403,7 +1403,7 @@ initialize_blacklists_sprites = LPH_JIT_MAX(function()
                 end
             end
 
-            Citizen.Wait(5600)
+            Citizen.Wait(5700)
         end
     end)
 end)
