@@ -49,6 +49,23 @@ new Vue({
         notificationId: 0
     },
     methods: {
+        fetchDashboardStats() {
+            fetch(`https://${GetParentResourceName()}/getDashboardStats`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({})  
+            })
+              .then(response => response.json())
+              .then(data => {
+                this.totalPlayers   = data.totalPlayers;
+                this.activeCheaters = data.activeCheaters;
+                this.serverUptime   = data.serverUptime;
+                this.peakPlayers    = data.peakPlayers;
+              })
+              .catch(error => {
+                console.error('Error fetching dashboard stats:', error);
+              });
+        },
         fetchPlayers() {
             fetch(`https://${GetParentResourceName()}/getPlayers`, {
                 method: 'POST',
@@ -249,6 +266,7 @@ new Vue({
                 case "open":
                     this.fetchBans(); 
                     this.fetchPlayers(); 
+                    this.fetchDashboardStats();
                     this.showMenu = true;
                     break;
                 case "close":

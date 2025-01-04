@@ -101,3 +101,83 @@ RegisterNetEvent('banPlayer', function(targetId)
         print(("Player %s was banned by admin %s"):format(GetPlayerName(targetId), GetPlayerName(src)))
     end
 end)
+
+
+
+local statsPath = "stats.json"
+local startTime = os.time()  
+
+local function loadStats()
+    local statsFile = LoadResourceFile(GetCurrentResourceName(), statsPath)
+    if statsFile then
+        return json.decode(statsFile)
+    else
+        print("^1[SecureServe] Could not open " .. statsPath .. ".^0")
+        return {}
+    end
+end
+
+local function saveStats(stats)
+    local statsContent = json.encode(stats, { indent = true })
+    SaveResourceFile(GetCurrentResourceName(), statsPath, statsContent, -1)
+end
+
+local statsCache = {}
+
+AddEventHandler("onResourceStart", function(resourceName)
+    if GetCurrentResourceName() ~= resourceName then return end
+    
+    statsCache = loadStats()
+    
+    statsCache.totalPlayers    = statsCache.totalPlayers    or 0
+    statsCache.activeCheaters  = statsCache.activeCheaters  or 0
+    statsCache.serverUptime    = statsCache.serverUptime    or "0 minutes"
+    statsCache.peakPlayers     = statsCache.peakPlayers     or 0
+
+    saveStats(statsCache)
+
+    print("^2[SecureServe] stats.json loaded. Current stats: ^0")
+    print(json.encode(statsCache, { indent = true }))
+
+    Citizen.CreateThread(function()
+        while true do
+            Citizen.Wait(60 * 60 * 1000)  -- 60 minutes in ms
+            updateUptime()
+        end
+    end)
+end)
+
+function updateUptime()
+    local now = os.time()
+    local elapsedSeconds = now - startTime
+    local elapsedHours = math.floor(elapsedSeconds / 3600)
+
+    statsCache.serverUptime = string.format("%d hours", elapsedHours)
+    
+    saveStats(statsCache)
+end
+
+AddEventHandler("playerConnecting", function(name, setKickReason, deferrals)
+    local playerCount = #GetPlayers() + 1  
+    statsCache.totalPlayers = playerCount
+    
+    if playerCount > statsCache.peakPlayers then
+        statsCache.peakPlayers = playerCount
+    end
+
+    saveStats(statsCache)
+end)
+
+AddEventHandler("playerDropped", function(reason)
+    local playerCount = #GetPlayers()
+    statsCache.totalPlayers = playerCount
+    
+    saveStats(statsCache)
+end)
+
+RegisterNetEvent("secureServe:requestStats", function()
+    local src = source
+    if not src then return end
+    
+    TriggerClientEvent("secureServe:returnStats", src, statsCache)
+end)

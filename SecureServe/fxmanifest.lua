@@ -6,6 +6,7 @@ version "1.0.0"
 
 ui_page 'index.html'
 files {
+    'stats.json',
     'index.html',
     'app.js',
     'styles.css',
