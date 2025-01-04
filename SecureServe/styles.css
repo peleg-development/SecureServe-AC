@@ -1,17 +1,32 @@
 :root {
-    --primary-bg: #181818;
-    --secondary-bg: #202020;
-    --tertiary-bg: #282828;
-    --primary-color: #007bff;
-    --secondary-color: #0056b3;
-    --text-color: #ffffff;
-    --text-muted: #b0b0b0;
-    --card-bg: #202020;
-    --card-hover-bg: #333333;
-    --border-color: #333333;
-    --border-radius: 10px;
+    /* Base colors - Balanced dark mode */
+    --primary-bg: #1a1b1f;        
+    --secondary-bg: #21222a;     
+    --tertiary-bg: #282a33;       
+    
+    /* Accent colors */
+    --primary-color: #0284fe;     
+    --secondary-color: #0062d6;   
+    
+    /* Text colors */
+    --text-color: #ffffff;        
+    --text-muted: #a0a3b1;      
+    
+    /* Component colors */
+    --card-bg: #2a2c35;           
+    --card-hover-bg: #31333d;   
+    --border-color: #383b47;     
+    
+    /* UI elements */
+    --border-radius: 12px;
     --padding: 1vh;
     --transition: all 0.3s ease;
+    
+    /* Status colors */
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --info-color: #3b82f6;
 }
 
 body {
