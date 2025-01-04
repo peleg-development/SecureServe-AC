@@ -474,21 +474,21 @@ AddEventHandler('receivePlayers', function(playerList)
 end)
 
 
-    RegisterNUICallback("getDashboardStats", function(data, cb)
-        TriggerServerEvent("secureServe:requestStats")
+RegisterNUICallback("getDashboardStats", function(data, cb)
+    TriggerServerEvent("secureServe:requestStats")
         
-        cb("ok")
-    end)
+    cb("ok")
+end)
     
-    RegisterNetEvent("secureServe:returnStats", function(stats)
-        SendNUIMessage({
-            action = "dashboardStats",
-            totalPlayers    = stats.totalPlayers,
-            activeCheaters  = stats.activeCheaters,
-            serverUptime    = stats.serverUptime,
-            peakPlayers     = stats.peakPlayers
-        })
-    end)
+RegisterNetEvent("secureServe:returnStats", function(stats)
+    SendNUIMessage({
+        action = "dashboardStats",
+        totalPlayers    = stats.totalPlayers,
+        activeCheaters  = stats.activeCheaters,
+        serverUptime    = stats.serverUptime,
+        peakPlayers     = stats.peakPlayers
+    })
+end)
     
 
     

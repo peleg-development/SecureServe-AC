@@ -84,6 +84,19 @@
                                     <p>{{ peakPlayers }}</p>
                                 </div>
                             </div>
+                            <div class="dashboard-section">
+                                <div class="updates-container">
+                                    <h2>Last Updates</h2>
+                                    <div class="update-card" v-for="update in lastUpdates" :key="update.id">
+                                        <i class="fas fa-info-circle update-icon"></i>
+                                        <div class="update-content">
+                                            <strong>{{ update.title }}</strong> - {{ update.description }}
+                                            <em>{{ update.date }}</em>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
                         </div>
                         <div v-if="selectedSection === 'player-list'" class="section" key="player-list">
                             <div class="player-list-header">

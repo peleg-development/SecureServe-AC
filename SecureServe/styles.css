@@ -38,17 +38,15 @@ body {
 }
 
 .header {
-    background-color: var(--secondary-bg);
-    padding: var(--padding);
-    text-align: center;
-    border-bottom: 2px solid var(--border-color);
+    background: linear-gradient(145deg, var(--secondary-bg), var(--primary-bg));
+    padding: 2vh;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .header h1 {
-    margin: 0;
-    font-size: 2vh;
-    color: var(--primary-color);
-    animation: slideIn 1s var(--transition);
+    font-size: 2.2vh;
+    font-weight: 600;
+    letter-spacing: 0.5px;
 }
 
 .main-content {
@@ -110,39 +108,39 @@ body {
     border-bottom: 2px solid var(--border-color);
     padding-bottom: var(--padding);
 }
-
 .stats-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5vh;
+    margin-top: 2vh; 
 }
 
 .stat-card {
-    background-color: var(--card-bg);
-    padding: var(--padding);
-    margin: 1vh;
-    border-radius: var(--border-radius);
-    flex: 1 1 calc(50% - 2vh);
-    box-sizing: border-box;
-    text-align: center;
-    transition: var(--transition);
-    animation: fadeIn 1s var(--transition);
+    background: linear-gradient(145deg, var(--card-bg), var(--secondary-bg));
+    padding: 2vh; 
+    border-radius: 12px; 
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2); 
+    transition: all 0.3s ease;
 }
 
 .stat-card:hover {
-    background-color: var(--card-hover-bg);
-    transform: scale(1.05);
+    transform: translateY(-4px); 
+    box-shadow: 0 10px 18px rgba(0, 0, 0, 0.3); 
 }
 
 .stat-card h3 {
-    margin-top: 0;
-    font-size: 2vh;
+    color: var(--text-muted);
+    font-size: 1.6vh; 
+    margin-top: -1vh;
+    margin-bottom: 0.8vh; 
+    font-weight: 500;
 }
 
 .stat-card p {
-    margin: 1vh 0;
-    font-size: 2.5vh;
+    font-size: 3vh;
+    font-weight: 600;
     color: var(--primary-color);
+    margin: 0;
 }
 
 .player-options-content {
@@ -668,3 +666,75 @@ input:checked + label:before {
 
 
 
+.updates-container {
+    margin-left: -1vw;
+    margin-top: 1;
+    border-radius: 15px;
+    padding: 2.5vh;
+}
+
+.updates-container h2 {
+    font-size: 2.5vh;
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 1vh;
+    width: auto; 
+    text-align: left; 
+}
+
+.update-card {
+    background: var(--card-bg);
+    margin: 1.5vh 0;
+    padding: 2vh;
+    border-radius: 12px;
+    border-left: 4px solid var(--primary-color);
+    transition: all 0.3s ease;
+}
+.update-card:hover {
+    background: var(--card-hover-bg);
+    transform: translateX(5px);
+}
+
+.update-icon {
+    background: rgba(0, 123, 255, 0.1);
+    padding: 1vh;
+    border-radius: 50%;
+}
+
+.updates-container .update-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5vh;
+    margin-bottom: 1vh;
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.updates-container .update-card:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.updates-container .update-card strong {
+    font-size: 2vh;
+    color: var(--primary-color);
+}
+
+.updates-container .update-card em {
+    font-size: 1.5vh;
+    color: var(--text-muted);
+}
+
+.updates-container .update-icon {
+    font-size: 2.5vh;
+    color: var(--primary-color);
+    margin-right: 1vh;
+}
+
+.updates-container .update-content {
+    flex: 1;
+    margin-left: 1vh;
+}

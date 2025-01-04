@@ -23,6 +23,8 @@ end)
 
 
 
+
+
 local function loadBans()
     local bansFile = LoadResourceFile(GetCurrentResourceName(), 'bans.json')
     if bansFile then
@@ -175,9 +177,17 @@ AddEventHandler("playerDropped", function(reason)
     saveStats(statsCache)
 end)
 
+
+
 RegisterNetEvent("secureServe:requestStats", function()
     local src = source
     if not src then return end
+    statsCache = loadStats()
+    
+    statsCache.totalPlayers    = statsCache.totalPlayers    or 0
+    statsCache.activeCheaters  = statsCache.activeCheaters  or 0
+    statsCache.serverUptime    = statsCache.serverUptime    or "0 minutes"
+    statsCache.peakPlayers     = statsCache.peakPlayers     or 0
     
     TriggerClientEvent("secureServe:returnStats", src, statsCache)
 end)

@@ -538,12 +538,15 @@ end
 function IsMenuAdmin(player)
     local promise = promise.new()
 
-    TriggerServerEvent('SecureServe:RequestMenuAdminStatus', player, function(result)
+    TriggerServerEvent('SecureServe:RequestMenuAdminStatus', player)
+
+    RegisterNetEvent('SecureServe:ReturnMenuAdminStatus', function(result)
         promise:resolve(result)
     end)
 
     return Citizen.Await(promise)
 end
+
     
 
 function client_methods_notify(title, description)

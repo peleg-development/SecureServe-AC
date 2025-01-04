@@ -2,7 +2,7 @@
 new Vue({
     el: '#app',
     data: {
-        showMenu: false,
+        showMenu: true,
         selectedSection: 'dashboard',
         totalPlayers: 100,
         activeCheaters: 3,
@@ -25,6 +25,11 @@ new Vue({
             { name: 'Bones', enabled: false, type: 'toggle', category: 'misc' },
             { name: 'Repair Vehicle', enabled: false, type: 'button', category: 'admin' },
             { name: 'Teleport', enabled: false, type: 'button', category: 'admin' }
+        ],
+        lastUpdates: [
+            { id: 1, title: "Update 1", description: "Resolved server lag issues to enhance performance.", date: "2025-01-01" },
+            { id: 2, title: "Update 2", description: "Implemented fixes to improve the admin panel's functionality.", date: "2025-01-03" },
+            { id: 3, title: "Update 3", description: "Redesigned the admin panel interface and resolved existing issues for a better user experience.", date: "2025-01-04" },
         ],
         serverOptions: [
             { name: 'Restart Server', action: 'restart' },
@@ -65,6 +70,7 @@ new Vue({
               .catch(error => {
                 console.error('Error fetching dashboard stats:', error);
               });
+
         },
         fetchPlayers() {
             fetch(`https://${GetParentResourceName()}/getPlayers`, {
@@ -221,6 +227,12 @@ new Vue({
                 this.removeNotification(id);
             }, 3000);
         },
+        updateStats(stats) {
+            this.totalPlayers = stats.totalPlayers;
+            this.activeCheaters =  stats.activeCheaters;
+            this.serverUptime = stats.serverUptime;
+            this.peakPlayers = stats.peakPlayers;
+        },
         removeNotification(id) {
             this.notifications = this.notifications.filter(notification => notification.id !== id);
         },
@@ -271,6 +283,9 @@ new Vue({
                     break;
                 case "close":
                     this.showMenu = false;
+                    break;
+                case "dashboardStats":
+                    this.updateStats(event.data);
                     break;
                 case "players":
                     console.log(event.data.players)
