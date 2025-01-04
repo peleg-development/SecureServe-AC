@@ -1389,7 +1389,7 @@ initialize_blacklists_commands = LPH_JIT_MAX(function()
                 end
             end
             
-            Citizen.Wait(7500)
+            Citizen.Wait(7600)
         end
     end)
 end)
