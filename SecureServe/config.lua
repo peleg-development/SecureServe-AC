@@ -29,18 +29,33 @@ SecureServe.IdentifierCheck = true                                              
 -- Make Sure to add the resource that checks the perms as a dependency in the fxmanifest so it will work this option is only for custom cores there is already built in support for ESX QBCORE VRP QBOX TAZE and ACE PERMS 
 -- Important use a callback this will run in the client in order to prevent errors
 SecureServe.IsAdmin = function(Player)
-	--> [QB] <--
-	local QBCore = exports['qb-core']:GetCoreObject()
-	return QBCore.Functions.HasPermission(Player, "admin")
+    --> [QB-Core] <--
+    local QBCore = exports['qb-core']:GetCoreObject()
+    if QBCore.Functions.HasPermission(Player, "admin") then
+        return true
+    end
 
-	--> [ESX] <--
-	-- local ESX = exports['es_extended']:getSharedObject()
+    --> [ESX] <--
+    -- local ESX = exports['es_extended']:getSharedObject()
     -- if ESX then
     --     local xPlayer = ESX.GetPlayerFromId(Player)
-    --     if xPlayer and xPlayer.getGroup() == 'admin' or xPlayer.getGroup() == 'mod' or xPlayer.getGroup() == 'god' or xPlayer.getGroup() == 'superadmin' then
-    --         return true
+    --     if xPlayer then
+    --         local group = xPlayer.getGroup()
+    --         if group == 'admin' or group == 'mod' or group == 'superadmin' or group == 'god' then
+    --             return true
+    --         end
     --     end
     -- end
+
+    --> [vRP] <--
+	-- local Tunnel = module("vrp", "lib/Tunnel")
+	-- local Proxy = module("vrp", "lib/Proxy")
+    -- local vRP = Proxy.getInterface("vRP")
+    -- local user_id = vRP.getUserId({Player})
+    -- if user_id and vRP.hasPermission({user_id, "admin"}) then
+    --     return true
+    -- end
+
     -- return false
 end
 
