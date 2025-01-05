@@ -99,31 +99,34 @@
                             
                         </div>
                         <div v-if="selectedSection === 'player-list'" class="section" key="player-list">
-                            <transition name="modal-fade">
-                                <div v-if="showScreenshotModal" class="modal">
-                                    <div class="modal-content">
-                                        <button class="close-button3" @click="closeScreenshotModal">×</button>
-                                        <h3>Screenshot</h3>
-                                        <img :src="modalScreenshot" alt="Player Screenshot" class="screenshot-image">
+                        <div class="playersection">
+                                <transition name="modal-fade">
+                                    <div v-if="showScreenshotModal" class="modal">
+                                        <div class="modal-content">
+                                            <button class="close-button3" @click="closeScreenshotModal">×</button>
+                                            <h3>Screenshot</h3>
+                                            <img :src="modalScreenshot" alt="Player Screenshot" class="screenshot-image">
+                                        </div>
                                     </div>
+                                </transition>
+                                                                                    
+                                <div class="player-list-header">
+                                    <h2>Player List</h2>
+                                    <input type="text" class="search-bar" v-model="searchQuery" placeholder="Search players...">
                                 </div>
-                            </transition>
-                                                                                   
-                            <div class="player-list-header">
-                                <h2>Player List</h2>
-                                <input type="text" class="search-bar" v-model="searchQuery" placeholder="Search players...">
-                            </div>
-                            <div class="player-list">
-                                <div v-for="player in filteredPlayers" :key="player.id" class="player-item">
-                                    <div class="player-info">
-                                        <div class="player-name">{{ player.name }}</div>
-                                        <div class="player-steamid">Steam ID: {{ player.steamId }}</div>
-                                    </div>
-                                    <div class="player-actions">
-                                        <i class="fas fa-user-slash" @click="kickPlayer(player.id)" title="Kick"></i>
-                                        <i class="fas fa-ban" @click="banPlayer(player.id)" title="Ban"></i>
-                                        <i class="fas fa-camera" @click="screenshotPlayer(player.id)" title="Screenshot"></i>
-                                        <i class="fas fa-eye" @click="spectatePlayer(player.id)" title="Spectate"></i>
+                                <div class="player-list">
+                                    <div v-for="player in filteredPlayers" :key="player.id" class="player-item">
+                                        <span class="player-status"></span>
+                                        <div class="player-info">
+                                            <div class="player-name">{{ player.name }}</div>
+                                            <div class="player-steamid">Steam ID: {{ player.steamId }}</div>
+                                        </div>
+                                        <div class="player-actions">
+                                            <i class="fas fa-user-slash" @click="kickPlayer(player.id)" title="Kick"></i>
+                                            <i class="fas fa-ban" @click="banPlayer(player.id)" title="Ban"></i>
+                                            <i class="fas fa-camera" @click="screenshotPlayer(player.id)" title="Screenshot"></i>
+                                            <i class="fas fa-eye" @click="spectatePlayer(player.id)" title="Spectate"></i>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

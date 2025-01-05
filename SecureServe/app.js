@@ -20,7 +20,11 @@ new Vue({
             // { id: 3, name: 'Chris Johnson', steamId: 'STEAM_0:1:23456789', ping: 30 },
             // { id: 4, name: 'Sarah Lee', steamId: 'STEAM_0:1:98765432', ping: 120 },
             // { id: 5, name: 'Mike Brown', steamId: 'STEAM_0:1:34567890', ping: 90 },
-            // { id: 6, name: 'Emma Davis', steamId: 'STEAM_0:1:54321098', ping: 60 }
+            // { id: 6, name: 'Emma Davis', steamId: 'STEAM_0:1:54321098', ping: 60 },
+            // { id: 6, name: 'Emma Davis', steamId: 'STEAM_0:1:54321098', ping: 60 },
+            // { id: 6, name: 'Emma Davis', steamId: 'STEAM_0:1:54321098', ping: 60 },
+            // { id: 6, name: 'Emma Davis', steamId: 'STEAM_0:1:54321098', ping: 60 },
+            // { id: 6, name: 'Emma Davis', steamId: 'STEAM_0:1:54321098', ping: 60 },
         ],
         bans: [
             // { id: 1, name: "Jane Smith", reason: "Abusive language", steam: "STEAM_0:1:87654321", discord: "Jane#1234", hwid1: "HWID123456", ip: "192.168.1.100", expire: "Permanent" },
