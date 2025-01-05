@@ -51,18 +51,6 @@
                     </ul>
                 </div>
                 <div class="content">
-                    <div v-if="showModal" class="modal">
-                        <div class="modal-content">
-                            <span class="close" @click="closeModal">&times;</span>
-                            <h3>Ban Details</h3>
-                            <p><strong>Name:</strong> {{ modalBan.name }}</p>
-                            <p><strong>Steam ID:</strong> {{ modalBan.steamId }}</p>
-                            <p><strong>Discord ID:</strong> {{ modalBan.discordId }}</p>
-                            <p><strong>HWID:</strong> {{ modalBan.hwid }}</p>
-                            <p><strong>Reason:</strong> {{ modalBan.reason }}</p>
-                            <p><strong>Date:</strong> {{ modalBan.date }}</p>
-                        </div>
-                    </div>
                     <transition name="fade" mode="out-in">
                         <div v-if="selectedSection === 'dashboard'" class="section" key="dashboard">
                             <h2>Dashboard</h2>
@@ -131,30 +119,176 @@
                                 </div>
                             </div>
                         </div>
-                        <div v-if="selectedSection === 'bans'" class="section" key="bans">
-                            <div class="ban-list-header">
-                                <h2>Bans</h2>
-                                <input type="text" class="search-bar" v-model="banSearchQuery" placeholder="Search bans...">
-                            </div>
-                            <div class="ban-list">
-                                <div v-for="ban in filteredBans" :key="ban.id" class="ban-item">
-                                    <div class="ban-info">
-                                        <div class="ban-name">{{ ban.name }}</div>
-                                        <div class="ban-reason">Reason: {{ ban.reason }}</div>
-                                        <div class="ban-details">
-                                            <p>Steam ID: {{ ban.steam }}</p>
-                                            <p>Discord ID: {{ ban.discord }}</p>
-                                            <p>HWID: {{ ban.hwid1 }}</p>
-                                            <p>IP: {{ ban.ip }}</p>
-                                            <p>Expiration: {{ ban.expire }}</p>
-                                        </div>
-                                    </div>
-                                    <div class="ban-actions">
-                                        <i class="fas fa-undo" @click="unbanPlayer(ban.id)" title="Unban"></i>
+                        
+                        <div v-if="selectedSection === 'bans'" class="section ban-section">
+                            <div class="ban-header">
+                                <div class="ban-title">
+                                    <i class="fas fa-ban"></i>
+                                    <h2>Ban Management</h2>
+                                </div>
+                                <div class="ban-controls">
+                                    <div class="search-container">
+                                        <i class="fas fa-search search-icon"></i>
+                                        <input 
+                                            type="text" 
+                                            class="ban-search" 
+                                            v-model="banSearchQuery" 
+                                            placeholder="Search by name, Steam ID, or reason..."
+                                        >
                                     </div>
                                 </div>
                             </div>
+                        
+                            <div class="ban-list-container">
+                                <div v-if="filteredBans.length === 0" class="no-bans">
+                                    <i class="fas fa-check-circle"></i>
+                                    <p>No banned players found</p>
+                                </div>
+                                
+                                <div v-else class="ban-grid">
+                                    <div v-for="ban in filteredBans" 
+                                         :key="ban.id" 
+                                         class="ban-card">
+                                        <div class="ban-card-header">
+                                            <div class="ban-user-info">
+                                                <div class="ban-avatar">
+                                                    <i class="fas fa-user"></i>
+                                                </div>
+                                                <div class="ban-user-details">
+                                                    <h3>{{ ban.name }}</h3>
+                                                    <span class="ban-date">Banned until: {{ ban.expire }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="ban-actions">
+                                                <button @click="unbanPlayer(ban.id)" class="unban-btn">
+                                                    <i class="fas fa-undo"></i>
+                                                    <span>Unban</span>
+                                                </button>
+                                                <button @click="showBanInfo(ban)" class="details-btn">
+                                                    <i class="fas fa-info-circle"></i>
+                                                    <span>Details</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="ban-card-content">
+                                            <div class="ban-info-grid">
+                                                <div class="ban-info-item">
+                                                    <span class="info-label">Steam ID</span>
+                                                    <span class="info-value">{{ ban.steam }}</span>
+                                                </div>
+                                                <div class="ban-info-item">
+                                                    <span class="info-label">Discord</span>
+                                                    <span class="info-value">{{ ban.discord }}</span>
+                                                </div>
+                                                <div class="ban-info-item">
+                                                    <span class="info-label">IP Address</span>
+                                                    <span class="info-value">{{ ban.ip }}</span>
+                                                </div>
+                                                <div class="ban-info-item">
+                                                    <span class="info-label">HWID</span>
+                                                    <span class="info-value">{{ ban.hwid1 }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="ban-reason">
+                                                <span class="info-label">Reason</span>
+                                                <p>{{ ban.reason }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <transition name="modal-fade">
+                                <div v-if="showModal" class="modal-overlay">
+                                    <div class="modal-container">
+                                        <div class="modal-header">
+                                            <div class="modal-title">
+                                                <i class="fas fa-user-shield"></i>
+                                                <h3>Ban Details</h3>
+                                            </div>
+                                            <button class="modal-close" @click="closeModal">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        <div class="modal-body">
+                                            <div class="modal-user-header">
+                                                <div class="modal-avatar">
+                                                    <i class="fas fa-user"></i>
+                                                </div>
+                                                <div class="modal-user-info">
+                                                    <h4>{{ modalBan.name }}</h4>
+                                                    <span class="ban-status">Banned</span>
+                                                </div>
+                                            </div>
+                            
+                                            <div class="modal-info-grid">
+                                                <div class="modal-info-item">
+                                                    <span class="modal-label">Steam ID</span>
+                                                    <div class="modal-value-container">
+                                                        <span class="modal-value">{{ modalBan.steam }}</span>
+                                                        <button class="copy-btn" @click="copyToClipboard(modalBan.steam)">
+                                                            <i class="fas fa-copy"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                            
+                                                <div class="modal-info-item">
+                                                    <span class="modal-label">Discord ID</span>
+                                                    <div class="modal-value-container">
+                                                        <span class="modal-value">{{ modalBan.discord }}</span>
+                                                        <button class="copy-btn" @click="copyToClipboard(modalBan.discord)">
+                                                            <i class="fas fa-copy"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                            
+                                                <div class="modal-info-item">
+                                                    <span class="modal-label">HWID</span>
+                                                    <div class="modal-value-container">
+                                                        <span class="modal-value">{{ modalBan.hwid1 }}</span>
+                                                        <button class="copy-btn" @click="copyToClipboard(modalBan.hwid1)">
+                                                            <i class="fas fa-copy"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                            
+                                                <div class="modal-info-item">
+                                                    <span class="modal-label">IP Address</span>
+                                                    <div class="modal-value-container">
+                                                        <span class="modal-value">{{ modalBan.ip }}</span>
+                                                        <button class="copy-btn" @click="copyToClipboard(modalBan.ip)">
+                                                            <i class="fas fa-copy"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                            
+                                                <div class="modal-info-item full-width">
+                                                    <span class="modal-label">Ban Expiration</span>
+                                                    <span class="modal-value">{{ modalBan.expire }}</span>
+                                                </div>
+                            
+                                                <div class="modal-info-item full-width">
+                                                    <span class="modal-label">Ban Reason</span>
+                                                    <span class="modal-value reason">{{ modalBan.reason }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                            
+                                        <div class="modal-footer">
+                                            <button class="modal-btn secondary" @click="closeModal">
+                                                <i class="fas fa-times"></i>
+                                                Close
+                                            </button>
+                                            <button class="modal-btn primary" @click="unbanPlayer(modalBan.id)">
+                                                <i class="fas fa-undo"></i>
+                                                Unban Player
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </transition>
                         </div>
+                        
                         
                         <div v-if="selectedSection === 'server-options'" class="section" key="server-options">
                             <h2 class="section-title">Server Options</h2>

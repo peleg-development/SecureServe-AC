@@ -270,7 +270,13 @@ new Vue({
             };
             return icons[type] || 'fas fa-bell';
         },
-    
+        copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                this.showNotification('Copied to clipboard', 'success');
+            }).catch(() => {
+                this.showNotification('Failed to copy to clipboard', 'error');
+            });
+        },
         showNotification(message, type = 'info') {
             const id = Date.now();
             this.notifications.push({ id, message, type });
@@ -360,6 +366,7 @@ new Vue({
                 }
             }
         },
+        
     
     },
     computed: {
