@@ -85,36 +85,6 @@ RegisterNetEvent('playerLoaded', function()
     playerStates[src] = { loaded = true, loadTime = GetGameTimer() }
 end)
 
-local events = {}
-
-RegisterNetEvent("TriggerdServerEventCheck", function(event, time)
-    events[event] = time
-end)
-
-exports('CheckTime', function(event ,time, source)
-    Wait(1000)
-    local playerState = playerStates[source]
-    if playerState and playerState.loaded then
-        if events[event] == nil then
-            Wait(500)
-            if events[event] == nil then
-                Wait(500)
-                if events[event] == nil then
-                    punish_player(source, "Trigger Event with an excutor ".. event, webhook, time)
-                end
-            end
-        else
-            local eventTime = events[event]
-            local currentTime = time
-            if not (math.abs(currentTime - eventTime) < 10) then
-                if source and GetPlayerPing(source) > 0 then
-                    punish_player(source, "Exceeded time stamp at trigger: ".. event .. " time: ".. currentTime - eventTime, webhook, time)
-                    -- print("banned", event, "time", source, currentTime - eventTime)
-                end
-            end
-        end
-    end
-end)
 
 --> [Protections] <--
 ProtectionCount = {}
@@ -529,14 +499,92 @@ local COLORS = {
 }
 
 --> [EVENTS] <--
+local encryption_key = "c4a2ec5dc103a3f730460948f2e3c01df39ea4212bc2c82f"
+
+local xor_encrypt = LPH_NO_VIRTUALIZE(function(text, key)
+    local res = {}
+    local key_len = #key
+    for i = 1, #text do
+        local xor_byte = string.byte(text, i) ~ string.byte(key, (i - 1) % key_len + 1)
+        res[i] = string.char(xor_byte)
+    end
+    return table.concat(res)
+end)
+
+local encryptEventName = LPH_NO_VIRTUALIZE(function(event_name, key)
+    local encrypted = xor_encrypt(event_name, key)
+    local result = ""
+    for i = 1, #encrypted do
+        result = result .. string.format("%03d", string.byte(encrypted, i))
+    end
+    return result
+end)
+
+local xor_decrypt = LPH_NO_VIRTUALIZE(function(encrypted_text, key)
+    local res = {}
+    local key_len = #key
+    for i = 1, #encrypted_text do
+        local xor_byte = string.byte(encrypted_text, i) ~ string.byte(key, (i - 1) % key_len + 1)
+        res[i] = string.char(xor_byte)
+    end
+    return table.concat(res)
+end)
+
+local decryptEventName = LPH_NO_VIRTUALIZE(function(encrypted_name, key)
+    local encrypted = {}
+    for i = 1, #encrypted_name, 3 do
+        local byte_str = encrypted_name:sub(i, i + 2)
+        local byte = tonumber(byte_str)
+        if byte and byte >= 0 and byte <= 255 then
+            table.insert(encrypted, string.char(byte))
+        else
+            return nil
+        end
+    end
+    return xor_decrypt(table.concat(encrypted), key)
+end)
+
+
+local events = {}
+
+RegisterNetEvent("TriggerdServerEventCheck", function(event, time)
+    events[event] = time
+end)
+
 local function isWhitelisted(event_name)
     for _, whitelisted_event in ipairs(SecureServe.EventWhitelist) do
-        if event_name == whitelisted_event then
+        if event_name == whitelisted_event or event_name == encryptEventName(whitelisted_event, encryption_key) then
             return true
         end
     end
     return false
 end
+
+exports('CheckTime', function(event ,time, source)
+    Wait(1000)
+    local playerState = playerStates[source]
+    if playerState and playerState.loaded then
+        if events[event] == nil and not isWhitelisted(event) then
+            Wait(500)
+            if events[event] == nil then
+                Wait(500)
+                if events[event] == nil and events[encryptEventName(event, encryption_key)] == nil then
+                    punish_player(source, "Trigger Event with an excutor ".. event, webhook, time)
+                end
+            end
+        else
+            local eventTime = events[event]
+            local currentTime = time
+            if not (math.abs(currentTime - eventTime) < 10) then
+                if source and GetPlayerPing(source) > 0 then
+                    punish_player(source, "Exceeded time stamp at trigger: ".. event .. " time: ".. currentTime - eventTime, webhook, time)
+                end
+            end
+        end
+    end
+end)
+
+
 
 exports('IsEventWhitelisted', LPH_NO_VIRTUALIZE(function(event_name)
     return isWhitelisted(event_name)
