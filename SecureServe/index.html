@@ -99,6 +99,16 @@
                             
                         </div>
                         <div v-if="selectedSection === 'player-list'" class="section" key="player-list">
+                            <transition name="modal-fade">
+                                <div v-if="showScreenshotModal" class="modal">
+                                    <div class="modal-content">
+                                        <button class="close-button3" @click="closeScreenshotModal">×</button>
+                                        <h3>Screenshot</h3>
+                                        <img :src="modalScreenshot" alt="Player Screenshot" class="screenshot-image">
+                                    </div>
+                                </div>
+                            </transition>
+                                                                                   
                             <div class="player-list-header">
                                 <h2>Player List</h2>
                                 <input type="text" class="search-bar" v-model="searchQuery" placeholder="Search players...">
@@ -142,29 +152,58 @@
                                 </div>
                             </div>
                         </div>
+                        
                         <div v-if="selectedSection === 'server-options'" class="section" key="server-options">
-                            <h2>Server Options</h2>
-                            <div class="options-container">
-                                <div class="card" v-for="option in serverOptions" :key="option.name">
-                                    <h3>{{ option.name }}</h3>
-                                    <button @click="executeServerOption(option.action)" class="execute-button">Execute</button>
+                            <h2 class="section-title">Server Options</h2>
+                            <div class="server-options-grid">
+                                <div v-for="option in serverOptions" :key="option.name" class="server-card">
+                                    <div class="card-content">
+                                        <div class="card-icon">
+                                            <i :class="getOptionIcon(option.name)"></i>
+                                        </div>
+                                        <h3 class="card-title">{{ option.name }}</h3>
+                                        <button @click="executeServerOption(option.action)" class="action-button">
+                                            <span class="button-text">Execute</span>
+                                            <i class="fas fa-arrow-right"></i>
+                                        </button>
+                                    </div>
                                 </div>
-                                <div class="card">
-                                    <h3>Clear All Entities</h3>
-                                    <button @click="clearAllEntities" class="execute-button">Execute</button>
+                                <div class="server-card danger">
+                                    <div class="card-content">
+                                        <div class="card-icon">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </div>
+                                        <h3 class="card-title">Clear All Entities</h3>
+                                        <button @click="clearAllEntities" class="action-button">
+                                            <span class="button-text">Execute</span>
+                                            <i class="fas fa-arrow-right"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-
 
                         <div v-if="selectedSection === 'logs'" class="section" key="logs">
-                            <h2>Logs</h2>
-                            <div class="logs">
-                                <div v-for="log in logs" :key="log.timestamp" class="log-entry">
-                                    <p>{{ log.timestamp }} - {{ log.message }}</p>
+                            <h2 class="section-title">Logs</h2>
+                            <div class="logs-list">
+                                <div v-for="log in logs" :key="log.timestamp" class="log-item">
+                                    <div class="log-icon">
+                                        <i class="fas" :class="getLogIcon(log.type)"></i>
+                                    </div>
+                                    <div class="log-content">
+                                        <div class="log-header">
+                                            <span class="log-timestamp">
+                                                <i class="fas fa-clock"></i> {{ log.timestamp }}
+                                            </span>
+                                        </div>
+                                        <div class="log-body">
+                                            <p class="log-message">{{ log.message }}</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                        
                         <div v-if="selectedSection === 'settings'" class="section" key="settings">
                             <h2>Settings</h2>
                             <div class="settings-container">
@@ -194,18 +233,21 @@
                                     </div>
                                 </div>
                                 <div class="option-category actions">
-                                    <h3>Actions</h3>
-                                    <div class="option">
-                                        <input type="text" v-model="vehicleName" placeholder="Enter vehicle name" class="input-card">
-                                        <button @click="spawnVehicle" class="execute-button">Spawn</button>
-                        
-                                        <input type="text" v-model="objectName" placeholder="Enter object name" class="input-card">
-                                        <button @click="objectSpawn" class="execute-button">Spawn</button>
-                        
-                                        <input type="text" v-model="pedModel" placeholder="Enter ped name" class="input-card">
-                                        <button @click="changePed" class="execute-button">Spawn</button>
+                                    <h3 class="actions-title">Actions</h3>
+                                    <div class="action-item">
+                                        <input type="text" v-model="vehicleName" placeholder="Enter vehicle name" class="styled-input">
+                                        <button @click="spawnVehicle" class="styled-button">Spawn</button>
+                                    </div>
+                                    <div class="action-item">
+                                        <input type="text" v-model="objectName" placeholder="Enter object name" class="styled-input">
+                                        <button @click="objectSpawn" class="styled-button">Spawn</button>
+                                    </div>
+                                    <div class="action-item">
+                                        <input type="text" v-model="pedModel" placeholder="Enter ped name" class="styled-input">
+                                        <button @click="changePed" class="styled-button">Spawn</button>
                                     </div>
                                 </div>
+                                
                                 <div class="option-category admin-powers">
                                     <h3>Admin Powers</h3>
                                     <div v-for="option in playerOptions" :key="option.name" v-if="option.category === 'admin'" class="option">
@@ -224,12 +266,22 @@
                 </div>
             </div>
         </div>
-        <div class="notification-container" v-for="notification in notifications" :key="notification.id">
-            <div class="notification" :class="notification.type">
-                <span>{{ notification.message }}</span>
-                <button @click="removeNotification(notification.id)">x</button>
+        <transition-group name="notification" tag="div" class="notification-container">
+            <div v-for="notification in notifications" 
+                 :key="notification.id" 
+                 class="notification" 
+                 :class="notification.type">
+                <div class="notification-icon">
+                    <i :class="getNotificationIcon(notification.type)"></i>
+                </div>
+                <div class="notification-content">
+                    {{ notification.message }}
+                </div>
+                <button class="notification-close" @click="removeNotification(notification.id)">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
-        </div>
+        </transition-group>
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>

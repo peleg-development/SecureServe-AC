@@ -191,3 +191,43 @@ RegisterNetEvent("secureServe:requestStats", function()
     
     TriggerClientEvent("secureServe:returnStats", src, statsCache)
 end)
+
+RegisterNetEvent('executeServerOption:restartServer', function()
+    TriggerClientEvent('chat:addMessage', -1, {
+        args = { '^1SERVER', 'The server is restarting. Please reconnect shortly.' }
+    })
+
+    print('[SERVER] Restart initiated by an admin.')
+
+    Citizen.Wait(5000)
+
+    -- Restart the server (if your hosting supports auto-restart)
+    os.exit() -- Replace with your hosting provider's restart command if necessary
+end)
+
+RegisterNetEvent('SecureServe:screenshotPlayer')
+AddEventHandler('SecureServe:screenshotPlayer', function(playerId)
+    local src = source
+    local webhookUrl = SecureServe.AdminMenu.Webhook
+
+    exports['screenshot-basic']:requestScreenshotUpload(webhookUrl, 'image', function(response)
+        local responseData = json.decode(response)
+
+        if responseData and responseData.attachments and responseData.attachments[1] then
+            local screenshotUrl = responseData.attachments[1].url
+
+            PerformHttpRequest(webhookUrl, function(err, text, headers) end, 'POST', json.encode({
+                embeds = {{
+                    title = "Screenshot Taken",
+                    description = string.format("Screenshot taken for player ID: %s", playerId),
+                    image = { url = screenshotUrl },
+                    color = 3066993
+                }}
+            }), { ['Content-Type'] = 'application/json' })
+
+            TriggerClientEvent('SecureServe:screenshotPlayerResult', src, screenshotUrl)
+        else
+            TriggerClientEvent('SecureServe:screenshotPlayerResult', src, nil)
+        end
+    end)
+end)

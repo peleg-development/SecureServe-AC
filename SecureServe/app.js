@@ -12,9 +12,21 @@ new Vue({
         banSearchQuery: '',
         showModal: false,
         modalBan: {},
+        showScreenshotModal: false,
+        modalScreenshot: '',
         players: [
+            // { id: 1, name: 'John Doe', steamId: 'STEAM_0:1:12345678', ping: 50 },
+            // { id: 2, name: 'Jane Smith', steamId: 'STEAM_0:1:87654321', ping: 75 },
+            // { id: 3, name: 'Chris Johnson', steamId: 'STEAM_0:1:23456789', ping: 30 },
+            // { id: 4, name: 'Sarah Lee', steamId: 'STEAM_0:1:98765432', ping: 120 },
+            // { id: 5, name: 'Mike Brown', steamId: 'STEAM_0:1:34567890', ping: 90 },
+            // { id: 6, name: 'Emma Davis', steamId: 'STEAM_0:1:54321098', ping: 60 }
         ],
-        bans: [],
+        bans: [
+            // { id: 1, name: "Jane Smith", reason: "Abusive language", steam: "STEAM_0:1:87654321", discord: "Jane#1234", hwid1: "HWID123456", ip: "192.168.1.100", expire: "Permanent" },
+            // { id: 2, name: "Chris Johnson", reason: "Cheating", steam: "STEAM_0:1:23456789", discord: "Chris#5678", hwid1: "HWID987654", ip: "192.168.1.101", expire: "2025-01-07" },
+            // { id: 3, name: "Mike Brown", reason: "Using exploits", steam: "STEAM_0:1:34567890", discord: "Mike#4321", hwid1: "HWID765432", ip: "192.168.1.102", expire: "2025-01-10" },
+        ],
         selectedPlayer: null,
         playerOptions: [
             { name: 'ESP', enabled: false, type: 'toggle', category: 'misc' },
@@ -39,7 +51,11 @@ new Vue({
             { name: 'Backup Database', action: 'backup_database' },
         ],
         logs: [
-
+            // { timestamp: "2025-01-01 14:30:00", message: "Player John Doe kicked for cheating." },
+            // { timestamp: "2025-01-01 15:00:00", message: "Server restarted by Admin." },
+            // { timestamp: "2025-01-01 15:15:00", message: "Player Jane Smith banned for abusive language." },
+            // { timestamp: "2025-01-01 16:00:00", message: "Server cache cleared successfully." },
+            // { timestamp: "2025-01-01 16:30:00", message: "Screenshot taken for Player Chris Johnson." },
         ],
         settings: {
             notifications: true,
@@ -176,7 +192,27 @@ new Vue({
             this.selectedSection = section;
         },
         screenshotPlayer(playerId) {
-            this.showNotification(`Taking a screenshot of player ${playerId}`, 'success');
+            fetch(`https://${GetParentResourceName()}/screenshotPlayer`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ playerId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    this.showNotification(`Screenshot request sent for player ${playerId}.`, 'success');
+                } else {
+                    this.showNotification(`Failed to send screenshot request for player ${playerId}.`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error taking screenshot:', error);
+                this.showNotification('Error sending screenshot request.', 'error');
+            });
+        },        
+        closeScreenshotModal() {
+            this.showScreenshotModal = false;
+            this.modalScreenshot = null;
         },
         showBanInfo(ban) {
             this.modalBan = ban;
@@ -220,25 +256,58 @@ new Vue({
                 body: JSON.stringify({ option, enabled })
             });
         },
-        showNotification(message, type) {
-            const id = this.notificationId++;
+
+        getNotificationIcon(type) {
+            const icons = {
+                success: 'fas fa-check',
+                error: 'fas fa-exclamation',
+                warning: 'fas fa-bell',
+                info: 'fas fa-info'
+            };
+            return icons[type] || 'fas fa-bell';
+        },
+    
+        showNotification(message, type = 'info') {
+            const id = Date.now();
             this.notifications.push({ id, message, type });
+            
             setTimeout(() => {
                 this.removeNotification(id);
-            }, 3000);
+            }, 4000);
         },
+    
+        removeNotification(id) {
+            const index = this.notifications.findIndex(n => n.id === id);
+            if (index > -1) {
+                this.notifications.splice(index, 1);
+            }
+        },
+
         updateStats(stats) {
             this.totalPlayers = stats.totalPlayers;
             this.activeCheaters =  stats.activeCheaters;
             this.serverUptime = stats.serverUptime;
             this.peakPlayers = stats.peakPlayers;
         },
-        removeNotification(id) {
-            this.notifications = this.notifications.filter(notification => notification.id !== id);
-        },
         executeServerOption(action) {
-            this.showNotification(`Executing server action: ${action}`, 'success');
-        },
+            fetch(`https://${GetParentResourceName()}/executeServerOption`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action }) 
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    this.showNotification(`Executing server action: ${action}`, 'success');
+                } else {
+                    this.showNotification('Failed to execute server action.', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error executing server action:', error);
+                this.showNotification('Error executing server action.', 'error');
+            });
+        },        
         clearAllEntities() {
             this.showNotification('Clearing all entities', 'success');
             fetch(`https://${GetParentResourceName()}/clearAllEntities`, {
@@ -247,16 +316,47 @@ new Vue({
                 body: JSON.stringify({})
             });
         },
-        handleKeydown(event) {
-            if (event.key === 'Escape') {
-                this.showMenu = false;
-                fetch(`https://${GetParentResourceName()}/close`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ })
-                });
+        getLogIcon(type) {
+            switch (type) {
+                case 'error':
+                    return 'fa-times-circle log-icon error';
+                case 'warning':
+                    return 'fa-exclamation-circle log-icon warning';
+                case 'success':
+                    return 'fa-check-circle log-icon success';
+                default:
+                    return 'fa-info-circle log-icon';
             }
         },
+        getOptionIcon(optionName) {
+            const icons = {
+                'Restart Server': 'fas fa-sync',
+                'Shutdown Server': 'fas fa-power-off',
+                'Clear Cache': 'fas fa-broom',
+                'Update Scripts': 'fas fa-code',
+                'Backup Database': 'fas fa-database',
+            };
+            return icons[optionName] || 'fas fa-cog';
+        },
+        showScreenshot(data) {
+            this.modalScreenshot = data.imageUrl;
+            this.showScreenshotModal = true;
+        },
+        handleKeydown(event) {
+            if (event.key === 'Escape') {
+                if (this.showScreenshotModal) {
+                    this.closeScreenshotModal();
+                } else if (this.showMenu) {
+                    this.showMenu = false;
+                    fetch(`https://${GetParentResourceName()}/close`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({})
+                    });
+                }
+            }
+        },
+    
     },
     computed: {
         filteredPlayers() {
@@ -290,7 +390,9 @@ new Vue({
                 case "players":
                     console.log(event.data.players)
                     this.players = event.data.players
-                    break
+                    break;
+                case "displayScreenshot":
+                    this.showScreenshot(event.data);
             }
         });
         window.addEventListener('keydown', this.handleKeydown);

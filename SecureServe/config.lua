@@ -59,10 +59,13 @@ SecureServe.IsAdmin = function(Player)
     -- return false
 end
 
-SecureServe.Admins = { 
-	"steam:110000112345678",
-	"steam:110000112345679",
-	"steam:110000112345680"
+SecureServe.AdminMenu = {
+	Webhook = "", -- Webhook for the admin menu images
+	Admins = { 
+		"steam:110000112345678",
+		"steam:110000112345679",
+		"steam:110000112345680"
+	}	
 }
 
 SecureServe.BanTimes = { -- Preset ban times, preset name can be used in the protections.

@@ -491,4 +491,25 @@ RegisterNetEvent("secureServe:returnStats", function(stats)
 end)
     
 
-    
+RegisterNUICallback('screenshotPlayer', function(data, cb)
+    local playerId = data.playerId
+
+    TriggerServerEvent('SecureServe:screenshotPlayer', playerId)
+
+    cb({ success = true })
+end)
+
+RegisterNetEvent('SecureServe:screenshotPlayerResult', function(screenshotUrl)
+    SendNUIMessage({
+        action = 'displayScreenshot',
+        imageUrl = screenshotUrl
+    })
+end)
+
+RegisterNUICallback('executeServerOption', function(data, cb)
+    if data.action == 'restart' then
+        TriggerServerEvent('executeServerOption:restartServer')
+    end
+
+    cb({ success = true })
+end)

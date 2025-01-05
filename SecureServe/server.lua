@@ -572,7 +572,7 @@ IsMenuAdmin = function(pl)
     local identifiers = GetPlayerIdentifiers(pl)
     for _, id in ipairs(identifiers) do
         if string.sub(id, 1, 6) == "steam:" then
-            for _, adminID in ipairs(SecureServe.Admins) do
+            for _, adminID in ipairs(SecureServe.AdminMenu.Admins) do
                 if id == adminID then
                     return true 
                 end
