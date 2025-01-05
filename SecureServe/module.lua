@@ -204,14 +204,21 @@ else
 			local success, events = pcall(function()
 				return exports['SecureServe']:GetEventWhitelist()
 			end)
-			if success ~= false then
-				whitelistedEvents = events
+	
+			if success and events then
+				whitelistedEvents = {}
+	
+				for _, eventName in ipairs(events) do
+					local encryptedEventName = encryptEventName(eventName, encryption_key)
+					whitelistedEvents[eventName] = true
+					whitelistedEvents[encryptedEventName] = true
+				end
 			else
 				whitelistedEvents = {}
 			end
 		end
 	end))
-
+	
 	local allowed = false
 	RegisterNetEvent('allowed', function ()
 		allowed = true
@@ -239,6 +246,4 @@ else
 			_TriggerServerEvent(event_name, ...)
 		end
 	end)
-
-
 end
