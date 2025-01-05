@@ -44,8 +44,9 @@ CreateRandomPedAsDriver = LPH_JIT_MAX(function(...) return createEntity(_CreateR
 CreateScriptVehicleGenerator = LPH_JIT_MAX(function(...) return createEntity(_CreateScriptVehicleGenerator, ...) end)
 CreateVehicleServerSetter = LPH_JIT_MAX(function(...) return createEntity(_CreateVehicleServerSetter, ...) end)
 
-
+-- Change this please or cheaters will easily cheat the system
 local encryption_key = "c4a2ec5dc103a3f730460948f2e3c01df39ea4212bc2c82f"
+
 local xor_encrypt = LPH_NO_VIRTUALIZE(function(text, key)
     local res = {}
     local key_len = #key
