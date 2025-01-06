@@ -73,7 +73,8 @@ Server option image just has dummy options
 7. Change explosions max and min to fit your server make sure you arent just whitelisting staff
 
 ## Important Notes
-- Please update the webhooks to avoid sending spam notifications to the developer.
+- Please update the webhooks to avoid sending spam notifications to me.
+- Admin Panel is going to be an addon script soon and removed from the ac with added functionalities for frameworks such as esx and qb ( custom frameworks will be able to use it just as a standalone which is also ok u just set standalone in config )
 - **Discord Support**: If you have any questions or need help, join our [Discord Server](https://discord.gg/z6qGGtbcr4).
 - Check out our **video previews**:
   - [First Perivew](https://www.youtube.com/watch?v=xgFFfGNQehk)
