@@ -4,10 +4,6 @@
 ## Please Read
 ![image](https://github.com/user-attachments/assets/76be061e-b296-4e8a-981c-1c96c4f258b8)
 
-if u have this issue please do open a ticket this issue happens to some people and im currently working on a fix
-
-![image](https://github.com/user-attachments/assets/5b7be81d-46d0-44cf-9d62-4e8e926bdfac)
-
 SecureServe is a comprehensive and advanced anti-cheat solution for FiveM, designed to keep your server secure and ensure a fair gameplay environment. This project is completely free and open-source.
 
 ## Read Before Use!!!
