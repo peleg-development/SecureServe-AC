@@ -552,19 +552,35 @@ RegisterNetEvent("TriggerdServerEventCheck", function(event, time)
 end)
 
 local function isWhitelisted(event_name)
+    if not SecureServe or not SecureServe.EventWhitelist or type(SecureServe.EventWhitelist) ~= "table" then
+        print("Error: EventWhitelist is missing or not a table.")
+        return false
+    end
+
+    if not event_name or type(event_name) ~= "string" then
+        print("Error: Invalid event_name. Expected a non-empty string.")
+        return false
+    end
+
     for _, whitelisted_event in ipairs(SecureServe.EventWhitelist) do
-        if event_name == whitelisted_event or event_name == encryptEventName(whitelisted_event, encryption_key) then
-            return true
+        if type(whitelisted_event) == "string" then
+            if event_name == whitelisted_event or event_name == encryptEventName(whitelisted_event, encryption_key) then
+                return true
+            end
+        else
+            print("Warning: Non-string value found in EventWhitelist. Skipping.")
         end
     end
+
     return false
 end
+
 
 exports('CheckTime', function(event ,time, source)
     Wait(1000)
     local playerState = playerStates[source]
     if playerState and playerState.loaded then
-        if events[event] == nil and not isWhitelisted(event) then
+        if events[event] == nil and isWhitelisted(event) == false then
             Wait(500)
             if events[event] == nil then
                 Wait(500)
@@ -583,8 +599,6 @@ exports('CheckTime', function(event ,time, source)
         end
     end
 end)
-
-
 
 exports('IsEventWhitelisted', LPH_NO_VIRTUALIZE(function(event_name)
     return isWhitelisted(event_name)
@@ -633,7 +647,7 @@ end
 
 RegisterNetEvent('SecureServe:RequestAdminStatus', function(player, cb)
     local src = source
-    local isAdmin = IsAdmin(src) 
+    local isAdmin = Isadmin(src) 
     cb(isAdmin)
 end)
 
@@ -654,7 +668,7 @@ RegisterServerCallback {
 RegisterServerCallback {
     eventName = 'SecureServe:Server_Callbacks:Protections:IsAdmin',
     eventCallback = function(source)
-        return SecureServe.IsAdmin(source)
+        return SecureServe.Isadmin(source)
     end
 }
 

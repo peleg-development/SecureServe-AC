@@ -144,7 +144,7 @@ SecureServe.EntitySecurity = { -- Resources that are causing false bans add to h
 
 SecureServe.EventWhitelist = {
 	"TestEvent",
-	'Antoher',
+	"test",
 }
 
 SecureServe.OCR = { -- Words on scrren that will get player banned
