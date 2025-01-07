@@ -11,7 +11,7 @@ SecureServe is a comprehensive and advanced anti-cheat solution for FiveM, desig
 3. Copy the name of the event causing the ban.
 4. Add this event name to the **whitelisted events list** in the config.
 5. This will resolve the issue caused by encrypted and decrypted scripts running the same events due to the encryption method used to prevent event triggering.
-6. if u get this  error please go onto my discord and open a ticket ill help u fix its an issue realted to save file and fix must be done manully ( until i make something better )
+6. if u get this  error please go onto my discord and open a ticket ill help u fix its an issue realted to save file and fix must be done manully ( until i find a better solution )
    
 ![image](https://github.com/user-attachments/assets/17c9a0e1-f8d3-4c13-a208-c5983e1b6e21)
 
