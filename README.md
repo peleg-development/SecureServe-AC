@@ -94,6 +94,6 @@ We welcome contributions from the community! If you would like to report issues,
 SecureServe is released under the [GNU Affero General Public License v3.0](https://www.gnu.org/licenses/agpl-3.0.en.html). Feel free to use, modify, and distribute it as per the terms of the license.
 
 ## Contact
-- **Discord**: [Join our server](https://discord.gg/z6qGGtbcr4) to get support and updates.
+- **Discord**: [Join our server](https://discord.gg/z6qGGtbcr4) to get support and more updates.
 
 ### Enjoy a secure FiveM experience with SecureServe!
