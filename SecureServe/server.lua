@@ -1332,6 +1332,12 @@ RegisterNetEvent("serverwhitels", function (entity)
 end)
 
 initialize_protections_explosions = LPH_JIT_MAX(function()
+    local whitelist = {}
+
+    RegisterNetEvent("SecureServe:Explosions:Whitelist", function(data)
+        whitelist[data.source] = true
+    end)
+
     local explosions = {}
     local detected = {}
     local false_explosions = {
@@ -1344,6 +1350,15 @@ initialize_protections_explosions = LPH_JIT_MAX(function()
 
     AddEventHandler('explosionEvent', function(sender, ev)
         explosions[sender] = explosions[sender] or {}
+        
+        
+        if GetPlayerPing(sender) > 0 then
+            if whitelist[sender] then
+                whitelist[sender] = false
+            else
+                print("Beta explosion detected source", sender)
+            end
+        end
 
         for k, v in pairs(SecureServe.Protection.BlacklistedExplosions) do
             if ev.explosionType == v.id then
@@ -1747,7 +1762,7 @@ local function replaceEventRegistrations(filePath)
 
     local outputFile = io.open(filePath, "w")
     if not outputFile then
-        -- print("Could not open file for writing: " .. filePath)
+        print("Could not open file for writing: " .. filePath)
         return
     end
 
@@ -1795,22 +1810,22 @@ local function searchInDirectory(directory, resourceName)
 
     local p = io.popen(findCommand)
     if not p then
-        -- print("Could not open directory: " .. directory)
+        print("Could not open directory: " .. directory)
         return
     end
 
 
     
-    -- for file in p:lines() do
-    --     -- replaceEventRegistrations(file)
+    for file in p:lines() do
+        replaceEventRegistrations(file)
 
-    --     if fileContainsLine(file, "CreateObject") or fileContainsLine(file, "CreateVehicle") or
-    --        fileContainsLine(file, "CreatePed") or fileContainsLine(file, "CreatePedInsideVehicle") or
-    --        fileContainsLine(file, "CreateRandomPed") or fileContainsLine(file, "CreateRandomPedAsDriver") then
-    --         -- print("Whitelisted resource with entity creation: " .. resourceName)
-    --         table.insert(SecureServe.EntitySecurity, {resource = resourceName, whitelist = true})
-    --     end
-    -- end
+        -- if fileContainsLine(file, "CreateObject") or fileContainsLine(file, "CreateVehicle") or
+        --    fileContainsLine(file, "CreatePed") or fileContainsLine(file, "CreatePedInsideVehicle") or
+        --    fileContainsLine(file, "CreateRandomPed") or fileContainsLine(file, "CreateRandomPedAsDriver") then
+        --     -- print("Whitelisted resource with entity creation: " .. resourceName)
+        --     table.insert(SecureServe.EntitySecurity, {resource = resourceName, whitelist = true})
+        -- end
+    end
 
     p:close()
 end
@@ -1835,7 +1850,6 @@ function SearchForAssetPackDependency()
             -- table.insert(SecureServe.EntitySecurity, {resource = resourceName, whitelist = true})
         end
 
-        -- Search all Lua files in the resource directory and its subdirectories
         searchInDirectory(resourcePath, resourceName)
 
         ::continue::
