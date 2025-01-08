@@ -205,29 +205,8 @@ RegisterNetEvent('executeServerOption:restartServer', function()
     os.exit() -- Replace with your hosting provider's restart command if necessary
 end)
 
-RegisterNetEvent('SecureServe:screenshotPlayer')
-AddEventHandler('SecureServe:screenshotPlayer', function(playerId)
+RegisterNetEvent('SecureServe:screenshotPlayer', function(playerId, screenshot)
     local src = source
     local webhookUrl = SecureServe.AdminMenu.Webhook
-
-    exports['screenshot-basic']:requestScreenshotUpload(webhookUrl, 'image', function(response)
-        local responseData = json.decode(response)
-
-        if responseData and responseData.attachments and responseData.attachments[1] then
-            local screenshotUrl = responseData.attachments[1].url
-
-            PerformHttpRequest(webhookUrl, function(err, text, headers) end, 'POST', json.encode({
-                embeds = {{
-                    title = "Screenshot Taken",
-                    description = string.format("Screenshot taken for player ID: %s", playerId),
-                    image = { url = screenshotUrl },
-                    color = 3066993
-                }}
-            }), { ['Content-Type'] = 'application/json' })
-
-            TriggerClientEvent('SecureServe:screenshotPlayerResult', src, screenshotUrl)
-        else
-            TriggerClientEvent('SecureServe:screenshotPlayerResult', src, nil)
-        end
-    end)
+    TriggerClientEvent('SecureServe:screenshotPlayerResult', src, screenshot)
 end)

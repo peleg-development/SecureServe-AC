@@ -43,5 +43,5 @@ exports {
 }
 
 server_export 'IsEventWhitelisted'
-
+server_export 'banPlayer'
 

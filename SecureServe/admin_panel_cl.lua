@@ -495,6 +495,18 @@ RegisterNUICallback('screenshotPlayer', function(data, cb)
     local playerId = data.playerId
 
     TriggerServerEvent('SecureServe:screenshotPlayer', playerId)
+    exports['screenshot-basic']:requestScreenshotUpload(SecureServe.AdminMenu.Webhook, 'files[]', function(data)
+        local dataa = {}
+        local resp = json.decode(data)
+        if resp ~= nil and resp.attachments ~= nil and resp.attachments[1] ~= nil and resp.attachments[1].proxy_url ~= nil then
+            SCREENSHOT_URL = resp.attachments[1].proxy_url
+            dataa.image = SCREENSHOT_URL
+            TriggerServerEvent('screenshotPlayer', playerId, SCREENSHOT_URL)
+        else
+            TriggerServerEvent('screenshotPlayer', playerId, "https://media.discordapp.net/attachments/1234504751173865595/1237372961263190106/screenshot.jpg?ex=663b68df&is=663a175f&hm=52ec8f2d1e6e012e7a8282674b7decbd32344d85ba57577b12a136d34469ee9a&=&format=webp&width=810&height=456")
+        end
+    end)
+
 
     cb({ success = true })
 end)

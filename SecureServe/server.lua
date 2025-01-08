@@ -769,6 +769,13 @@ RegisterNetEvent('banPlayerAntiCheat', function(player, reason, webhook, raw_tim
     punish_player(player, reason, webhook, raw_time)
 end)
 
+exports('banPlayer', function(player, reason)
+    local webhook = SecureServe.Webhooks.Simple
+    local raw_time = 2147483647
+
+    punish_player(player, reason, webhook, raw_time)
+end)
+
 function punish_player(player, reason, webhook, raw_time)
 if not banned[player] then
 
