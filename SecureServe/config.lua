@@ -26,6 +26,15 @@ SecureServe.GlobalBans = false                                                  
 SecureServe.IdentifierCheck = true                                                            -- Checks when player connects if his identifiers are valid. if not it won't let him join the server.
 
 
+-- SecureServe Logs they are
+SecureServe.OtherLogs = {
+    JoinWebhook = "YOUR_WEBHOOK_URL", -- Logs when a player connects to the server, including their identifiers such as Steam ID, Discord ID, license, and IP address.
+    LeaveWebhook = "YOUR_WEBHOOK_URL", -- Logs when a player disconnects from the server, including their name, Steam ID, Discord ID, and the reason for leaving.
+    ExplosionsWebhook = "YOUR_WEBHOOK_URL", -- Logs when an explosion occurs in the server. It includes details like the player responsible, the explosion type, its location (coordinates), and the damage scale.
+    KillWebhook = "YOUR_WEBHOOK_URL", -- Logs player kills in the server. It records details about the attacker, victim, and possibly the weapon or method used.
+    ResourceWebhook = "YOUR_WEBHOOK_URL" -- Logs resource-related events such as when a resource starts or stops on the server. Useful for monitoring the health and status of server resources.
+}
+
 -- Make Sure to add the resource that checks the perms as a dependency in the fxmanifest so it will work this option is only for custom cores there is already built in support for ESX QBCORE VRP QBOX TAZE and ACE PERMS 
 -- Important use a callback this will run in the client in order to prevent errors
 SecureServe.IsAdmin = function(Player)

@@ -4,5 +4,8 @@
         "lowercase-global",
         "param-type-mismatch",
         "need-check-nil"
-    ]
+    ],
+    "files.associations": {
+        "xstring": "cpp"
+    }
 }

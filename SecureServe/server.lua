@@ -1936,3 +1936,127 @@ end)
 
 
 
+
+
+local function sendToDiscord(webhook, title, description, color, fields)
+    if not webhook or webhook == "" or webhook == "YOUR_WEBHOOK_URL"  then
+        print("[SecureServe] Error: Invalid webhook URL.")
+        return
+    end
+
+    local payload = {
+        username = "Server Logs",
+        embeds = {{
+            title = title,
+            description = description,
+            color = color,
+            fields = fields,
+            footer = {
+                ["text"] = "SecureServe | Secure Your Server Now",
+                ["icon_url"] = "https://images-ext-1.discordapp.net/external/ATCidz-Uio1fj26KQZH1mmy20YnxQxQxv-sc0gBFGFw/%3Fformat%3Dwebp%26quality%3Dlossless/https/images-ext-1.discordapp.net/external/z9bSkH3p8iTlOClfnK7zVOEC9i5xcORJZfsuqlcf1XA/https/cdn.discordapp.com/icons/814390233898156063/c959fc0889d2436b87ccbf2f73d4f30e.png?format=webp&quality=lossless"
+            },
+            timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
+        }}
+    }
+
+    PerformHttpRequest(webhook, function(err, text, headers) end, 'POST', json.encode(payload), {['Content-Type'] = 'application/json'})
+end
+
+local function getPlayerIdentifiersInfo(playerId)
+    local identifiers = GetPlayerIdentifiers(playerId)
+    local steamId = "Unknown"
+    local discordId = "Unknown"
+    local license = "Unknown"
+    local xbox = "Unknown"
+    local live = "Unknown"
+    local hwid = "Unknown"
+
+    for _, identifier in ipairs(identifiers) do
+        if string.find(identifier, "steam:") then
+            steamId = identifier
+        elseif string.find(identifier, "discord:") then
+            discordId = "<@" .. string.gsub(identifier, "discord:", "") .. ">" 
+        elseif string.find(identifier, "license:") then
+            license = identifier
+        elseif string.find(identifier, "xbl:") then
+            xbox = identifier
+        elseif string.find(identifier, "live:") then
+            live = identifier
+        elseif string.find(identifier, "hwid:") then
+            hwid = identifier
+        end
+    end
+
+    return steamId, discordId, license, xbox, live, hwid
+end
+
+AddEventHandler('playerConnecting', function(playerName, setKickReason, deferrals)
+    local playerId = source
+    local steamId, discordId, license, xbox, live, hwid = getPlayerIdentifiersInfo(playerId)
+
+    sendToDiscord(SecureServe.OtherLogs.JoinWebhook, "Player Connected",
+        "**A new player has connected to the server!**",
+        3066993, {
+            {name = "Player Name", value = playerName, inline = true},
+            {name = "Steam ID", value = steamId, inline = false},
+            {name = "Discord ID", value = discordId, inline = false},
+            {name = "License", value = license, inline = false},
+            {name = "Xbox ID", value = xbox, inline = false},
+            {name = "Live ID", value = live, inline = false},
+            {name = "HWID", value = hwid, inline = false}
+        })
+end)
+
+AddEventHandler('playerDropped', function(reason)
+    local playerId = source
+    local playerName = GetPlayerName(playerId)
+    local steamId, discordId, license, xbox, live, hwid = getPlayerIdentifiersInfo(playerId)
+
+    sendToDiscord(SecureServe.OtherLogs.LeaveWebhook, "Player Disconnected",
+        "**A player has left the server.**",
+        15158332, {
+            {name = "Player Name", value = playerName, inline = true},
+            {name = "Reason", value = reason, inline = false},
+            {name = "Steam ID", value = steamId, inline = false},
+            {name = "Discord ID", value = discordId, inline = false},
+            {name = "License", value = license, inline = false},
+            {name = "Xbox ID", value = xbox, inline = false},
+            {name = "Live ID", value = live, inline = false},
+            {name = "HWID", value = hwid, inline = false}
+        })
+end)
+
+AddEventHandler('explosionEvent', function(playerId, explosionType, isAudible, isInvisible, pos, damageScale)
+    local playerName = GetPlayerName(playerId)
+    local steamId, discordId, license, xbox, live, hwid = getPlayerIdentifiersInfo(playerId)
+    local explosionTypes = {"Grenade", "Molotov", "Rocket", "Car Bomb", "Unknown"}
+    local explosionName = explosionTypes[explosionType + 1] or "Unknown"
+
+    sendToDiscord(SecureServe.OtherLogs.ExplosionsWebhook, "Explosion Detected",
+        "**An explosion has been detected in the server!**",
+        16776960, {
+            {name = "Player Name", value = playerName, inline = true},
+            {name = "Steam ID", value = steamId, inline = false},
+            {name = "Discord ID", value = discordId, inline = false},
+            {name = "License", value = license, inline = false},
+            {name = "Explosion Type", value = explosionName, inline = true},
+            {name = "Location", value = string.format("[%.2f, %.2f, %.2f]", pos.x, pos.y, pos.z), inline = false},
+            {name = "Damage Scale", value = tostring(damageScale), inline = true}
+        })
+end)
+
+AddEventHandler('onResourceStart', function(resourceName)
+    local message = "**A resource has been started on the server.**"
+    sendToDiscord(SecureServe.OtherLogs.ResourceWebhook, "Resource Started", message, 65280, {
+        {name = "Resource Name", value = resourceName, inline = true},
+        {name = "Timestamp", value = os.date("%Y-%m-%d %H:%M:%S"), inline = false}
+    })
+end)
+
+AddEventHandler('onResourceStop', function(resourceName)
+    local message = "**A resource has been stopped on the server.**"
+    sendToDiscord(SecureServe.OtherLogs.ResourceWebhook, "Resource Stopped", message, 16711680, {
+        {name = "Resource Name", value = resourceName, inline = true},
+        {name = "Timestamp", value = os.date("%Y-%m-%d %H:%M:%S"), inline = false}
+    })
+end)
