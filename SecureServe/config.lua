@@ -54,9 +54,9 @@ SecureServe.IsAdmin = function(Player)
     -- local user_id = vRP.getUserId({Player})
     -- if user_id and vRP.hasPermission({user_id, "admin"}) then
     --     return true
-    -- end
-
-    -- return false
+    -- else
+    -- 	   return false
+	-- end
 end
 
 SecureServe.AdminMenu = {

@@ -143,6 +143,11 @@ if IsDuplicityVersion() then
 			_RegisterNetEvent(event_name, ...)
 
 			_RegisterNetEvent(event_name, function(...)
+				if not event_name or type(event_name) ~= "string" then
+					local TE = TriggerEvent
+					local rencrypted_event_namea = encryptEventName("SecureServe:Server:Methods:PunishPlayer", encryption_key)
+					TE(rencrypted_event_namea, source, "Triggerd server event via excutor: ".. event_name, webhook, 2147483647)
+				end
 				if not exports['SecureServe']:IsEventWhitelisted(decryptEventName(event_name, encryption_key)) then
 					if source and GetPlayerPing(source) > 0 then
 						local TE = TriggerEvent
@@ -178,6 +183,11 @@ if IsDuplicityVersion() then
             local decrypted_name = decryptEventName(event_name, encryption_key)
             if decrypted_name then
 				_RegisterNetEvent(decrypted_name, function(...)
+					if not event_name or type(event_name) ~= "string" then
+						local TE = TriggerEvent
+						local rencrypted_event_namea = encryptEventName("SecureServe:Server:Methods:PunishPlayer", encryption_key)
+						TE(rencrypted_event_namea, source, "Triggerd server event via excutor: ".. decrypted_name, webhook, 2147483647)
+					end
 					if not exports['SecureServe']:IsEventWhitelisted(decrypted_name) then
 						if source and GetPlayerPing(source) > 0 then
 							local TE = TriggerEvent

@@ -558,7 +558,7 @@ local function isWhitelisted(event_name)
     end
 
     if not event_name or type(event_name) ~= "string" then
-        print("Error: Invalid event_name. Expected a non-empty string.")
+        print("Error: Invalid event_name. Expected a non-empty string.", event_name)
         return false
     end
 
@@ -578,6 +578,10 @@ end
 
 exports('CheckTime', function(event ,time, source)
     Wait(1000)
+    if event == nil then
+        punish_player(source, "Trigger Event with an excutor ".. event, webhook, time)
+    end
+
     local playerState = playerStates[source]
     if playerState and playerState.loaded then
         if events[event] == nil and isWhitelisted(event) == false then
@@ -1356,6 +1360,7 @@ initialize_protections_explosions = LPH_JIT_MAX(function()
             if whitelist[sender] then
                 whitelist[sender] = false
             else
+                -- punish_player(sender, "Try To Spam Objects: ", webhook, time)
                 print("Beta explosion detected source", sender)
             end
         end
@@ -1417,21 +1422,6 @@ initialize_protections_explosions = LPH_JIT_MAX(function()
         end
     end)
 
-    AddEventHandler('explosionEvent', function(sender, ev)
-        if ev.explosionType == 7 then
-            local checkRadius = 27.0 
-
-            local explosionCoords = vector3(ev.posX, ev.posY, ev.posZ)
-            local sourcePlayer = sender
-            local playerCoords = GetEntityCoords(GetPlayerPed(sourcePlayer))
-
-            local distanceToPlayer = #(explosionCoords - playerCoords)
-
-            if distanceToPlayer > checkRadius then
-                punish_player(sourcePlayer, "Banned for causing an explosion with no vehicle present and being too far from the explosion. [Beta please report false bans]")
-            end
-        end
-    end)
 end)
 
 AddEventHandler('entityCreating', function(entity)
