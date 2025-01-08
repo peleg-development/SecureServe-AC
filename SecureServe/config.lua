@@ -59,6 +59,7 @@ SecureServe.IsAdmin = function(Player)
 	-- end
 end
 
+-- use /ssm to open admin panel (this admins are for admin panel only and not for protections)
 SecureServe.AdminMenu = {
 	Webhook = "", -- Webhook for the admin menu images
 	Admins = { 
