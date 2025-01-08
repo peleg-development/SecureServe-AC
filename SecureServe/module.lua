@@ -247,44 +247,83 @@ else
 		end
 	end)
 
+	local function isValidResource(resourceName)
+		local invalidResources = {
+			nil, 
+			"fivem", 
+			"gta", 
+			"citizen", 
+			"system" 
+		}
+	
+		for _, invalid in ipairs(invalidResources) do
+			if resourceName == invalid then
+				return false
+			end
+		end
+	
+		return true
+	end
+	
 	local _AddExplosion = AddExplosion
 	AddExplosion = function(x, y, z, explosionType, damageScale, isAudible, isInvisible, cameraShake)
-		TriggerServerEvent("SecureServe:Explosions:Whitelist", {
-			source = GetPlayerServerId(PlayerId())
-		})
+		local resourceName = GetCurrentResourceName()
+		if isValidResource(resourceName) then
+			TriggerServerEvent("SecureServe:Explosions:Whitelist", {
+				source = GetPlayerServerId(PlayerId()),
+				resource = resourceName
+			})
+		end
 		_AddExplosion(x, y, z, explosionType, damageScale, isAudible, isInvisible, cameraShake)
 	end
-
+	
 	local _AddExplosionWithUserVfx = AddExplosionWithUserVfx
 	AddExplosionWithUserVfx = function(x, y, z, explosionType, damageScale, isAudible, isInvisible, cameraShake)
-		TriggerServerEvent("SecureServe:Explosions:Whitelist", {
-			source = GetPlayerServerId(PlayerId())
-		})
+		local resourceName = GetCurrentResourceName()
+		if isValidResource(resourceName) then
+			TriggerServerEvent("SecureServe:Explosions:Whitelist", {
+				source = GetPlayerServerId(PlayerId()),
+				resource = resourceName
+			})
+		end
 		_AddExplosionWithUserVfx(x, y, z, explosionType, damageScale, isAudible, isInvisible, cameraShake)
 	end
-
+	
 	local _ExplodeVehicle = ExplodeVehicle
 	ExplodeVehicle = function(vehicle, isAudible, isInvisible)
-		TriggerServerEvent("SecureServe:Explosions:Whitelist", {
-			source = GetPlayerServerId(PlayerId())
-		})
+		local resourceName = GetCurrentResourceName()
+		if isValidResource(resourceName) then
+			TriggerServerEvent("SecureServe:Explosions:Whitelist", {
+				source = GetPlayerServerId(PlayerId()),
+				resource = resourceName
+			})
+		end
 		_ExplodeVehicle(vehicle, isAudible, isInvisible)
 	end
-
+	
 	local _NetworkExplodeVehicle = NetworkExplodeVehicle
 	NetworkExplodeVehicle = function(vehicle, isAudible, isInvisible, damageScale)
-		TriggerServerEvent("SecureServe:Explosions:Whitelist", {
-			source = GetPlayerServerId(PlayerId())
-		})
+		local resourceName = GetCurrentResourceName()
+		if isValidResource(resourceName) then
+			TriggerServerEvent("SecureServe:Explosions:Whitelist", {
+				source = GetPlayerServerId(PlayerId()),
+				resource = resourceName
+			})
+		end
 		_NetworkExplodeVehicle(vehicle, isAudible, isInvisible, damageScale)
 	end
-
+	
 	local _ShootSingleBulletBetweenCoords = ShootSingleBulletBetweenCoords
 	ShootSingleBulletBetweenCoords = function(x1, y1, z1, x2, y2, z2, damage, isAudible, weaponHash, owner, isExplosiveAmmo, ignoreEntity, speed)
-		TriggerServerEvent("SecureServe:Explosions:Whitelist", {
-			source = GetPlayerServerId(PlayerId())
-		})
+		local resourceName = GetCurrentResourceName()
+		if isValidResource(resourceName) then
+			TriggerServerEvent("SecureServe:Explosions:Whitelist", {
+				source = GetPlayerServerId(PlayerId()),
+				resource = resourceName
+			})
+		end
 		_ShootSingleBulletBetweenCoords(x1, y1, z1, x2, y2, z2, damage, isAudible, weaponHash, owner, isExplosiveAmmo, ignoreEntity, speed)
 	end
+	
 
 end
