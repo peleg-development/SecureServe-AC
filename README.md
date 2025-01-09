@@ -75,6 +75,10 @@ Server option image just has dummy options
 5. Add this event name to the **whitelisted events list** in the config.
 6. This will resolve the issue caused by encrypted and decrypted scripts running the same events due to the encryption method used to prevent event triggering.
 7. Change explosions max and min to fit your server make sure you arent just whitelisting staff
+```lua
+-- Ban export example: ( only server side )!
+exports['SecureServe']:banPlayer(source, 'Cheater')
+```
 
 ## Important Notes
 - Please update the webhooks to avoid sending spam notifications to me.
