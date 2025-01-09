@@ -1,4 +1,4 @@
-# 50 Stars and I'll make a config app panel 
+# 50 Stars and I'll make a web panel 
 # SecureServe - Advanced Free Open Source FiveM Anti-Cheat
 **Discord**: [Join our server](https://discord.gg/z6qGGtbcr4) to get support and more updates.
 ![image](https://github.com/user-attachments/assets/5b7be81d-46d0-44cf-9d62-4e8e926bdfac)
