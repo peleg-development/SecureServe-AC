@@ -81,6 +81,7 @@ We value contributions! If you encounter issues, have suggestions, or want to co
    ![Image 2](https://github.com/user-attachments/assets/19745935-d0e8-460a-af98-944ca078ee8e)
    ![Image 3](https://github.com/user-attachments/assets/e680de5d-eef3-44b0-bf47-65b5397a1b55)
    ![Image 4](https://github.com/user-attachments/assets/93aae8da-67ae-43c4-bdff-e7f3ecc1adb0)
+   
 2. **Detection Interface**
    ![Image 5](https://github.com/user-attachments/assets/6d381556-3273-4b45-b2c6-fd1e07c836b9)
    ![Image 6](https://github.com/user-attachments/assets/f7f51ae5-0229-4261-a91f-525cd64afd6d)
