@@ -74,15 +74,15 @@ We value contributions! If you encounter issues, have suggestions, or want to co
 ## 🎥 **Screenshots & Video Previews**
 
 ### Screenshots
-1. **Admin Panel**
+# **Admin Panel**
    ![Admin Panel](https://github.com/user-attachments/assets/17db7796-9602-474a-9549-e2fb7b701a22)
    ![Detection Interface](https://github.com/user-attachments/assets/5ec653eb-6fdd-47ce-9e4a-d727fb449aa2)
    ![Image 1](https://github.com/user-attachments/assets/4d5864d8-a984-4b89-bce6-7c26a74264f2)
    ![Image 2](https://github.com/user-attachments/assets/19745935-d0e8-460a-af98-944ca078ee8e)
    ![Image 3](https://github.com/user-attachments/assets/e680de5d-eef3-44b0-bf47-65b5397a1b55)
    ![Image 4](https://github.com/user-attachments/assets/93aae8da-67ae-43c4-bdff-e7f3ecc1adb0)
-   
-2. **Detection Interface**
+
+# **Detections**
    ![Image 5](https://github.com/user-attachments/assets/6d381556-3273-4b45-b2c6-fd1e07c836b9)
    ![Image 6](https://github.com/user-attachments/assets/f7f51ae5-0229-4261-a91f-525cd64afd6d)
    ![Image 7](https://github.com/user-attachments/assets/7ff2e07e-5f4c-4caa-b308-fedb87e44aa3)
