@@ -1346,9 +1346,10 @@ initialize_protections_explosions = LPH_JIT_MAX(function()
     local whitelist = {}
 
     RegisterNetEvent("SecureServe:Explosions:Whitelist", function(data)
+        if (data.source == nil) then return end
         whitelist[data.source] = true
     end)
-
+    
     local explosions = {}
     local detected = {}
     local false_explosions = {
@@ -1361,17 +1362,24 @@ initialize_protections_explosions = LPH_JIT_MAX(function()
 
     AddEventHandler('explosionEvent', function(sender, ev)
         explosions[sender] = explosions[sender] or {}
-        
-        
-        if GetPlayerPing(sender) > 0 then
+    
+        local explosionType = ev.explosionType
+        local explosionPos = ev.posX and ev.posY and ev.posZ and vector3(ev.posX, ev.posY, ev.posZ) or "Unknown"
+        local explosionDamage = ev.damageScale or "Unknown"
+        local explosionOwner = GetPlayerName(sender) or "Unknown"
+    
+        print(string.format("Explosion detected! Type: %s | Position: %s | Damage Scale: %s | Owner: %s", 
+            explosionType, explosionPos, explosionDamage, explosionOwner))
+        local resourceName = GetInvokingResource()
+        if GetPlayerPing(sender) > 0 and SecureServe.ExplosionsWhitelist[resourceName] then
             if whitelist[sender] then
                 whitelist[sender] = false
             else
-                -- punish_player(sender, "Try To Spam Objects: ", webhook, time)
-                print("Beta explosion detected source", sender)
+                punish_player(sender, string.format("Explosion Details: Type: %s, Position: %s, Damage Scale: %s", 
+                    explosionType, explosionPos, explosionDamage), webhook, time)
             end
         end
-
+    
         for k, v in pairs(SecureServe.Protection.BlacklistedExplosions) do
             if ev.explosionType == v.id then
                 local explosionInfo = string.format("Explosion Type: %d, Position: (%.2f, %.2f, %.2f)", ev.explosionType, ev.posX, ev.posY, ev.posZ)

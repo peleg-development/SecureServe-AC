@@ -37,6 +37,7 @@ SecureServe.OtherLogs = {
 
 -- Make Sure to add the resource that checks the perms as a dependency in the fxmanifest so it will work this option is only for custom cores there is already built in support for ESX QBCORE VRP QBOX TAZE and ACE PERMS 
 -- Important use a callback this will run in the client in order to prevent errors
+-- This make sures admins dosent get banned for nocliping godmode blips and such (it will be soon removed since im working on new better detections!)
 SecureServe.IsAdmin = function(Player)
     --> [QB-Core] <--
     local QBCore = exports['qb-core']:GetCoreObject()
@@ -71,7 +72,7 @@ end
 -- use /ssm to open admin panel (this admins are for admin panel only and not for protections)
 SecureServe.AdminMenu = {
 	Webhook = "", -- Webhook for the admin menu images
-	Admins = { 
+	Admins = { -- Who can open the admin panel has nothing to do whit who gets banned or not!
 		"steam:110000112345678",
 		"steam:110000112345679",
 		"steam:110000112345680"
@@ -152,6 +153,16 @@ SecureServe.EntitySecurity = { -- Resources that are causing false bans add to h
 	{ resource = "6x_houserobbery",  whitelist = true},
 }
 
+SecureServe.ExplosionsWhitelist = {
+    -- Add resource names here to whitelist them for explosion events
+    ["resource_name_1"] = true,
+    ["resource_name_2"] = true,
+    -- Example: ["my_custom_resource"] = true,
+}
+
+-- If u get the fowlling ban: 
+    -- "A player has been banned for Trigger Event with an executor (name of the event)"
+-- And its a false ban add the event name to here
 SecureServe.EventWhitelist = {
 	"TestEvent",
 	"test",
