@@ -538,12 +538,12 @@ local decryptEventName = LPH_NO_VIRTUALIZE(function(encrypted_name, key)
         if byte and byte >= 0 and byte <= 255 then
             table.insert(encrypted, string.char(byte))
         else
+            print("Decryption failed: invalid byte detected ->", byte_str)
             return nil
         end
     end
     return xor_decrypt(table.concat(encrypted), key)
 end)
-
 
 local events = {}
 
@@ -557,10 +557,10 @@ local function isWhitelisted(event_name)
         return false
     end
 
-    if not event_name or type(event_name) ~= "string" then
-        print("Error: Invalid event_name. Expected a non-empty string.", event_name)
+    if not event_name or type(event_name) ~= "string" or event_name == "" then
+        print("Error: event_name is invalid or empty.")
         return false
-    end
+    end    
 
     for _, whitelisted_event in ipairs(SecureServe.EventWhitelist) do
         if type(whitelisted_event) == "string" then

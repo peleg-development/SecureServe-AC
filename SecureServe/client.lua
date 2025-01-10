@@ -42,10 +42,55 @@ end
 Wait(1000)
 -- TriggerServerEvent("requestWhitelist")
 -- TriggerServerEvent("requestWhitelist")
+local encryption_key = "c4a2ec5dc103a3f730460948f2e3c01df39ea4212bc2c82f"
+
+local xor_encrypt = LPH_NO_VIRTUALIZE(function(text, key)
+    local res = {}
+    local key_len = #key
+    for i = 1, #text do
+        local xor_byte = string.byte(text, i) ~ string.byte(key, (i - 1) % key_len + 1)
+        res[i] = string.char(xor_byte)
+    end
+    return table.concat(res)
+end)
+
+local encryptEventName = LPH_NO_VIRTUALIZE(function(event_name, key)
+    local encrypted = xor_encrypt(event_name, key)
+    local result = ""
+    for i = 1, #encrypted do
+        result = result .. string.format("%03d", string.byte(encrypted, i))
+    end
+    return result
+end)
+
+local xor_decrypt = LPH_NO_VIRTUALIZE(function(encrypted_text, key)
+    local res = {}
+    local key_len = #key
+    for i = 1, #encrypted_text do
+        local xor_byte = string.byte(encrypted_text, i) ~ string.byte(key, (i - 1) % key_len + 1)
+        res[i] = string.char(xor_byte)
+    end
+    return table.concat(res)
+end)
+
+local decryptEventName = LPH_NO_VIRTUALIZE(function(encrypted_name, key)
+    local encrypted = {}
+    for i = 1, #encrypted_name, 3 do
+        local byte_str = encrypted_name:sub(i, i + 2)
+        local byte = tonumber(byte_str)
+        if byte and byte >= 0 and byte <= 255 then
+            table.insert(encrypted, string.char(byte))
+        else
+            print("Decryption failed: invalid byte detected ->", byte_str)
+            return nil
+        end
+    end
+    return xor_decrypt(table.concat(encrypted), key)
+end)
 
 local function isWhitelisted(event_name)
     for _, whitelisted_event in ipairs(SecureServe.EventWhitelist) do
-        if event_name == whitelisted_event then
+        if event_name == whitelisted_event or event_name == encryptEventName(whitelisted_event, encryption_key) then
             return true
         end
     end

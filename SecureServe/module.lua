@@ -1,16 +1,4 @@
-function LPH_JIT_MAX(func)
-    return function(...)
-        return func(...)
-    end
-end
-function LPH_NO_VIRTUALIZE(func)
-    return function(...)
-        return func(...)
-    end
-end
-
-
-local createEntity = LPH_JIT_MAX(function(originalFunction, ...)
+local createEntity = function(originalFunction, ...)
 	local entity = originalFunction(...)
 	if entity then
 		if IsDuplicityVersion() then
@@ -22,7 +10,7 @@ local createEntity = LPH_JIT_MAX(function(originalFunction, ...)
 		end
 		return entity
 	end
-end)
+end
 
 local _CreateObject = CreateObject
 local _CreateObjectNoOffset = CreateObjectNoOffset
@@ -34,19 +22,19 @@ local _CreateRandomPedAsDriver = CreateRandomPedAsDriver
 local _CreateScriptVehicleGenerator = CreateScriptVehicleGenerator
 local _CreateVehicleServerSetter = CreateVehicleServerSetter
 
-CreateObject = LPH_JIT_MAX(function(...) return createEntity(_CreateObject, ...) end)
-CreateObjectNoOffset = LPH_JIT_MAX(function(...) return createEntity(_CreateObjectNoOffset, ...) end)
-CreateVehicle = LPH_JIT_MAX(function(...) return createEntity(_CreateVehicle, ...) end)
-CreatePed = LPH_JIT_MAX(function(...) return createEntity(_CreatePed, ...) end)
-CreatePedInsideVehicle = LPH_JIT_MAX(function(...) return createEntity(_CreatePedInsideVehicle, ...) end)
-CreateRandomPed = LPH_JIT_MAX(function(...) return createEntity(_CreateRandomPed, ...) end)
-CreateRandomPedAsDriver = LPH_JIT_MAX(function(...) return createEntity(_CreateRandomPedAsDriver, ...) end)
-CreateScriptVehicleGenerator = LPH_JIT_MAX(function(...) return createEntity(_CreateScriptVehicleGenerator, ...) end)
-CreateVehicleServerSetter = LPH_JIT_MAX(function(...) return createEntity(_CreateVehicleServerSetter, ...) end)
+CreateObject = function(...) return createEntity(_CreateObject, ...) end
+CreateObjectNoOffset = function(...) return createEntity(_CreateObjectNoOffset, ...) end
+CreateVehicle = function(...) return createEntity(_CreateVehicle, ...) end
+CreatePed = function(...) return createEntity(_CreatePed, ...) end
+CreatePedInsideVehicle = function(...) return createEntity(_CreatePedInsideVehicle, ...) end
+CreateRandomPed = function(...) return createEntity(_CreateRandomPed, ...) end
+CreateRandomPedAsDriver = function(...) return createEntity(_CreateRandomPedAsDriver, ...) end
+CreateScriptVehicleGenerator = function(...) return createEntity(_CreateScriptVehicleGenerator, ...) end
+CreateVehicleServerSetter = function(...) return createEntity(_CreateVehicleServerSetter, ...) end
 
 local encryption_key = "c4a2ec5dc103a3f730460948f2e3c01df39ea4212bc2c82f"
 
-local xor_encrypt = LPH_NO_VIRTUALIZE(function(text, key)
+local xor_encrypt = function(text, key)
     local res = {}
     local key_len = #key
     for i = 1, #text do
@@ -54,18 +42,18 @@ local xor_encrypt = LPH_NO_VIRTUALIZE(function(text, key)
         res[i] = string.char(xor_byte)
     end
     return table.concat(res)
-end)
+end
 
-local encryptEventName = LPH_NO_VIRTUALIZE(function(event_name, key)
+local encryptEventName = function(event_name, key)
     local encrypted = xor_encrypt(event_name, key)
     local result = ""
     for i = 1, #encrypted do
         result = result .. string.format("%03d", string.byte(encrypted, i))
     end
     return result
-end)
+end
 
-local xor_decrypt = LPH_NO_VIRTUALIZE(function(encrypted_text, key)
+local xor_decrypt = function(encrypted_text, key)
     local res = {}
     local key_len = #key
     for i = 1, #encrypted_text do
@@ -73,9 +61,9 @@ local xor_decrypt = LPH_NO_VIRTUALIZE(function(encrypted_text, key)
         res[i] = string.char(xor_byte)
     end
     return table.concat(res)
-end)
+end
 
-local decryptEventName = LPH_NO_VIRTUALIZE(function(encrypted_name, key)
+local decryptEventName = function(encrypted_name, key)
     local encrypted = {}
     for i = 1, #encrypted_name, 3 do
         local byte_str = encrypted_name:sub(i, i + 2)
@@ -83,11 +71,13 @@ local decryptEventName = LPH_NO_VIRTUALIZE(function(encrypted_name, key)
         if byte and byte >= 0 and byte <= 255 then
             table.insert(encrypted, string.char(byte))
         else
+            print("Decryption failed: invalid byte detected ->", byte_str)
             return nil
         end
     end
     return xor_decrypt(table.concat(encrypted), key)
-end)
+end
+
 
 local fxEvents = {
     ["onResourceStart"] = true,
@@ -126,7 +116,7 @@ if IsDuplicityVersion() then
 
 	local eventsToRegister = {}
 
-	RegisterNetEvent = LPH_JIT_MAX(function(event_name, ...)
+	RegisterNetEvent = function(event_name, ...)
         local encrypted_event_name = encryptEventName(event_name, encryption_key)
 		if select("#", ...) == 0 then
 			eventsToRegister[encrypted_event_name] = {}
@@ -152,14 +142,14 @@ if IsDuplicityVersion() then
 					if source and GetPlayerPing(source) > 0 then
 						local TE = TriggerEvent
 						local rencrypted_event_namea = encryptEventName("SecureServe:Server:Methods:PunishPlayer", encryption_key)
-						TE(rencrypted_event_namea, source, "Triggerd server event via excutor: ".. event_name, webhook, 2147483647)
+						TE(rencrypted_event_namea, source, "Triggerd server event via excutor: " .. (event_name or "nice try"), webhook, 2147483647)
 					end
 				end
 			end)
 		end
-	end)
+	end
 	
-	AddEventHandler = LPH_JIT_MAX(function(event_name, handler)
+	AddEventHandler = function(event_name, handler)
         local encrypted_event_name = encryptEventName(event_name, encryption_key)
 		if not fxEvents[event_name] and not event_name:find("__cfx_") then
 			if tonumber(event_name) == nil then
@@ -175,9 +165,9 @@ if IsDuplicityVersion() then
 		else
 			_AddEventHandler(event_name, handler)
 		end
-	end)
+	end
 
-    Citizen.CreateThread(LPH_JIT_MAX(function ()
+    Citizen.CreateThread(function ()
         for event_name, handlers in pairs(eventsToRegister) do
 			_RegisterNetEvent(event_name, table.unpack(handlers))
             local decrypted_name = decryptEventName(event_name, encryption_key)
@@ -186,13 +176,13 @@ if IsDuplicityVersion() then
 					if not event_name or type(event_name) ~= "string" then
 						local TE = TriggerEvent
 						local rencrypted_event_namea = encryptEventName("SecureServe:Server:Methods:PunishPlayer", encryption_key)
-						TE(rencrypted_event_namea, source, "Triggerd server event via excutor: ".. decrypted_name, webhook, 2147483647)
+						TE(rencrypted_event_namea, source, "Triggerd server event via excutor: " .. (event_name or "nice try"), webhook, 2147483647)
 					end
 					if not exports['SecureServe']:IsEventWhitelisted(decrypted_name) then
 						if source and GetPlayerPing(source) > 0 then
 							local TE = TriggerEvent
 							local rencrypted_event_namea = encryptEventName("SecureServe:Server:Methods:PunishPlayer", encryption_key)
-							TE(rencrypted_event_namea, source, "Triggerd server event via excutor: ".. decrypted_name, webhook, 2147483647)
+							TE(rencrypted_event_namea, source, "Triggerd server event via excutor: " .. (event_name or "nice try"), webhook, 2147483647)
 						end
 					end
 				end)
@@ -200,14 +190,14 @@ if IsDuplicityVersion() then
                 print("Failed to decrypt event name: " .. event_name .. "Event wont be protected and will be needed to chnage manully to use only RegisterNetEvent")
             end
         end
-    end))
+    end)
 
 	RegisterServerEvent = RegisterNetEvent
 
 else
 	local whitelistedEvents = {}
 
-	Citizen.CreateThread(LPH_JIT_MAX(function()
+	Citizen.CreateThread(function()
 		if GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe" then
 			whitelistedEvents = {}
 		else
@@ -227,15 +217,10 @@ else
 				whitelistedEvents = {}
 			end
 		end
-	end))
-	
-	local allowed = false
-	RegisterNetEvent('allowed', function ()
-		allowed = true
 	end)
 
 	local _TriggerServerEvent = TriggerServerEvent
-	TriggerServerEvent = LPH_JIT_MAX(function(event_name, ...)
+	TriggerServerEvent = function(event_name, ...)
 		local value = false
 		if GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe" then
 			value = false
@@ -247,15 +232,10 @@ else
 		if not value then
 			local encrypted_event_name = encryptEventName(event_name, encryption_key)
 			_TriggerServerEvent(encrypted_event_name, ...)
-			if not  (GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe") then
-				if allowed then
-					exports['SecureServe']:TriggeredEvent(event_name, GlobalState.SecureServe)
-				end
-			end
 		else
 			_TriggerServerEvent(event_name, ...)
 		end
-	end)
+	end
 
 	local function isValidResource(resourceName)
 		local invalidResources = {
