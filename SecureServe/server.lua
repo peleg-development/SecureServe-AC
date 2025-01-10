@@ -1371,12 +1371,13 @@ initialize_protections_explosions = LPH_JIT_MAX(function()
         print(string.format("Explosion detected! Type: %s | Position: %s | Damage Scale: %s | Owner: %s", 
             explosionType, explosionPos, explosionDamage, explosionOwner))
         local resourceName = GetInvokingResource()
-        if GetPlayerPing(sender) > 0 and SecureServe.ExplosionsWhitelist[resourceName] then
-            if whitelist[sender] then
+        if GetPlayerPing(sender) > 0  then
+            if whitelist[sender] or SecureServe.ExplosionsWhitelist[resourceName] then
                 whitelist[sender] = false
             else
                 punish_player(sender, string.format("Explosion Details: Type: %s, Position: %s, Damage Scale: %s", 
                     explosionType, explosionPos, explosionDamage), webhook, time)
+                    CancelEvent()
             end
         end
     
@@ -1386,6 +1387,7 @@ initialize_protections_explosions = LPH_JIT_MAX(function()
 
                 if v.limit and explosions[sender][v.id] and explosions[sender][v.id] >= v.limit then
                     punish_player(sender, "Exceeded explosion limit at explosion: " .. v.id .. ". " .. explosionInfo, v.webhook or SecureServe.Webhooks.BlacklistedExplosions or "https://discord.com/api/webhooks/1237077520210329672/PvyzM9Vr43oT3BbvBeLLeS-BQnCV4wSUQDhbKBAXr9g9JcjshPCzQ7DL1pG8sgjIqpK0", v.time)
+                    CancelEvent()
                     return
                 end
 
@@ -1393,6 +1395,7 @@ initialize_protections_explosions = LPH_JIT_MAX(function()
 
                 if v.limit and explosions[sender][v.id] > v.limit then
                     punish_player(sender, "Exceeded explosion limit at explosion: " .. v.id .. ". " .. explosionInfo, v.webhook or SecureServe.Webhooks.BlacklistedExplosions or "https://discord.com/api/webhooks/1237077520210329672/PvyzM9Vr43oT3BbvBeLLeS-BQnCV4wSUQDhbKBAXr9g9JcjshPCzQ7DL1pG8sgjIqpK0", v.time)
+                    CancelEvent()
                     return
                 end
 
@@ -1409,11 +1412,13 @@ initialize_protections_explosions = LPH_JIT_MAX(function()
 
                 if v.audio and ev.isAudible == false then
                     punish_player(sender, "Used inaudible explosion. " .. explosionInfo, v.webhook or SecureServe.Webhooks.BlacklistedExplosions or "https://discord.com/api/webhooks/1237077520210329672/PvyzM9Vr43oT3BbvBeLLeS-BQnCV4wSUQDhbKBAXr9g9JcjshPCzQ7DL1pG8sgjIqpK0", v.time)
+                    CancelEvent()
                     return
                 end
 
                 if v.invisible and ev.isInvisible == true then
                     punish_player(sender, "Used invisible explosion. " .. explosionInfo, v.webhook or SecureServe.Webhooks.BlacklistedExplosions or "https://discord.com/api/webhooks/1237077520210329672/PvyzM9Vr43oT3BbvBeLLeS-BQnCV4wSUQDhbKBAXr9g9JcjshPCzQ7DL1pG8sgjIqpK0", v.time)
+                    CancelEvent()
                     return
                 end
 
