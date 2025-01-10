@@ -73,7 +73,7 @@ We value contributions! If you encounter issues, have suggestions, or want to co
 
 ## 🎥 **Screenshots & Video Previews**
 
-# **Admin Panel (Server Options Are Dummy Options For Now)**
+# **Admin Panel (Server Options Are Dummy Options)**
    ![Admin Panel](https://github.com/user-attachments/assets/17db7796-9602-474a-9549-e2fb7b701a22)
    ![Detection Interface](https://github.com/user-attachments/assets/5ec653eb-6fdd-47ce-9e4a-d727fb449aa2)
    ![Image 1](https://github.com/user-attachments/assets/4d5864d8-a984-4b89-bce6-7c26a74264f2)
