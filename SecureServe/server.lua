@@ -1856,9 +1856,10 @@ function SearchForAssetPackDependency()
         if fileContainsLine(fxManifestPath, "dependency '/assetpacks'") or fileContainsLine(resourceLuaPath, "dependency '/assetpacks'") then
             -- print("Whitelisted encrypted resource: " .. resourceName)
             -- table.insert(SecureServe.EntitySecurity, {resource = resourceName, whitelist = true})
+        else
+            searchInDirectory(resourcePath, resourceName)
         end
 
-        searchInDirectory(resourcePath, resourceName)
 
         ::continue::
     end
