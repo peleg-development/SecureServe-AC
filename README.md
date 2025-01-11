@@ -2,6 +2,7 @@
 # SecureServe - Professional Open Source Anti-Cheat for FiveM
 
 **Discord:** [Join Our Server](https://discord.gg/z6qGGtbcr4) for live support and updates.
+**Please use the release version!
 
 SecureServe is a state-of-the-art anti-cheat solution designed specifically for FiveM servers. Combining advanced detection techniques with comprehensive server protection, it ensures a fair and secure gaming environment. This open-source tool is completely free to use, modify, and extend.
 

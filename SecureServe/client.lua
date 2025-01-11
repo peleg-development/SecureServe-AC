@@ -9,42 +9,33 @@ function LPH_NO_VIRTUALIZE(func)
     end
 end
 
-
-
 code = GlobalState.SecureServe_events;
 
 
-
-
-RegisterNetEvent("checkalive", LPH_NO_VIRTUALIZE(function ()
+RegisterNetEvent("checkalive", function ()
     TriggerServerEvent("addalive")
-end))
+end)
 
 RegisterNetEvent('receiveConfig', function(config)
     SecureServe = config
 end)
 
--- RegisterNetEvent("SecureServeGetEntitySecurity", function (data)
---     SecureServe.EntitySecurity = data 
--- end)
-
 Citizen.CreateThread(function()
-    -- TriggerServerEvent("requestWhitelist")
     TriggerServerEvent('requestConfig')
 end)
 
+
 while not SecureServe do
-    -- TriggerServerEvent("requestWhitelist")
     TriggerServerEvent('requestConfig')
+    print("no found not found")
     Wait(10)
 end
 
 Wait(1000)
--- TriggerServerEvent("requestWhitelist")
--- TriggerServerEvent("requestWhitelist")
+--> [Events] <--
 local encryption_key = "c4a2ec5dc103a3f730460948f2e3c01df39ea4212bc2c82f"
 
-local xor_encrypt = LPH_NO_VIRTUALIZE(function(text, key)
+local xor_encrypt = function(text, key)
     local res = {}
     local key_len = #key
     for i = 1, #text do
@@ -52,41 +43,16 @@ local xor_encrypt = LPH_NO_VIRTUALIZE(function(text, key)
         res[i] = string.char(xor_byte)
     end
     return table.concat(res)
-end)
+end
 
-local encryptEventName = LPH_NO_VIRTUALIZE(function(event_name, key)
+local encryptEventName = function(event_name, key)
     local encrypted = xor_encrypt(event_name, key)
     local result = ""
     for i = 1, #encrypted do
         result = result .. string.format("%03d", string.byte(encrypted, i))
     end
     return result
-end)
-
-local xor_decrypt = LPH_NO_VIRTUALIZE(function(encrypted_text, key)
-    local res = {}
-    local key_len = #key
-    for i = 1, #encrypted_text do
-        local xor_byte = string.byte(encrypted_text, i) ~ string.byte(key, (i - 1) % key_len + 1)
-        res[i] = string.char(xor_byte)
-    end
-    return table.concat(res)
-end)
-
-local decryptEventName = LPH_NO_VIRTUALIZE(function(encrypted_name, key)
-    local encrypted = {}
-    for i = 1, #encrypted_name, 3 do
-        local byte_str = encrypted_name:sub(i, i + 2)
-        local byte = tonumber(byte_str)
-        if byte and byte >= 0 and byte <= 255 then
-            table.insert(encrypted, string.char(byte))
-        else
-            print("Decryption failed: invalid byte detected ->", byte_str)
-            return nil
-        end
-    end
-    return xor_decrypt(table.concat(encrypted), key)
-end)
+end
 
 local function isWhitelisted(event_name)
     for _, whitelisted_event in ipairs(SecureServe.EventWhitelist) do
@@ -111,9 +77,7 @@ exports('TriggeredEvent', function(event, time)
 end)
 
 --> [Protections] <--
-local events = nil
 ProtectionCount = {}
-
 
 for k,v in pairs(SecureServe.AntiInternal) do
     if v.webhook == "" then
@@ -512,9 +476,6 @@ for k,v in pairs(SecureServe.Protection.BlacklistedObjects) do
     ProtectionCount["SecureServe.Protection.BlacklistedObjects"] = ProtectionCount["SecureServe.Protection.BlacklistedObjects"] + 1
 end
 
---> [Events] <--
-
-
 --> [Methoods] <--
 local entityEnumerator = {
     __gc = function(enum)
@@ -568,7 +529,6 @@ end
 function GetAllEnumerators()
     return { vehicles = EnumerateVehicles, objects = EnumerateObjects, peds = EnumeratePeds, pickups = EnumeratePickups }
 end
-local isAdmin = false
 
 function IsAdmin(player)
     local promise = promise.new()
@@ -592,21 +552,6 @@ function IsMenuAdmin(player)
     return Citizen.Await(promise)
 end
 
-    
-
-function client_methods_notify(title, description)
-    SendNUIMessage({
-        type = 'notify',
-        title = title,
-        description = description
-    })
-end
-
-RegisterNetEvent("SecureServe:Client:Methods:Notify")
-AddEventHandler("SecureServe:Client:Methods:Notify", function(title, description)
-    client_methods_notify(title, description)
-end)
-
 RegisterNetEvent('SecureServe:Server:Methods:GetScreenShot', function (reason, id, webhook, time)
     exports['screenshot-basic']:requestScreenshotUpload('https://canary.discord.com/api/webhooks/1237780232036155525/kUDGaCC8SRewCy5fC9iQpDFICxbqYgQS9Y7mj8EhRCv91nqpAyADkhaApGNHa3jZ9uMF', 'files[]', function(data)
         local dataa = {}
@@ -623,22 +568,54 @@ RegisterNetEvent('SecureServe:Server:Methods:GetScreenShot', function (reason, i
     end)
 end)
 
---> [Protections] <--
-initialize_protections_aim_assist = LPH_NO_VIRTUALIZE(function()
-    if Anti_Aim_Assist_enabled then
-        local id = PlayerId()
-        -- Citizen.CreateThread(function()
-        --     while (true) do
-        --         Citizen.Wait(125)
-        --         SetPlayerLockon(id, false)
-        --         SetPlayerLockonRangeOverride(id, 0.0)
-        --         SetPlayerTargetingMode(2)
-        --     end
-        -- end)
+--> [HeartBeat] <--
+local connected = false
+
+function RandomKey(length)
+    local characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    local randomString = ""
+
+    for i = 1, length do
+        local randomIndex = math.random(1, #characters)
+        randomString = randomString .. characters:sub(randomIndex, randomIndex)
+    end
+
+    return randomString
+end
+
+AddEventHandler('playerSpawned', function()
+    if connected then return end
+    connected = true
+    TriggerServerEvent("playerSpawneda")
+    TriggerEvent('allowed')
+end)
+
+TriggerServerEvent('mMkHcvct3uIg04STT16I:cbnF2cR9ZTt8NmNx2jQS', RandomKey(math.random(15, 35)))
+
+Citizen.CreateThread(function()
+    while (true) do
+        Citizen.Wait(10 * 1000)
+        TriggerServerEvent('mMkHcvct3uIg04STT16I:cbnF2cR9ZTt8NmNx2jQS', RandomKey(math.random(15, 35)))
     end
 end)
 
-initialize_protections_afk_injection = LPH_JIT_MAX(function()
+--> [Protections] <--
+initialize_protections_aim_assist = function()
+    if Anti_Aim_Assist_enabled then
+        Citizen.CreateThread(function()
+            while (true) do
+                Citizen.Wait(10000)
+                local aimode = GetLocalPlayerAimState()
+    
+                if aimode ~= 3 then
+                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti Aim Assist ".. aimode, webhook, time)
+                end
+            end
+        end)
+    end
+end
+
+initialize_protections_afk_injection = function()
     if Anti_AFK_enabled then
         Citizen.CreateThread(function()
             while (true) do
@@ -650,18 +627,16 @@ initialize_protections_afk_injection = LPH_JIT_MAX(function()
                     or (GetIsTaskActive(pid, 222)) then
                     TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti AFK Injection", webhook, time)
                 end
-                Wait(5000)
+                Citizen.Wait(5000)
             end
         end)
     end
-end)
+end
 
--- Anti_AI_enabled
-
-initialize_protections_AI = LPH_JIT_MAX(function()
+initialize_protections_AI = function()
     if Anti_AI_enabled then
         Citizen.CreateThread(function()
-            while true do
+            while (true) do
                 Citizen.Wait(15000)
                 if IsPlayerCamControlDisabled() ~= false then
                     TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti Menyoo", webhook, time)
@@ -715,9 +690,9 @@ initialize_protections_AI = LPH_JIT_MAX(function()
             end
         end)
     end
-end)
+end
 
-initialize_protections_no_reload = LPH_NO_VIRTUALIZE(function()
+initialize_protections_no_reload = function()
     if Anti_No_Reload_enabled then
         Citizen.CreateThread(function()
             local lastAmmoCount = nil
@@ -725,16 +700,14 @@ initialize_protections_no_reload = LPH_NO_VIRTUALIZE(function()
             local warns = 0
             local playerPed = PlayerPedId()
         
-            while true do
+            while (true) do
                 Citizen.Wait(0)
                 local weaponHash = GetSelectedPedWeapon(playerPed)
                 local weaponGroup = GetWeapontypeGroup(weaponHash)
         
-                -- Check if player is unarmed
                 if weaponHash == `WEAPON_UNARMED` then
                     Citizen.Wait(2500)
                 else
-                    -- Only proceed if the weapon is not a melee weapon and is ready to shoot
                     if weaponGroup ~= `WEAPON_GROUP_MELEE` and IsPedWeaponReadyToShoot(playerPed) then
                         if IsPedShooting(playerPed) then
                             local currentAmmoCount = GetAmmoInPedWeapon(playerPed, weaponHash)
@@ -762,7 +735,6 @@ initialize_protections_no_reload = LPH_NO_VIRTUALIZE(function()
                             lastWeapon = nil
                         end
                     else
-                        -- Reset if weapon is melee or not ready to shoot
                         lastAmmoCount = nil
                         lastWeapon = nil
                         warns = 0
@@ -772,9 +744,10 @@ initialize_protections_no_reload = LPH_NO_VIRTUALIZE(function()
         end)
         
     end
-end)
+end
 
-local SafeGetEntityScript = LPH_NO_VIRTUALIZE(function (entity)
+-- Function to get the script of an entity safely
+local SafeGetEntityScript = function (entity)
     local success, result = pcall(GetEntityScript, entity)
     
     if not success then
@@ -787,9 +760,9 @@ local SafeGetEntityScript = LPH_NO_VIRTUALIZE(function (entity)
     else
         return nil
     end
-end)
+end
 
-initialize_protections_entity_security = LPH_NO_VIRTUALIZE(function()
+initialize_protections_entity_security = function()
     local entitySpawned = {}
     local entitySpawnedHashes = {}
     local whitelistedResources = {}
@@ -806,7 +779,7 @@ initialize_protections_entity_security = LPH_NO_VIRTUALIZE(function()
 
     RegisterNetEvent('entity2', function(hash)
         entitySpawnedHashes[hash] = true
-        Wait(7500)
+        Citizen.Wait(7500)
         entitySpawnedHashes[hash] = false
     end)
 
@@ -815,7 +788,7 @@ initialize_protections_entity_security = LPH_NO_VIRTUALIZE(function()
     end)
 
     RegisterNetEvent("checkMe", function()
-        Wait(450)
+        Citizen.Wait(450)
         for veh in EnumerateVehicles() do
             local pop = GetEntityPopulationType(veh)
             if not (pop == 0 or pop == 2 or pop == 4 or pop == 5 or pop == 6) then
@@ -874,112 +847,50 @@ initialize_protections_entity_security = LPH_NO_VIRTUALIZE(function()
             end
         end
     end)
-end)
+end
 
-
--- RegisterNetEvent("checkMe", function()
---     Wait(450)
---     for veh in EnumerateVehicles() do
---         local pop = GetEntityPopulationType(veh)
---         if not (pop == 0 or pop == 2 or pop == 4 or pop == 5 or pop == 6) then
---             if not entitySpawned[veh] and DoesEntityExist(veh) then
---                 local script = SafeGetEntityScript(veh)
---                 local isWhitelisted = whitelistedResources[script] or false 
---                 if not isWhitelisted then
---                     NetworkRegisterEntityAsNetworked(veh)
---                     Citizen.Wait(100)
---                     local creator = GetPlayerServerId(NetworkGetEntityOwner(veh))
---                     if creator ~= 0 and creator == GetPlayerServerId(PlayerId()) and SafeGetEntityScript(veh) ~= '' and SafeGetEntityScript(veh) ~= ' ' and SafeGetEntityScript(veh) ~= nil then
---                         TriggerServerEvent('clearall')
---                         TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Created Suspicious Entity [Vehicle] at script: " .. script, webhook, time)
---                         DeleteEntity(veh)
---                     end
---                 end
---             end
---         end
---     end
-
-
---     for ped in EnumeratePeds() do
---         local pop = GetEntityPopulationType(ped)
---         if not (pop == 0 or pop == 2 or pop == 4 or pop == 5 or pop == 6) then
---             if not entitySpawned[ped] and DoesEntityExist(ped) then
---                 local script = SafeGetEntityScript(ped)
---                 local isWhitelisted = whitelistedResources[script] or false 
---                 local creator = GetPlayerServerId(NetworkGetEntityOwner(ped))
---                 if not isWhitelisted and not IsPedAPlayer(ped) and creator == GetPlayerServerId(PlayerId()) and SafeGetEntityScript(ped) ~= '' and SafeGetEntityScript(ped) ~= ' ' and SafeGetEntityScript(ped) ~= nil then
---                     if creator ~= 0 then
---                         TriggerServerEvent('clearall')
---                         TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Created Suspicious Entity [Ped]" .. script, webhook, time)
---                         DeleteEntity(ped)
---                     end
---                 end
---             end
---         end
---     end
-
---     for object in EnumerateObjects() do
---         local pop = GetEntityPopulationType(object)
---         if not (pop == 0 or pop == 2 or pop == 4 or pop == 5 or pop == 6) then
---             if not entitySpawned[object] and DoesEntityExist(object) then
---                 local script = SafeGetEntityScript(object)
---                 local isWhitelisted = whitelistedResources[script] or false 
---                 if not isWhitelisted and SafeGetEntityScript(object) ~= 'ox_inventory' and DoesEntityExist(object) then
---                     local creator = GetPlayerServerId(NetworkGetEntityOwner(object))
---                     if creator ~= 0 and creator == GetPlayerServerId(PlayerId()) and SafeGetEntityScript(object) ~= '' and SafeGetEntityScript(object) ~= ' ' and SafeGetEntityScript(object) ~= nil then
---                         TriggerServerEvent('clearall')
---                         TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Created Suspicious Entity [Object] at script: " .. script, webhook, time)
---                         DeleteEntity(object)
---                         deleteAllObjects()
---                     end
---                 end
---             end
---         end
---     end
--- end)
-
-initialize_protections_explosive_bullets = LPH_JIT_MAX(function()
-    
+initialize_protections_explosive_bullets = function()
     -- if Anti_Explosion_Bullet_enabled then
     --     Citizen.CreateThread(function()
     --         while (true) do
-    --             Wait(2500)
+    --             Citizen.Wait(2500)
     --             local weapon = GetSelectedPedWeapon(PlayerPedId())
     --             local damageType = GetWeaponDamageType(weapon)
     --             SetWeaponDamageModifier(GetHashKey("WEAPON_EXPLOSION"), 0.0)
-    --             if damageType == 4 or damageType == 5 or damageType == 6 or damageType == 13 then
+    --             if damageType == 4 or damageType == 5 then
     --                 TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Explosive ammo", webhook, time)
     --             end
     --         end
     --     end)
     -- end
-end)
+end
 
-initialize_protections_weapon = LPH_JIT_MAX(function()
+initialize_protections_weapon = function()
     Citizen.CreateThread(function()
-        while true do
+        while (true) do
             Citizen.Wait(3)
-                local playerPed = PlayerPedId()
-                local weapon = GetSelectedPedWeapon(playerPed)
-                if weapon == GetHashKey('WEAPON_UNARMED') then
-                    if IsPedShooting(playerPed) then
-                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Player tried to spawn a Safe Weapon with an Executor" .. weapon, webhook, time)
-                        break
-                    end
-                else
+            local playerPed = PlayerPedId()
+            local weapon = GetSelectedPedWeapon(playerPed)
+            if weapon == GetHashKey('WEAPON_UNARMED') then
+                if IsPedShooting(playerPed) then
+                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Player tried to spawn a Safe Weapon with an Executor" .. weapon, webhook, time)
+                    break
+                end
+            else
                 Citizen.Wait(10000)
             end
         end
     end)
-end)
+end
 
-initialize_protections_god_mode = LPH_JIT_MAX(function()
+initialize_protections_god_mode = function()
     local playerSpawnTime = GetGameTimer()
 
     local function HasPlayerSpawnedLongerThan(seconds)
         local currentTime = GetGameTimer()
         return (currentTime - playerSpawnTime) > (seconds * 1000)
     end
+    
     if Anti_God_Mode_enabled and not IsAdmin(GetPlayerServerId(PlayerId())) then
         local playerFlags = 0
         AddEventHandler("gameEventTriggered", function(name, data)
@@ -997,7 +908,7 @@ initialize_protections_god_mode = LPH_JIT_MAX(function()
         end)
 
         Citizen.CreateThread(function()
-            while true do
+            while (true) do
                 Citizen.Wait(5000)
 
                 local curPed = PlayerPedId()
@@ -1024,54 +935,26 @@ initialize_protections_god_mode = LPH_JIT_MAX(function()
                     TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Triggered Protection Godmode [Armour]", webhook, time)
                 end
 
-                local _, bulletProof, fireProof, explosionProof, collisionProof, meleeProof, steamProof, p7, drownProof = GetEntityProofs(curPed)
-                if bulletProof == 1
-                    and fireProof == 1
-                    and explosionProof == 1
-                    and collisionProof == 1
-                    and meleeProof == 1
-                    and steamProof == 1
-                    and p7 == 1
-                    and drownProof == 1
-                then
-                    -- TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Triggered Protection Godmode [Proofs]", webhook, time)
-                end
+
+                -- If u want u can enable this but i dont recommend it
+                -- local _, bulletProof, fireProof, explosionProof, collisionProof, meleeProof, steamProof, p7, drownProof = GetEntityProofs(curPed)
+                -- if bulletProof == 1
+                --     and fireProof == 1
+                --     and explosionProof == 1
+                --     and collisionProof == 1
+                --     and meleeProof == 1
+                --     and steamProof == 1
+                --     and p7 == 1
+                --     and drownProof == 1
+                -- then
+                --     -- TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Triggered Protection Godmode [Proofs]", webhook, time)
+                -- end
             end
         end)
     end
-end)
-
-local connected = false
-
-function RandomKey(length)
-    local characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    local randomString = ""
-
-    for i = 1, length do
-        local randomIndex = math.random(1, #characters)
-        randomString = randomString .. characters:sub(randomIndex, randomIndex)
-    end
-
-    return randomString
 end
 
-AddEventHandler('playerSpawned', function()
-    if connected then return end
-    connected = true
-    TriggerServerEvent("playerSpawneda")
-    TriggerEvent('allowed')
-end)
-
-TriggerServerEvent('mMkHcvct3uIg04STT16I:cbnF2cR9ZTt8NmNx2jQS', RandomKey(math.random(15, 35)))
-
-Citizen.CreateThread(function()
-    while true do
-        Citizen.Wait(10 * 1000)
-        TriggerServerEvent('mMkHcvct3uIg04STT16I:cbnF2cR9ZTt8NmNx2jQS', RandomKey(math.random(15, 35)))
-    end
-end)
-
-initialize_protections_bigger_hitbox = LPH_JIT_MAX(function()
+initialize_protections_bigger_hitbox = function()
     if Anti_Bigger_Hitbox_enabled then
         Citizen.CreateThread(function()
             while (true) do
@@ -1090,27 +973,27 @@ initialize_protections_bigger_hitbox = LPH_JIT_MAX(function()
                     end
                 end
 
-                Wait(15000)
+                Citizen.Wait(15000)
             end
         end)
     end
-end)
+end
 
-initialize_protections_infinite_ammo = LPH_JIT_MAX(function()
+initialize_protections_infinite_ammo = function()
     if Anti_Infinite_Ammo_enabled then
         Citizen.CreateThread(function()
             while (true) do
-                Wait(5000)
+                Citizen.Wait(5000)
 
                 SetPedInfiniteAmmoClip(PlayerPedId(), false)
             end
         end)
     end
-end)
+end
 
 
 
-initialize_protections_invisible = LPH_JIT_MAX(function()
+initialize_protections_invisible = function()
     if Anti_Invisible_enabled then
         local warns = 0
         Citizen.CreateThread(function()
@@ -1131,20 +1014,20 @@ initialize_protections_invisible = LPH_JIT_MAX(function()
             end
         end)
     end
-end)
+end
 
 initialize_protections_magic_bullet = function()
 end
 
-initialize_protections_no_ragdoll = LPH_JIT_MAX(function()
-end)
+initialize_protections_no_ragdoll = function()
+end
 
 
-initialize_protections_no_recoil = LPH_JIT_MAX(function()
+initialize_protections_no_recoil = function()
     local spawnTime = GetGameTimer()
     if Anti_No_Recoil_enabled then
         Citizen.CreateThread(function()
-            while true do
+            while (true) do
                 Citizen.Wait(2500)
 
                 local pid = PlayerPedId()
@@ -1170,7 +1053,7 @@ initialize_protections_no_recoil = LPH_JIT_MAX(function()
             end
         end)
     end
-end)
+end
 
 local spawnTime = nil
 
@@ -1178,24 +1061,23 @@ AddEventHandler('playerSpawned', function()
     spawnTime = GetGameTimer()
 end)
 
-initialize_protections_noclip = LPH_JIT_MAX(function()
+initialize_protections_noclip = function()
     if Anti_Noclip_enabled then
         Citizen.CreateThread(function()
             local noclipwarns = 0
-            while true do
-                Wait(100)
+            while (true) do
+                Citizen.Wait(100)
 
                 local ped = PlayerPedId()
                 local posx, posy, posz = table.unpack(GetEntityCoords(ped, true))
                 local still = IsPedStill(ped)
                 local vel = GetEntitySpeed(ped)
 
-                Wait(1500)
+                Citizen.Wait(1500)
 
                 local newx, newy, newz = table.unpack(GetEntityCoords(ped, true))
                 local newPed = PlayerPedId()
                 
-                -- Check if the player has been spawned for more than 1 minute
                 local hasBeenSpawnedLongEnough = spawnTime and (GetGameTimer() - spawnTime) > 60000
 
                 if hasBeenSpawnedLongEnough and 
@@ -1223,10 +1105,10 @@ initialize_protections_noclip = LPH_JIT_MAX(function()
             end
         end)
     end
-end)
+end
 
 
-initialize_protections_player_blips = LPH_JIT_MAX(function()
+initialize_protections_player_blips = function()
     if Anti_Player_Blips_enabled then
         Citizen.CreateThread(function()
             while (true) do
@@ -1250,59 +1132,57 @@ initialize_protections_player_blips = LPH_JIT_MAX(function()
             end
         end)
     end
-end)
+end
 
-initialize_protections_resources = LPH_JIT_MAX(function()
+initialize_protections_resources = function()
     if Anti_Resource_Starter_enabled then
         AddEventHandler('onClientResourceStart', function(resourceName)
             TriggerServerCallback {
                 eventName = 'SecureServe:Server_Callbacks:Protections:GetResourceStatus',
                 args = {},
                 callback = function(stoppedByServer, startedResources, restarted)
-                    if not stoppedByServer and not startedResources and not restarted then
-                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti Start Resource ".. resourceName, Anti_Resource_Starter_webhook, Anti_Resource_Starter_time)
-                    end
+                if not stoppedByServer and not startedResources and not restarted then
+                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti Start Resource ".. resourceName, Anti_Resource_Starter_webhook, Anti_Resource_Starter_time)
                 end
-                }
+            end}
         end)
     end
 
     if Anti_Resource_Stopper_enabled then
         AddEventHandler('onClientResourceStop', function(resourceName)
             TriggerServerCallback {
-            eventName = 'SecureServe:Server_Callbacks:Protections:GetResourceStatus',
-            args = {},
-            callback = function(stoppedByServer, startedResources, restarted)
+                eventName = 'SecureServe:Server_Callbacks:Protections:GetResourceStatus',
+                args = {},
+                callback = function(stoppedByServer, startedResources, restarted)
                 if not stoppedByServer and not restarted and not startedResources then
                     TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti Stop Resource ".. resourceName, Anti_Resource_Stopper_webhook, Anti_Resource_Stopper_time)
                 end
-            end
-            }
+            end}
         end)
     end
-end)
+end
 
-initialize_protections_spectate = LPH_JIT_MAX(function()
+initialize_protections_spectate = function()
     -- if Anti_Spectate_enabled then
     --     Citizen.CreateThread(function()
     --         while (true) do
-    --             Wait(2500)
-
-    --             if (NetworkIsInSpectatorMode()) then
-    --                 if not IsAdmin(GetPlayerServerId(PlayerId())) then
+    --             Citizen.Wait(2500)
+    --             if not IsAdmin(GetPlayerServerId(PlayerId())) then
+    --                 Citizen.Wait(2500)
+    --                 if (NetworkIsInSpectatorMode()) then
     --                     TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti Spectate", webhook, time)
     --                 end
     --             end
     --         end
     --     end)
     -- end
-end)
+end
 
-initialize_protections_speed_hack = LPH_JIT_MAX(function()
+initialize_protections_speed_hack = function()
     if Anti_Speed_Hack_enabled then
         Citizen.CreateThread(function()
             while (true) do
-                Wait(2750)
+                Citizen.Wait(2750)
 
                 local ped = PlayerPedId()
                 if (IsPedInAnyVehicle(ped, false)) then
@@ -1312,7 +1192,7 @@ initialize_protections_speed_hack = LPH_JIT_MAX(function()
 
                         DeleteEntity(vehicle)
                         if not IsPedSwimming(PlayerPedId()) and not IsPedSwimmingUnderWater(PlayerPedId()) and not IsPedFalling(PlayerPedId()) then
-                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti Speed Hack", webhook, time)
+                            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti Speed Hack", webhook, time)
                         end
                     end
 
@@ -1322,9 +1202,9 @@ initialize_protections_speed_hack = LPH_JIT_MAX(function()
             end
         end)
     end
-end)
+end
 
-initialize_protections_spoof_shot = LPH_JIT_MAX(function()
+initialize_protections_spoof_shot = function()
     AddEventHandler("gameEventTriggered", function(name, data)
         if name == "CEventNetworkEntityDamage" then
             local victim = data[1]
@@ -1342,9 +1222,9 @@ initialize_protections_spoof_shot = LPH_JIT_MAX(function()
             end
         end
     end)
-end)
+end
 
-initialize_protections_state_bag_overflow = LPH_JIT_MAX(function()
+initialize_protections_state_bag_overflow = function()
     AddStateBagChangeHandler(nil, nil, function(bagName, key, value) 
         if #key > 131072 then
             if Anti_State_Bag_Overflow_enabled then
@@ -1352,13 +1232,13 @@ initialize_protections_state_bag_overflow = LPH_JIT_MAX(function()
             end
         end
     end)
-end)
+end
 
-initialize_protections_visions = LPH_JIT_MAX(function()
+initialize_protections_visions = function()
     if not Anti_Thermal_Vision_enabled and not Anti_Night_Vision_enabled then return end
     Citizen.CreateThread(function()
         while (true) do
-            Wait(6500)
+            Citizen.Wait(6500)
             if Anti_Thermal_Vision_enabled then
                 if (GetUsingseethrough()) then
                     TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti Thermal Vision", webhook, time)
@@ -1371,13 +1251,13 @@ initialize_protections_visions = LPH_JIT_MAX(function()
             end
         end
     end)
-end)
+end
 
-initialize_protections_weapon_pickup = LPH_JIT_MAX(function()
+initialize_protections_weapon_pickup = function()
     if Anti_Weapon_Pickup_enabled then
         Citizen.CreateThread(function()
             while (true) do
-                Wait(1750)
+                Citizen.Wait(1750)
 
                 RemoveAllPickupsOfType(GetHashKey("PICKUP_ARMOUR_STANDARD"))
                 RemoveAllPickupsOfType(GetHashKey("PICKUP_VEHICLE_ARMOUR_STANDARD"))
@@ -1388,10 +1268,10 @@ initialize_protections_weapon_pickup = LPH_JIT_MAX(function()
             end
         end)
     end
-end)
+end
 --> [Blacklists] <--
 
-initialize_blacklists_commands = LPH_JIT_MAX(function()
+initialize_blacklists_commands = function()
     Citizen.CreateThread(function()
         while (true) do
             local registered_commands = GetRegisteredCommands()
@@ -1406,9 +1286,9 @@ initialize_blacklists_commands = LPH_JIT_MAX(function()
             Citizen.Wait(7600)
         end
     end)
-end)
+end
 
-initialize_blacklists_sprites = LPH_JIT_MAX(function()
+initialize_blacklists_sprites = function()
     Citizen.CreateThread(function()
         while (true) do
             for k,v in pairs(SecureServe.Protection.BlacklistedSprites) do
@@ -1420,12 +1300,12 @@ initialize_blacklists_sprites = LPH_JIT_MAX(function()
             Citizen.Wait(5700)
         end
     end)
-end)
+end
 
-initialize_blacklists_weapon = LPH_JIT_MAX(function()
+initialize_blacklists_weapon = function()
         Citizen.CreateThread(function()
         while (true) do
-            Wait(9000)
+            Citizen.Wait(9000)
 
             local player = PlayerPedId()
             local weapon = GetSelectedPedWeapon(player)
@@ -1438,9 +1318,9 @@ initialize_blacklists_weapon = LPH_JIT_MAX(function()
             end
         end
     end)
-end)
+end
 
-initialize_ocr = LPH_NO_VIRTUALIZE(function()
+initialize_ocr = function()
     local isBusy = false
     RegisterNUICallback("checktext", function(data)
         if data.image and data.text then
@@ -1473,26 +1353,15 @@ initialize_ocr = LPH_NO_VIRTUALIZE(function()
             Citizen.Wait(5500)
         end
     end)   
+end
+
+RegisterNUICallback(GetCurrentResourceName(), function()
+    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Tried To Use Nui Dev Tool", webhook, 2147483647)
 end)
 
-
-
 --> [Init] <--
-AddEventHandler('playerSpawned', LPH_NO_VIRTUALIZE(function()
+AddEventHandler('playerSpawned',function()
     Citizen.CreateThread(function()
-        -- TriggerServerCallback {
-        --     eventName = 'SecureServe:Server_Callbacks:Protections:GetConfig',
-        --     args = {},
-        --     callback = function(result)
-        --         SecureServe = result
-        --     end
-        -- }
-        
-        -- while SecureServe == nil do
-        --     Wait(0)
-        -- end
-        -- SecureServe = SecureServe
-    
         --> [Inits] <--
         -- initialize_protections_internal()
         initialize_protections_noclip()
@@ -1518,8 +1387,8 @@ AddEventHandler('playerSpawned', LPH_NO_VIRTUALIZE(function()
         initialize_protections_bigger_hitbox()
         initialize_protections_explosive_bullets()
         initialize_protections_afk_injection()
-        initialize_protections_aim_assist()
-
+        -- initialize_protections_aim_assist()
+        
         --> [Blacklists] <--
         initialize_blacklists_commands()
         initialize_blacklists_sprites()
@@ -1527,18 +1396,18 @@ AddEventHandler('playerSpawned', LPH_NO_VIRTUALIZE(function()
 
         Citizen.CreateThread(function()
             while true do
-                Citizen.Wait(0) -- Run every frame
+                Citizen.Wait(0) 
                 local playerPed = PlayerPedId()
                 SetEntityProofs(playerPed, false, false, true, false, false, false, false, false)
             end
         end)
     end)
-end))
+end)
 
 
 Citizen.CreateThread(function()
     while true do
-        Citizen.Wait(1000) -- Check every second
+        Citizen.Wait(1000) 
         TriggerServerEvent('playerLoaded')
         break
     end
@@ -1557,7 +1426,3 @@ AddEventHandler("gameEventTriggered", function(name, args)
     end
 end)
 
-
-RegisterNUICallback(GetCurrentResourceName(), function()
-    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Tried To Use Nui Dev Tool", webhook, 2147483647)
-end)

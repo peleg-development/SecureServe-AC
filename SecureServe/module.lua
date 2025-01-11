@@ -22,15 +22,15 @@ local _CreateRandomPedAsDriver = CreateRandomPedAsDriver
 local _CreateScriptVehicleGenerator = CreateScriptVehicleGenerator
 local _CreateVehicleServerSetter = CreateVehicleServerSetter
 
-CreateObject = function(...) return createEntity(_CreateObject, ...) end
-CreateObjectNoOffset = function(...) return createEntity(_CreateObjectNoOffset, ...) end
-CreateVehicle = function(...) return createEntity(_CreateVehicle, ...) end
-CreatePed = function(...) return createEntity(_CreatePed, ...) end
-CreatePedInsideVehicle = function(...) return createEntity(_CreatePedInsideVehicle, ...) end
-CreateRandomPed = function(...) return createEntity(_CreateRandomPed, ...) end
-CreateRandomPedAsDriver = function(...) return createEntity(_CreateRandomPedAsDriver, ...) end
-CreateScriptVehicleGenerator = function(...) return createEntity(_CreateScriptVehicleGenerator, ...) end
-CreateVehicleServerSetter = function(...) return createEntity(_CreateVehicleServerSetter, ...) end
+_G.CreateObject = function(...) return createEntity(_CreateObject, ...) end
+_G.CreateObjectNoOffset = function(...) return createEntity(_CreateObjectNoOffset, ...) end
+_G.CreateVehicle = function(...) return createEntity(_CreateVehicle, ...) end
+_G.CreatePed = function(...) return createEntity(_CreatePed, ...) end
+_G.CreatePedInsideVehicle = function(...) return createEntity(_CreatePedInsideVehicle, ...) end
+_G.CreateRandomPed = function(...) return createEntity(_CreateRandomPed, ...) end
+_G.CreateRandomPedAsDriver = function(...) return createEntity(_CreateRandomPedAsDriver, ...) end
+_G.CreateScriptVehicleGenerator = function(...) return createEntity(_CreateScriptVehicleGenerator, ...) end
+_G.CreateVehicleServerSetter = function(...) return createEntity(_CreateVehicleServerSetter, ...) end
 
 local encryption_key = "c4a2ec5dc103a3f730460948f2e3c01df39ea4212bc2c82f"
 
@@ -116,7 +116,7 @@ if IsDuplicityVersion() then
 
 	local eventsToRegister = {}
 
-	RegisterNetEvent = function(event_name, ...)
+	_G.RegisterNetEvent = function(event_name, ...)
         local encrypted_event_name = encryptEventName(event_name, encryption_key)
 		if select("#", ...) == 0 then
 			eventsToRegister[encrypted_event_name] = {}
@@ -149,7 +149,7 @@ if IsDuplicityVersion() then
 		end
 	end
 	
-	AddEventHandler = function(event_name, handler)
+	_G.AddEventHandler = function(event_name, handler)
         local encrypted_event_name = encryptEventName(event_name, encryption_key)
 		if not fxEvents[event_name] and not event_name:find("__cfx_") then
 			if tonumber(event_name) == nil then
@@ -220,7 +220,7 @@ else
 	end)
 
 	local _TriggerServerEvent = TriggerServerEvent
-	TriggerServerEvent = function(event_name, ...)
+	_G.TriggerServerEvent = function(event_name, ...)
 		local value = false
 		if GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe" then
 			value = false
