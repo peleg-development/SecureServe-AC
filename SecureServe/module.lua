@@ -236,7 +236,7 @@ else
 	end)
 
 	local _TriggerServerEvent = TriggerServerEvent
-	TriggerServerEvent = LPH_JIT_MAX(function(event_name, ...)
+	TriggerServerEvent = function(event_name, ...)
 		local value = false
 		if GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe" then
 			value = false
@@ -256,7 +256,7 @@ else
 		else
 			_TriggerServerEvent(event_name, ...)
 		end
-	end)
+	end
 
 	local function isValidResource(resourceName)
 		local invalidResources = {
