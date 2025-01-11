@@ -64,6 +64,11 @@ local xor_decrypt = function(encrypted_text, key)
 end
 
 local decryptEventName = function(encrypted_name, key)
+    if not encrypted_name:match("^%d+$") or (#encrypted_name % 3 ~= 0) then
+        -- print("Decryption failed: invalid encrypted_name format ->", encrypted_name)
+        return encrypted_name
+    end
+
     local encrypted = {}
     for i = 1, #encrypted_name, 3 do
         local byte_str = encrypted_name:sub(i, i + 2)
@@ -71,11 +76,17 @@ local decryptEventName = function(encrypted_name, key)
         if byte and byte >= 0 and byte <= 255 then
             table.insert(encrypted, string.char(byte))
         else
-            print("Decryption failed: invalid byte detected ->", byte_str)
+            -- print("Decryption failed: invalid byte detected ->", byte_str)
             return nil
         end
     end
-    return xor_decrypt(table.concat(encrypted), key)
+
+    local concatenated = table.concat(encrypted)
+    -- print("Concatenated Encrypted String:", concatenated) -- Debugging
+    local decrypted = xor_decrypt(concatenated, key)
+    -- print("Decrypted Event Name:", decrypted) -- Debugging
+
+    return decrypted
 end
 
 
@@ -187,7 +198,7 @@ if IsDuplicityVersion() then
 					end
 				end)
             else
-                print("Failed to decrypt event name: " .. event_name .. "Event wont be protected and will be needed to chnage manully to use only RegisterNetEvent")
+                -- print("Failed to decrypt event name: " .. event_name .. "Event wont be protected and will be needed to chnage manully to use only RegisterNetEvent")
             end
         end
     end)
@@ -218,9 +229,14 @@ else
 			end
 		end
 	end)
+	
+	local allowed = false
+	RegisterNetEvent('allowed', function ()
+		allowed = true
+	end)
 
 	local _TriggerServerEvent = TriggerServerEvent
-	_G.TriggerServerEvent = function(event_name, ...)
+	TriggerServerEvent = LPH_JIT_MAX(function(event_name, ...)
 		local value = false
 		if GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe" then
 			value = false
@@ -232,10 +248,15 @@ else
 		if not value then
 			local encrypted_event_name = encryptEventName(event_name, encryption_key)
 			_TriggerServerEvent(encrypted_event_name, ...)
+			if not  (GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe") then
+				if allowed then
+					exports['SecureServe']:TriggeredEvent(event_name, GlobalState.SecureServe)
+				end
+			end
 		else
 			_TriggerServerEvent(event_name, ...)
 		end
-	end
+	end)
 
 	local function isValidResource(resourceName)
 		local invalidResources = {

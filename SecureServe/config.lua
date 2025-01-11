@@ -24,7 +24,7 @@ SecureServe.ServerName = ""                                                     
 SecureServe.DiscordLink = ""                                                                  -- The link to your discord server.
 SecureServe.GlobalBans = false                                                                -- [NOTE: this will still not do anyting but will add them to our database so when the system is ready global bans that has collected will work ]Enables the global bans system (Only on join, Cheaters are still able to get global bans from your server).
 SecureServe.IdentifierCheck = true                                                            -- Checks when player connects if his identifiers are valid. if not it won't let him join the server.
-
+SecureServe.Debug = false 																      -- Enables debug mode, this will print debug messages in the console.
 
 -- SecureServe Logs they are
 SecureServe.OtherLogs = {
@@ -46,13 +46,15 @@ SecureServe.IsAdmin = function(Player)
     end
 
     --> [ESX] <--
-    -- local ESX = exports['es_extended']:getSharedObject()
+	-- local ESX = exports['es_extended']:getSharedObject()
     -- if ESX then
     --     local xPlayer = ESX.GetPlayerFromId(Player)
     --     if xPlayer then
     --         local group = xPlayer.getGroup()
     --         if group == 'admin' or group == 'mod' or group == 'superadmin' or group == 'god' then
     --             return true
+	-- 		else
+	-- 			return false
     --         end
     --     end
     -- end

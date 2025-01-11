@@ -9,6 +9,16 @@ function LPH_NO_VIRTUALIZE(func)
     end
 end
 
+_print = print
+if SecureServe.Debug then
+    print = function(...)
+        _print("^1SecureServe | ^7", ...)
+    end
+else
+    print = function(...)
+    end
+end
+
 local alive = {}
 local allowedStop = {}
 local failureCount = {}
@@ -573,34 +583,38 @@ local function isWhitelisted(event_name)
     return false
 end
 
+local encryption_key = "c4a2ec5dc103a3f730460948f2e3c01df39ea4212bc2c82f"
 
-exports('CheckTime', function(event ,time, source)
+
+exports('CheckTime', function(event, time, source)
     Wait(1000)
-    if event == nil then
-        punish_player(source, "Trigger Event with an excutor ".. event, webhook, time)
+
+    if type(event) ~= "string" or event == "" then
+        print("Invalid event name:", tostring(event))
+        punish_player(source, "Triggered invalid event: " .. tostring(event), webhook, time)
+        return
     end
 
     local playerState = playerStates[source]
     if playerState and playerState.loaded then
-        if events[event] == nil and isWhitelisted(event) == false then
+        if not events[event] and not isWhitelisted(event) then
             Wait(500)
-            if events[event] == nil then
+            if not events[event] then
                 Wait(500)
-                if events[event] == nil and events[encryptEventName(event, encryption_key)] == nil then
-                    punish_player(source, "Trigger Event with an excutor ".. event, webhook, time)
+                local encrypted_event = encryptEventName(event, encryption_key)
+                if not events[event] and not events[encrypted_event] then
+                    punish_player(source, "Triggered unauthorized event: " .. event, webhook, time)
                 end
             end
         else
             local eventTime = events[event]
-            local currentTime = time
-            if not (math.abs(currentTime - eventTime) < 10) then
-                if source and GetPlayerPing(source) > 0 then
-                    punish_player(source, "Exceeded time stamp at trigger: ".. event .. " time: ".. currentTime - eventTime, webhook, time)
-                end
+            if eventTime and math.abs(time - eventTime) >= 10 then
+                punish_player(source, "Exceeded timestamp for event: " .. event, webhook, time)
             end
         end
     end
 end)
+
 
 exports('IsEventWhitelisted', LPH_NO_VIRTUALIZE(function(event_name)
     return isWhitelisted(event_name)
@@ -1748,108 +1762,108 @@ MYMMMM9   YMMMM9   YMMMM9   YMMM9MM__MM_     YMMMM9  MYMMMM9   YMMMM9 _MM_      
     
 end)
 
--- local function replaceEventRegistrations(filePath)
---     local file = io.open(filePath, "r")
---     if not file then
---         -- print("Could not open file: " .. filePath)
---         return
---     end
+local function replaceEventRegistrations(filePath)
+    local file = io.open(filePath, "r")
+    if not file then
+        -- print("Could not open file: " .. filePath)
+        return
+    end
 
---     local content = file:read("*all")
---     file:close()
+    local content = file:read("*all")
+    file:close()
 
---     local netEventPattern = "RegisterNetEvent%s*%('([^']+)'%s*%)%s*AddEventHandler%s*%('%1'%s*,%s*function%(([^)]*)%)"
---     content = content:gsub(netEventPattern, "RegisterNetEvent('%1', function(%2)")
+    local netEventPattern = "RegisterNetEvent%s*%('([^']+)'%s*%)%s*AddEventHandler%s*%('%1'%s*,%s*function%(([^)]*)%)"
+    content = content:gsub(netEventPattern, "RegisterNetEvent('%1', function(%2)")
 
---     local serverEventPattern = "RegisterServerEvent%s*%('([^']+)'%s*%)%s*AddEventHandler%s*%('%1'%s*,%s*function%(([^)]*)%)"
---     content = content:gsub(serverEventPattern, "RegisterNetEvent('%1', function(%2)")
+    local serverEventPattern = "RegisterServerEvent%s*%('([^']+)'%s*%)%s*AddEventHandler%s*%('%1'%s*,%s*function%(([^)]*)%)"
+    content = content:gsub(serverEventPattern, "RegisterNetEvent('%1', function(%2)")
 
---     local outputFile = io.open(filePath, "w")
---     if not outputFile then
---         print("Could not open file for writing: " .. filePath)
---         return
---     end
+    local outputFile = io.open(filePath, "w")
+    if not outputFile then
+        -- print("Could not open file for writing: " .. filePath)
+        return
+    end
 
---     outputFile:write(content)
---     outputFile:close()
---     -- print("Updated file: " .. filePath)
--- end
+    outputFile:write(content)
+    outputFile:close()
+    -- print("Updated file: " .. filePath)
+end
 
--- local function fileContainsLine(filePath, lineToFind)
---     local file = io.open(filePath, "r")
---     if not file then
---         -- print("Could not open file: " .. filePath)
---         return false
---     end
+local function fileContainsLine(filePath, lineToFind)
+    local file = io.open(filePath, "r")
+    if not file then
+        -- print("Could not open file: " .. filePath)
+        return false
+    end
 
---     for line in file:lines() do
---         if line:match(lineToFind) then
---             file:close()
---             return true
---         end
---     end
+    for line in file:lines() do
+        if line:match(lineToFind) then
+            file:close()
+            return true
+        end
+    end
 
---     file:close()
---     return false
--- end
+    file:close()
+    return false
+end
 
 
--- local function searchInDirectory(directory, resourceName)
---     local findCommand
---     if os.getenv("OS") == "Windows_NT" then
---         findCommand = 'dir /s /b "' .. directory .. '\\*.lua"'
---     else
---         findCommand = 'find "' .. directory .. '" -type f -name "*.lua"'
---     end
+local function searchInDirectory(directory, resourceName)
+    local findCommand
+    if os.getenv("OS") == "Windows_NT" then
+        findCommand = 'dir /s /b "' .. directory .. '\\*.lua"'
+    else
+        findCommand = 'find "' .. directory .. '" -type f -name "*.lua"'
+    end
 
---     local p = io.popen(findCommand)
---     if not p then
---         print("Could not open directory: " .. directory)
---         return
---     end
+    local p = io.popen(findCommand)
+    if not p then
+        print("Could not open directory: " .. directory)
+        return
+    end
 
 
     
---     for file in p:lines() do
---         replaceEventRegistrations(file)
---         -- if fileContainsLine(file, "CreateObject") or fileContainsLine(file, "CreateVehicle") or
---         --    fileContainsLine(file, "CreatePed") or fileContainsLine(file, "CreatePedInsideVehicle") or
---         --    fileContainsLine(file, "CreateRandomPed") or fileContainsLine(file, "CreateRandomPedAsDriver") then
---         --     -- print("Whitelisted resource with entity creation: " .. resourceName)
---         --     table.insert(SecureServe.EntitySecurity, {resource = resourceName, whitelist = true})
---         -- end
---     end
+    for file in p:lines() do
+        replaceEventRegistrations(file)
+        -- if fileContainsLine(file, "CreateObject") or fileContainsLine(file, "CreateVehicle") or
+        --    fileContainsLine(file, "CreatePed") or fileContainsLine(file, "CreatePedInsideVehicle") or
+        --    fileContainsLine(file, "CreateRandomPed") or fileContainsLine(file, "CreateRandomPedAsDriver") then
+        --     -- print("Whitelisted resource with entity creation: " .. resourceName)
+        --     table.insert(SecureServe.EntitySecurity, {resource = resourceName, whitelist = true})
+        -- end
+    end
 
---     p:close()
--- end
+    p:close()
+end
 
--- function SearchForAssetPackDependency()
---     SecureServe.EntitySecurity = SecureServe.EntitySecurity or {}
+function SearchForAssetPackDependency()
+    SecureServe.EntitySecurity = SecureServe.EntitySecurity or {}
 
---     local resources = GetNumResources()
---     for i = 0, resources - 1 do
---         local resourceName = GetResourceByFindIndex(i)
---         local resourcePath = GetResourcePath(resourceName)
---         if not resourcePath then
---             -- print("Could not find resource path for: " .. resourceName)
---             goto continue
---         end
+    local resources = GetNumResources()
+    for i = 0, resources - 1 do
+        local resourceName = GetResourceByFindIndex(i)
+        local resourcePath = GetResourcePath(resourceName)
+        if not resourcePath then
+            -- print("Could not find resource path for: " .. resourceName)
+            goto continue
+        end
 
---         local fxManifestPath = resourcePath .. "/fxmanifest.lua"
---         local resourceLuaPath = resourcePath .. "/__resource.lua"
+        local fxManifestPath = resourcePath .. "/fxmanifest.lua"
+        local resourceLuaPath = resourcePath .. "/__resource.lua"
 
---         if fileContainsLine(fxManifestPath, "dependency '/assetpacks'") or fileContainsLine(resourceLuaPath, "dependency '/assetpacks'") then
---             -- print("Whitelisted encrypted resource: " .. resourceName)
---             -- table.insert(SecureServe.EntitySecurity, {resource = resourceName, whitelist = true})
---         end
+        if fileContainsLine(fxManifestPath, "dependency '/assetpacks'") or fileContainsLine(resourceLuaPath, "dependency '/assetpacks'") then
+            -- print("Whitelisted encrypted resource: " .. resourceName)
+            -- table.insert(SecureServe.EntitySecurity, {resource = resourceName, whitelist = true})
+        end
 
---         searchInDirectory(resourcePath, resourceName)
+        searchInDirectory(resourcePath, resourceName)
 
---         ::continue::
---     end
--- end
+        ::continue::
+    end
+end
 
--- SearchForAssetPackDependency()
+SearchForAssetPackDependency()
 
 
 exports('isResourceWhitelistedServer', function(resourceName)
