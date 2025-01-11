@@ -1,4 +1,4 @@
-## 50 Stars ill make a web panel
+## 50 Stars to this git repo ill make a web panel
 # SecureServe - Professional Open Source Anti-Cheat for FiveM
 
 **Discord:** [Join Our Server](https://discord.gg/z6qGGtbcr4) for live support and updates.
