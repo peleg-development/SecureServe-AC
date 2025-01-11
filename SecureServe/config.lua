@@ -30,7 +30,6 @@ SecureServe.Debug = false 																      -- Enables debug mode, this will
 SecureServe.OtherLogs = {
     JoinWebhook = "YOUR_WEBHOOK_URL", -- Logs when a player connects to the server, including their identifiers such as Steam ID, Discord ID, license, and IP address.
     LeaveWebhook = "YOUR_WEBHOOK_URL", -- Logs when a player disconnects from the server, including their name, Steam ID, Discord ID, and the reason for leaving.
-    ExplosionsWebhook = "YOUR_WEBHOOK_URL", -- Logs when an explosion occurs in the server. It includes details like the player responsible, the explosion type, its location (coordinates), and the damage scale.
     KillWebhook = "YOUR_WEBHOOK_URL", -- Logs player kills in the server. It records details about the attacker, victim, and possibly the weapon or method used.
     ResourceWebhook = "YOUR_WEBHOOK_URL" -- Logs resource-related events such as when a resource starts or stops on the server. Useful for monitoring the health and status of server resources.
 }

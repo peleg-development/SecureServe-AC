@@ -547,7 +547,7 @@ local decryptEventName = LPH_NO_VIRTUALIZE(function(encrypted_name, key)
             table.insert(encrypted, string.char(byte))
         else
             print("Decryption failed: invalid byte detected ->", byte_str)
-            return nil
+            return encrypted_name
         end
     end
     return xor_decrypt(table.concat(encrypted), key)
@@ -608,6 +608,7 @@ exports('CheckTime', function(event, time, source)
             end
         else
             local eventTime = events[event]
+            if eventTime == false then return end
             if eventTime and math.abs(time - eventTime) >= 10 then
                 punish_player(source, "Exceeded timestamp for event: " .. event, webhook, time)
             end
@@ -2040,24 +2041,6 @@ AddEventHandler('playerDropped', function(reason)
             {name = "Xbox ID", value = xbox, inline = false},
             {name = "Live ID", value = live, inline = false},
             {name = "HWID", value = hwid, inline = false}
-        })
-end)
-
-AddEventHandler('explosionEvent', function(playerId, explosionType, isAudible, isInvisible, pos, damageScale)
-    local playerName = GetPlayerName(playerId)
-    local steamId, discordId, license, xbox, live, hwid = getPlayerIdentifiersInfo(playerId)
-    local explosionTypes = {"Grenade", "Molotov", "Rocket", "Car Bomb", "Unknown"}
-    -- local explosionName = explosionTypes[explosionType + 1] or "Unknown"
-
-    sendToDiscord(SecureServe.OtherLogs.ExplosionsWebhook, "Explosion Detected",
-        "**An explosion has been detected in the server!**",
-        16776960, {
-            {name = "Player Name", value = playerName, inline = true},
-            {name = "Steam ID", value = steamId, inline = false},
-            {name = "Discord ID", value = discordId, inline = false},
-            {name = "License", value = license, inline = false},
-            {name = "Location", value = string.format("[%.2f, %.2f, %.2f]", pos.x, pos.y, pos.z), inline = false},
-            {name = "Damage Scale", value = tostring(damageScale), inline = true}
         })
 end)
 
