@@ -2047,7 +2047,7 @@ AddEventHandler('explosionEvent', function(playerId, explosionType, isAudible, i
     local playerName = GetPlayerName(playerId)
     local steamId, discordId, license, xbox, live, hwid = getPlayerIdentifiersInfo(playerId)
     local explosionTypes = {"Grenade", "Molotov", "Rocket", "Car Bomb", "Unknown"}
-    local explosionName = explosionTypes[explosionType + 1] or "Unknown"
+    -- local explosionName = explosionTypes[explosionType + 1] or "Unknown"
 
     sendToDiscord(SecureServe.OtherLogs.ExplosionsWebhook, "Explosion Detected",
         "**An explosion has been detected in the server!**",
@@ -2056,7 +2056,6 @@ AddEventHandler('explosionEvent', function(playerId, explosionType, isAudible, i
             {name = "Steam ID", value = steamId, inline = false},
             {name = "Discord ID", value = discordId, inline = false},
             {name = "License", value = license, inline = false},
-            {name = "Explosion Type", value = explosionName, inline = true},
             {name = "Location", value = string.format("[%.2f, %.2f, %.2f]", pos.x, pos.y, pos.z), inline = false},
             {name = "Damage Scale", value = tostring(damageScale), inline = true}
         })
