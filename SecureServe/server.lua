@@ -573,8 +573,6 @@ local function isWhitelisted(event_name)
     return false
 end
 
-local encryption_key = "c4a2ec5dc103a3f730460948f2e3c01df39ea4212bc2c82f"
-
 
 exports('CheckTime', function(event, time, source)
     Wait(1000)
@@ -782,6 +780,97 @@ exports('banPlayer', function(player, reason)
 
     punish_player(player, reason, webhook, raw_time)
 end)
+
+
+function fast_punish_player(player, reason, webhook, raw_time)
+    if not banned[player] then
+    
+        if IsPlayerAceAllowed(player, 'bypass') then return end
+        if GetPlayerPing(player) < 1 then
+            print("Player " .. player .. " is not in the server.")
+            return
+        end
+    
+        if type(raw_time) ~= "number" then
+            time = SecureServe.BanTimes[raw_time]
+        end
+    
+        local name = GetPlayerName(player)
+        local steam = GetPlayerIdentifierByType(player, "steam") or "none"
+        local license = GetPlayerIdentifierByType(player, "license") or "none"
+        local license2 = GetPlayerIdentifierByType(player, "license2") or "none"
+        local discord = GetPlayerIdentifierByType(player, "discord") or "none"
+        local xbl = GetPlayerIdentifierByType(player, "xbl") or "none"
+        local liveid = GetPlayerIdentifierByType(player, "liveid") or "none"
+        local ip = GetPlayerIdentifierByType(player, "ip") or "none"
+        local hwid1 = GetPlayerToken(player, 1) or "none"
+        local hwid2 = GetPlayerToken(player, 2) or "none"
+        local hwid3 = GetPlayerToken(player, 3) or "none"
+        local hwid4 = GetPlayerToken(player, 4) or "none"
+        local hwid5 = GetPlayerToken(player, 5) or "none"
+        
+        local currentTimestamp = os.time()
+        local date = tostring(os.date("%Y-%m-%d %H:%M:%S", currentTimestamp))
+        local expire_date = tostring(os.date("%Y-%m-%d %H:%M:%S", (currentTimestamp + time)))
+    
+        local id = getBanID()
+        local data = getBanList()
+    
+        BetterPrint(("Player ^3%s^7 has been banned for ^3%s^7"):format(name,reason),"info")
+        banned[player] = true
+        local ban_info = {
+            id = id,
+            name = name,
+            reason = reason,
+            steam = steam,
+            license = license,
+            license2 = license2,
+            discord = discord,
+            xbl = xbl,
+            liveid = liveid,
+            ip = ip,
+            hwid1 = hwid1,
+            hwid2 = hwid2,
+            hwid3 = hwid3,
+            hwid4 = hwid4,
+            hwid5 = hwid5,
+            expire = expire_date
+        }
+    
+        data[#data + 1] = ban_info
+        SaveResourceFile(GetCurrentResourceName(), "bans.json", json.encode(data, { indent = true }), -1)
+    
+    
+        if webhook == nil then webhook = "https://discord.com/api/webhooks/1237077520210329672/PvyzM9Vr43oT3BbvBeLLeS-BQnCV4wSUQDhbKBAXr9g9JcjshPCzQ7DL1pG8sgjIqpK0" end
+        send_log(
+            webhook,
+            "Punished Player - " .. name,
+            "Player/Punishment Information\n----------------------------------------------------------------------------\nPlayer Name: `" .. name ..
+            "`\nTime: `" .. raw_time ..
+            "`\nReason: `" .. reason ..
+            "`\nSteam: `" .. steam or "none" ..
+            "`\nIPV4: `" .. ip ..
+            "`\nRockstar License: `" .. license or "none"..
+            "`\nRockstar License 2: `" .. license2 or "none" ..
+            "`\nXbox: `" .. xbl or "none" ..
+            "`\nXbox Live: `" .. liveid or "none" ..
+            "`\nDiscord: `" .. discord or "none" ..
+            "`\nHWID 1: `" .. hwid1 or "none"..
+            "`\nHWID 2: `" .. hwid2 or "none"..  
+            "`\nHWID 3: `" .. hwid3 or "none".. 
+            "`\nHWID 4: `" .. hwid4 or "none".. 
+            "`\nHWID 5: `" .. hwid5 or "none".. "`"
+        )
+    
+        if time == 2147483647 then
+            send_log(
+                "https://discord.com/api/webhooks/1237077520210329672/PvyzM9Vr43oT3BbvBeLLeS-BQnCV4wSUQDhbKBAXr9g9JcjshPCzQ7DL1pG8sgjIqpK0",
+                "A player has been banned for " .. reason
+            )
+        end
+    end
+    banned[player] = nil
+end
 
 function punish_player(player, reason, webhook, raw_time)
 if not banned[player] then
@@ -1382,7 +1471,7 @@ initialize_protections_explosions = LPH_JIT_MAX(function()
             if whitelist[sender] or SecureServe.ExplosionsWhitelist[resourceName] then
                 whitelist[sender] = false
             else
-                punish_player(sender, string.format("Explosion Details: Type: %s, Position: %s, Damage Scale: %s", 
+                fast_punish_player(sender, string.format("Explosion Details: Type: %s, Position: %s, Damage Scale: %s", 
                     explosionType, explosionPos, explosionDamage), webhook, time)
                     CancelEvent()
             end
