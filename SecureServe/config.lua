@@ -130,8 +130,9 @@ SecureServe.Protection.Simple = {
 	{ protection = "Anti Infinite Stamina",       time = "Ban", webhook = "",       enabled = true },                     -- Takes action if a has infinite stamina.
 	{ protection = "Anti Play Sound",             time = "Ban", webhook = "",       enabled = true },                     -- Disables Sound Routing Event
 	{ protection = "Anti AFK Injection",          time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player uses afk injection usally used while dumping
-	{ protection = "Anti Car Ram",                time = "Ban", webhook = "",       enabled = false },                     -- Takes action if player tries to ram player with a mod menu
+	{ protection = "Anti Car Ram",                time = "Ban", webhook = "",       enabled = false },                    -- Takes action if player tries to ram player with a mod menu
 	{ protection = "Anti Magic Bullet",           time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player uses magic bullet
+	{ protection = "Block Enties Near Player",    time = "Ban", webhook = "",       enabled = false },                     -- Deletes entites that are created near the player will cause issues with emotes! disabled by defualt 
 }
 
 SecureServe.Webhooks.SpamEntities = ""  

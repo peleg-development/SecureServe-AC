@@ -394,6 +394,8 @@ for k,v in pairs(SecureServe.Protection.Simple) do
         Anti_Play_Sound_time = time
         Anti_Play_Sound_webhook = webhook
         Anti_Play_Sound_enabled = enabled
+    elseif name == "Block Enties Near Player" then
+        Block_Enties_Near_Player_enabled = enabled
     end
             
     if not ProtectionCount["SecureServe.Protection.Simple"] then ProtectionCount["SecureServe.Protection.Simple"] = 0 end
@@ -1540,34 +1542,36 @@ initialize_protections_explosions = LPH_JIT_MAX(function()
 
 end)
 
-AddEventHandler('entityCreating', function(entity)
-    local model
-    local owner
-    local entityType
+if Block_Enties_Near_Player_enabled then
+    AddEventHandler('entityCreating', function(entity)
+        local model
+        local owner
+        local entityType
 
-    if not DoesEntityExist(entity) then
-        CancelEvent()
-        return
-    end
+        if not DoesEntityExist(entity) then
+            CancelEvent()
+            return
+        end
 
-    if DoesEntityExist(entity) then
-        model = GetEntityModel(entity)
-        entityType = GetEntityType(entity)
-        owner = NetworkGetEntityOwner(entity)
-    end
-    if entityType == 3 then
-        for _, player in pairs(GetPlayers()) do
-            local playerPed = GetPlayerPed(player)
-            local playerCoords = GetEntityCoords(playerPed)
-            local entityCoords = GetEntityCoords(entity)
-            local distance = #(playerCoords - entityCoords)
+        if DoesEntityExist(entity) then
+            model = GetEntityModel(entity)
+            entityType = GetEntityType(entity)
+            owner = NetworkGetEntityOwner(entity)
+        end
+        if entityType == 3 then
+            for _, player in pairs(GetPlayers()) do
+                local playerPed = GetPlayerPed(player)
+                local playerCoords = GetEntityCoords(playerPed)
+                local entityCoords = GetEntityCoords(entity)
+                local distance = #(playerCoords - entityCoords)
 
-            if distance < 5 then
-                CancelEvent()
+                if distance < 5 then
+                    CancelEvent()
+                end
             end
         end
-    end
-end)
+    end)
+end
 
 local playerHeartbeats = {}
 
