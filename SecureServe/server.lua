@@ -9,16 +9,6 @@ function LPH_NO_VIRTUALIZE(func)
     end
 end
 
-_print = print
-if SecureServe.Debug then
-    print = function(...)
-        _print("^1SecureServe | ^7", ...)
-    end
-else
-    print = function(...)
-    end
-end
-
 local alive = {}
 local allowedStop = {}
 local failureCount = {}
@@ -546,7 +536,7 @@ local decryptEventName = LPH_NO_VIRTUALIZE(function(encrypted_name, key)
         if byte and byte >= 0 and byte <= 255 then
             table.insert(encrypted, string.char(byte))
         else
-            print("Decryption failed: invalid byte detected ->", byte_str)
+            -- print("Decryption failed: invalid byte detected ->", byte_str)
             return encrypted_name
         end
     end
@@ -561,12 +551,12 @@ end)
 
 local function isWhitelisted(event_name)
     if not SecureServe or not SecureServe.EventWhitelist or type(SecureServe.EventWhitelist) ~= "table" then
-        print("Error: EventWhitelist is missing or not a table.")
+        -- print("Error: EventWhitelist is missing or not a table.")
         return false
     end
 
     if not event_name or type(event_name) ~= "string" or event_name == "" then
-        print("Error: event_name is invalid or empty.")
+        -- print("Error: event_name is invalid or empty.")
         return false
     end    
 
@@ -576,7 +566,7 @@ local function isWhitelisted(event_name)
                 return true
             end
         else
-            print("Warning: Non-string value found in EventWhitelist. Skipping.")
+            -- print("Warning: Non-string value found in EventWhitelist. Skipping.")
         end
     end
 
@@ -590,7 +580,7 @@ exports('CheckTime', function(event, time, source)
     Wait(1000)
 
     if type(event) ~= "string" or event == "" then
-        print("Invalid event name:", tostring(event))
+        -- print("Invalid event name:", tostring(event))
         punish_player(source, "Triggered invalid event: " .. tostring(event), webhook, time)
         return
     end
@@ -617,8 +607,13 @@ exports('CheckTime', function(event, time, source)
 end)
 
 
-exports('IsEventWhitelisted', LPH_NO_VIRTUALIZE(function(event_name)
-    return isWhitelisted(event_name)
+exports('IsEventWhitelisted', LPH_NO_VIRTUALIZE(function(event_name, src)
+    -- print(src, event_name, (GetPlayerPing(src) > 0) )
+    if not isWhitelisted(event_name) then
+        if src and GetPlayerPing(src) > 0 then
+            punish_player(src, "Triggerd server event via excutor: " .. event_name, webhook, 2147483647)
+        end
+    end
 end))
 
 sm_print = function(color, content)
@@ -643,8 +638,7 @@ AddEventHandler("txAdmin:events:adminAuth",function (data)
 end)
 
 Isadmin = function(pl)
-    print(pl)
-    return SecureServe.IsAdmin(source) or admins[pl] == true
+    return SecureServe.IsAdmin(pl) or admins[pl] == true
 end
 
 IsMenuAdmin = function(pl)

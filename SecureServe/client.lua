@@ -75,12 +75,6 @@ exports('TriggeredEvent', function(event, time)
     if not time then print('banned', GetPlayerServerId(PlayerId())) end
     TriggerServerEvent('TriggerdServerEventCheck', event, time)
 end)
-local encryption_key = "c4a2ec5dc103a3f730460948f2e3c01df39ea4212bc2c82f"
-
-
-
-
-
 
 --> [Protections] <--
 ProtectionCount = {}
@@ -482,15 +476,7 @@ for k,v in pairs(SecureServe.Protection.BlacklistedObjects) do
     ProtectionCount["SecureServe.Protection.BlacklistedObjects"] = ProtectionCount["SecureServe.Protection.BlacklistedObjects"] + 1
 end
 
-_print = print
-if SecureServe.Debug then
-    print = function(...)
-        _print("^1SecureServe | ^7", ...)
-    end
-else
-    print = function(...)
-    end
-end
+
 
 --> [Methoods] <--
 local entityEnumerator = {

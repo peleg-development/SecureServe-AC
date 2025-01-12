@@ -134,6 +134,7 @@ if IsDuplicityVersion() then
 			CancelEvent()
 			return
 		else
+			-- print(event_name, encrypted_event_name)
 			_RegisterNetEvent(encrypted_event_name, ...)
 			_RegisterNetEvent(encrypted_event_name,  function()
 				if not (GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe") then
@@ -149,13 +150,7 @@ if IsDuplicityVersion() then
 					local rencrypted_event_namea = encryptEventName("SecureServe:Server:Methods:PunishPlayer", encryption_key)
 					TE(rencrypted_event_namea, source, "Triggerd server event via excutor: ".. event_name, webhook, 2147483647)
 				end
-				if not exports['SecureServe']:IsEventWhitelisted(decryptEventName(event_name, encryption_key)) then
-					if source and GetPlayerPing(source) > 0 then
-						local TE = TriggerEvent
-						local rencrypted_event_namea = encryptEventName("SecureServe:Server:Methods:PunishPlayer", encryption_key)
-						TE(rencrypted_event_namea, source, "Triggerd server event via excutor: " .. (event_name or "nice try"), webhook, 2147483647)
-					end
-				end
+				exports['SecureServe']:IsEventWhitelisted(decryptEventName(event_name, encryption_key), source)
 			end)
 		end
 	end
@@ -189,13 +184,7 @@ if IsDuplicityVersion() then
 						local rencrypted_event_namea = encryptEventName("SecureServe:Server:Methods:PunishPlayer", encryption_key)
 						TE(rencrypted_event_namea, source, "Triggerd server event via excutor: " .. (event_name or "nice try"), webhook, 2147483647)
 					end
-					if not exports['SecureServe']:IsEventWhitelisted(decrypted_name) then
-						if source and GetPlayerPing(source) > 0 then
-							local TE = TriggerEvent
-							local rencrypted_event_namea = encryptEventName("SecureServe:Server:Methods:PunishPlayer", encryption_key)
-							TE(rencrypted_event_namea, source, "Triggerd server event via excutor: " .. (event_name or "nice try"), webhook, 2147483647)
-						end
-					end
+					exports['SecureServe']:IsEventWhitelisted(decrypted_name, source) 
 				end)
             else
                 -- print("Failed to decrypt event name: " .. event_name .. "Event wont be protected and will be needed to chnage manully to use only RegisterNetEvent")
