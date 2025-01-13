@@ -2,6 +2,7 @@
 # SecureServe - Professional Open Source Anti-Cheat for FiveM
 
 **Discord:** [Join Our Server](https://discord.gg/z6qGGtbcr4) for live support and updates.
+**Docs:** [SecureServe Documentation](https://peleg.gitbook.io/secureserve/)
 
 **Please use the release beta or v versions only unless u want to the test latest version (might be bugged)!**
 
@@ -109,7 +110,7 @@ SecureServe is licensed under the [GNU Affero General Public License v3.0](https
 --- 
 
 ## 📚 **Documentation**
-Access our detailed documentation for installation, configuration, and troubleshooting guides: (Not Finished)
+Access our detailed documentation for installation, configuration, and troubleshooting guides: 
 - **GitBook:** [SecureServe Documentation](https://peleg.gitbook.io/secureserve/)
 
 **Experience unmatched security with SecureServe, the professional-grade anti-cheat solution for FiveM servers.**
