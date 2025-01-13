@@ -1,9 +1,8 @@
 ## 50 Stars to this git repo ill make a web panel
 # SecureServe - Professional Open Source Anti-Cheat for FiveM
 
-**Discord:** [Join Our Server](https://discord.gg/z6qGGtbcr4) for live support and updates.
-
-**Docs:** [SecureServe Documentation](https://peleg.gitbook.io/secureserve/)
+- **Discord:** [Join Our Server](https://discord.gg/z6qGGtbcr4) for live support and updates.
+- **Docs:** [SecureServe Documentation](https://peleg.gitbook.io/secureserve/)
 
 **Please use the release beta or v versions only unless u want to the test latest version (might be bugged)!**
 
