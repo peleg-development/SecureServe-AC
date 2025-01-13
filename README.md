@@ -19,7 +19,7 @@ SecureServe is a state-of-the-art anti-cheat solution designed specifically for 
    - Identify the event name causing the issue.
    - Add the event name to the **whitelisted events list** in the config.
 3. **Still Have Issues?**
-   - Persistent errors might stem from a save file problem.
+   - Read our docs: [SecureServe Documentation](https://peleg.gitbook.io/secureserve/)
    - Join our [Discord](https://discord.gg/z6qGGtbcr4) and open a ticket for personalized support.
 
 ---
