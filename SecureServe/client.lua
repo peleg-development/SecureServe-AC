@@ -32,6 +32,7 @@ while not SecureServe do
 end
 
 Wait(1000)
+
 --> [Events] <--
 local encryption_key = "c4a2ec5dc103a3f730460948f2e3c01df39ea4212bc2c82f"
 
@@ -53,6 +54,12 @@ local encryptEventName = function(event_name, key)
     end
     return result
 end
+
+Citizen.CreateThread(function()
+    for _, whitelisted_event in ipairs(SecureServe.EventWhitelist) do
+        SecureServe.EventWhitelist[encryptEventName(whitelisted_event, encryption_key)] = true
+    end
+end)
 
 local function isWhitelisted(event_name)
     for _, whitelisted_event in ipairs(SecureServe.EventWhitelist) do
