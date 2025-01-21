@@ -598,7 +598,7 @@ exports('CheckTime', function(event, time, source)
         else
             local eventTime = events[event]
             if eventTime == false then return end
-            if eventTime and math.abs(time - eventTime) >= 10  and not isWhitelisted(event) then
+            if eventTime and math.abs(time - eventTime) >= 10000  and not isWhitelisted(event) then
                 punish_player(source, "Exceeded timestamp for event: " .. event, webhook, time)
             end
         end
