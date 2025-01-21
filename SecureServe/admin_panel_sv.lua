@@ -80,7 +80,7 @@ end)
 
 RegisterNetEvent('kickPlayer', function(targetId)
     local src = source
-    if not IsAdmin(src) then
+    if not IsMenuAdmin(src) then
         print(("Unauthorized kick attempt by %s"):format(GetPlayerName(src)))
         return
     end
@@ -92,7 +92,7 @@ end)
 
 RegisterNetEvent('banPlayer', function(targetId)
     local src = source
-    if not IsAdmin(src) then
+    if not IsMenuAdmin(src) then
         print(("Unauthorized ban attempt by %s"):format(GetPlayerName(src)))
         return
     end

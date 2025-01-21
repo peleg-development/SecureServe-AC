@@ -549,6 +549,7 @@ RegisterNetEvent("TriggerdServerEventCheck", function(event, time)
     events[event] = time
 end)
 
+
 local function isWhitelisted(event_name)
     if not SecureServe or not SecureServe.EventWhitelist or type(SecureServe.EventWhitelist) ~= "table" then
         -- print("Error: EventWhitelist is missing or not a table.")
