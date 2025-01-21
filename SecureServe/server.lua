@@ -88,6 +88,51 @@ end)
 ProtectionCount = {}
 
 
+for k,v in pairs(SecureServe.AntiInternal) do
+    if v.webhook == "" then
+        SecureServe.AntiInternal[k].webhook = SecureServe.Webhooks.AntiInternal
+    end
+    if type(v.time) ~= "number" then
+        SecureServe.AntiInternal[k].time = SecureServe.BanTimes[v.time]
+    end
+    
+    name = SecureServe.AntiInternal[k].detection
+    dispatch = SecureServe.AntiInternal[k].dispatch
+    default = SecureServe.AntiInternal[k].default
+    defaultr = SecureServe.AntiInternal[k].defaultr
+    defaults = SecureServe.AntiInternal[k].defaults
+    punish = SecureServe.AntiInternal[k].punishType
+    time = SecureServe.AntiInternal[k].time
+    if type(time) ~= "number" then
+        time = SecureServe.BanTimes[v.time]
+    end
+    limit = SecureServe.AntiInternal[k].limit or 999
+    webhook = SecureServe.AntiInternal[k].webhook
+    if webhook == "" then
+        webhook = SecureServe.Webhooks.AntiInternal
+    end
+    enabled = SecureServe.AntiInternal[k].enabled
+    if name == "Anti RedEngine" then
+        Anti_RedEngine_time = time
+        Anti_RedEngine_limit = limit
+        Anti_RedEngine_webhook = webhook
+        Anti_RedEngine_enabled = enabled
+        Anti_RedEngine_punish = punish
+    elseif name == "Anti Internal" then
+        Anti_AntiIntrenal_time = time
+        Anti_AntiIntrenal_limit = limit
+        Anti_AntiIntrenal_webhook = webhook
+        Anti_AntiIntrenal_enabled = enabled
+        Anti_AntiIntrenal_punish = punish
+    elseif name == "Destroy Input" then
+        Anti_Destory_Input_time = time
+        Anti_Destory_Input_limit = limit
+        Anti_Destory_Input_webhook = webhook
+        Anti_Destory_Input_enabled = enabled
+        Anti_Destory_Input_punish = punish
+    end
+end
+
 
 for k,v in pairs(SecureServe.Protection.Simple) do
     if v.webhook == "" then
@@ -349,8 +394,6 @@ for k,v in pairs(SecureServe.Protection.Simple) do
         Anti_Play_Sound_time = time
         Anti_Play_Sound_webhook = webhook
         Anti_Play_Sound_enabled = enabled
-    elseif name == "Block Enties Near Player" then
-        Block_Enties_Near_Player_enabled = enabled
     end
             
     if not ProtectionCount["SecureServe.Protection.Simple"] then ProtectionCount["SecureServe.Protection.Simple"] = 0 end
@@ -485,12 +528,7 @@ local xor_decrypt = LPH_NO_VIRTUALIZE(function(encrypted_text, key)
     return table.concat(res)
 end)
 
-local decryptEventName = function(encrypted_name, key)
-    if not encrypted_name:match("^%d+$") or (#encrypted_name % 3 ~= 0) then
-        print("Decryption failed: invalid encrypted_name format ->", encrypted_name)
-        return encrypted_name
-    end
-
+local decryptEventName = LPH_NO_VIRTUALIZE(function(encrypted_name, key)
     local encrypted = {}
     for i = 1, #encrypted_name, 3 do
         local byte_str = encrypted_name:sub(i, i + 2)
@@ -498,18 +536,12 @@ local decryptEventName = function(encrypted_name, key)
         if byte and byte >= 0 and byte <= 255 then
             table.insert(encrypted, string.char(byte))
         else
-            print("Decryption failed: invalid byte detected ->", byte_str)
-            return nil
+            -- print("Decryption failed: invalid byte detected ->", byte_str)
+            return encrypted_name
         end
     end
-
-    local concatenated = table.concat(encrypted)
-    print("Concatenated Encrypted String:", concatenated) -- Debugging
-    local decrypted = xor_decrypt(concatenated, key)
-    print("Decrypted Event Name:", decrypted) -- Debugging
-
-    return decrypted
-end
+    return xor_decrypt(table.concat(encrypted), key)
+end)
 
 local events = {}
 
@@ -519,22 +551,22 @@ end)
 
 local function isWhitelisted(event_name)
     if not SecureServe or not SecureServe.EventWhitelist or type(SecureServe.EventWhitelist) ~= "table" then
-        print("Error: EventWhitelist is missing or not a table.")
+        -- print("Error: EventWhitelist is missing or not a table.")
         return false
     end
 
     if not event_name or type(event_name) ~= "string" or event_name == "" then
-        print("Error: event_name is invalid or empty.")
+        -- print("Error: event_name is invalid or empty.")
         return false
     end    
 
     for _, whitelisted_event in ipairs(SecureServe.EventWhitelist) do
         if type(whitelisted_event) == "string" then
-            if event_name == whitelisted_event or event_name == decryptEventName(whitelisted_event, encryption_key) or event_name == encryptEventName(whitelisted_event, encryption_key) then
+            if event_name == whitelisted_event or event_name == encryptEventName(whitelisted_event, encryption_key) then
                 return true
             end
         else
-            print("Warning: Non-string value found in EventWhitelist. Skipping.")
+            -- print("Warning: Non-string value found in EventWhitelist. Skipping.")
         end
     end
 
@@ -557,8 +589,8 @@ exports('CheckTime', function(event, time, source)
             Wait(500)
             if not events[event] then
                 Wait(500)
-                local encrypted_event = decryptEventName(event, encryption_key)
-                if not events[event] and not events[encrypted_event] and not events[encryptEventName(event, encryption_key)] then
+                local encrypted_event = encryptEventName(event, encryption_key)
+                if not events[event] and not events[encrypted_event] then
                     punish_player(source, "Triggered unauthorized event: " .. event, webhook, time)
                 end
             end
@@ -1439,8 +1471,8 @@ initialize_protections_explosions = LPH_JIT_MAX(function()
             if whitelist[sender] or SecureServe.ExplosionsWhitelist[resourceName] then
                 whitelist[sender] = false
             else
-                fast_punish_player(sender, string.format("Explosion Details: Type: %s, Position: %s, Damage Scale: %s, Reosurce: %s", 
-                    explosionType, explosionPos, explosionDamage, resourceName), webhook, time)
+                fast_punish_player(sender, string.format("Explosion Details: Type: %s, Position: %s, Damage Scale: %s", 
+                    explosionType, explosionPos, explosionDamage), webhook, time)
                     CancelEvent()
             end
         end
@@ -1508,36 +1540,34 @@ initialize_protections_explosions = LPH_JIT_MAX(function()
 
 end)
 
-if Block_Enties_Near_Player_enabled then
-    AddEventHandler('entityCreating', function(entity)
-        local model
-        local owner
-        local entityType
+AddEventHandler('entityCreating', function(entity)
+    local model
+    local owner
+    local entityType
 
-        if not DoesEntityExist(entity) then
-            CancelEvent()
-            return
-        end
+    if not DoesEntityExist(entity) then
+        CancelEvent()
+        return
+    end
 
-        if DoesEntityExist(entity) then
-            model = GetEntityModel(entity)
-            entityType = GetEntityType(entity)
-            owner = NetworkGetEntityOwner(entity)
-        end
-        if entityType == 3 then
-            for _, player in pairs(GetPlayers()) do
-                local playerPed = GetPlayerPed(player)
-                local playerCoords = GetEntityCoords(playerPed)
-                local entityCoords = GetEntityCoords(entity)
-                local distance = #(playerCoords - entityCoords)
+    if DoesEntityExist(entity) then
+        model = GetEntityModel(entity)
+        entityType = GetEntityType(entity)
+        owner = NetworkGetEntityOwner(entity)
+    end
+    if entityType == 3 then
+        for _, player in pairs(GetPlayers()) do
+            local playerPed = GetPlayerPed(player)
+            local playerCoords = GetEntityCoords(playerPed)
+            local entityCoords = GetEntityCoords(entity)
+            local distance = #(playerCoords - entityCoords)
 
-                if distance < 5 then
-                    CancelEvent()
-                end
+            if distance < 5 then
+                CancelEvent()
             end
         end
-    end)
-end
+    end
+end)
 
 local playerHeartbeats = {}
 
@@ -1664,6 +1694,91 @@ AddEventHandler('entityCreating', function(entity)
 end)  
 
 
+local playerProximitySpawns = {}
+local proximityThreshold = 10.0 
+local timeWindow = 60000 
+local maxProximitySpawns = 15 
+local cooldownPeriod = 1000 
+
+local function initializePlayerData(playerId)
+    playerProximitySpawns[playerId] = {
+        spawns = {},
+        lastSpawnTime = 0
+    }
+end
+
+local function isEntityNearAnyPlayer(entity)
+    local entityCoords = GetEntityCoords(entity)
+    local players = GetPlayers()
+    for _, playerId in ipairs(players) do
+        local playerPed = GetPlayerPed(playerId)
+        local playerCoords = GetEntityCoords(playerPed)
+        local distance = #(playerCoords - entityCoords)
+        if distance <= proximityThreshold then
+            return true, playerId
+        end
+    end
+    return false, nil
+end
+
+local function updateProximitySpawns(playerId, currentTime)
+    local playerData = playerProximitySpawns[playerId]
+    
+    for i = #playerData.spawns, 1, -1 do
+        if currentTime - playerData.spawns[i] > timeWindow then
+            table.remove(playerData.spawns, i)
+        else
+            break 
+        end
+    end
+    
+    table.insert(playerData.spawns, currentTime)
+    
+    return #playerData.spawns
+end
+
+AddEventHandler('entityCreating', function(entity)
+    local ownerPlayerId = NetworkGetEntityOwner(entity)
+    local isNearPlayer, nearestPlayerId = isEntityNearAnyPlayer(entity)
+    
+    if isNearPlayer then
+        if not playerProximitySpawns[ownerPlayerId] then
+            initializePlayerData(ownerPlayerId)
+        end
+
+        local playerData = playerProximitySpawns[ownerPlayerId]
+        local currentTime = GetGameTimer()
+
+        if currentTime - playerData.lastSpawnTime < cooldownPeriod then
+            CancelEvent()
+            print(ownerPlayerId, "Entity spawning too quickly near players", 'this is a beta funciton please update us if its not working corretely')
+            return
+        end
+
+        local proximitySpawnCount = updateProximitySpawns(ownerPlayerId, currentTime)
+
+        if proximitySpawnCount > maxProximitySpawns then
+            CancelEvent()
+            print(ownerPlayerId, "Excessive entity spawning near players detected: " .. proximitySpawnCount .. " spawns in " .. timeWindow/1000 .. " seconds", 'this is a beta funciton please update us if its not working corretely')
+            return
+        end
+
+        playerData.lastSpawnTime = currentTime
+
+        if proximitySpawnCount == maxProximitySpawns - 3 then
+            print(ownerPlayerId, "You are approaching the entity spawn limit near players", 'this is a beta funciton please update us if its not working corretely')
+        end
+
+        if nearestPlayerId ~= ownerPlayerId then
+            print(nearestPlayerId, "An entity was spawned near you by another player", 'this is a beta funciton please update us if its not working corretely')
+        end
+    end
+end)
+
+AddEventHandler('playerDropped', function()
+    local playerId = source
+    playerProximitySpawns[playerId] = nil
+end)
 
 --> [Init] <--
 
