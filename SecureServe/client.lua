@@ -535,10 +535,11 @@ end
 function IsAdmin(player)
     local promise = promise.new()
     
-    TriggerServerEvent('SecureServe:RequestAdminStatus', player, function(result)
+    TriggerServerEvent('SecureServe:RequestAdminStatus', player)
+    RegisterNetEvent('SecureServe:ReturnAdminStatus', function(result)
         promise:resolve(result)
     end)
-    
+
     return Citizen.Await(promise)
 end
     

@@ -635,7 +635,7 @@ AddEventHandler("txAdmin:events:adminAuth",function (data)
     end
 end)
 
-Isadmin = function(pl)
+ServerIsadmin = function(pl)
     return SecureServe.IsAdmin(pl) or admins[pl] == true
 end
 
@@ -656,8 +656,8 @@ end
 
 RegisterNetEvent('SecureServe:RequestAdminStatus', function(player, cb)
     local src = source
-    local isAdmin = Isadmin(src) 
-    cb(isAdmin)
+    local isAdmin = ServerIsadmin(src) 
+    TriggerClientEvent('SecureServe:ReturnAdminStatus', src, isAdmin)
 end)
 
 RegisterNetEvent('SecureServe:RequestMenuAdminStatus', function(player, cb)
@@ -665,21 +665,6 @@ RegisterNetEvent('SecureServe:RequestMenuAdminStatus', function(player, cb)
     local isMenuAdmin = IsMenuAdmin(src) 
     TriggerClientEvent('SecureServe:ReturnMenuAdminStatus', src, isMenuAdmin)
 end)
-
-
-RegisterServerCallback {
-    eventName = 'SecureServe:Server_Callbacks:Protections:IsMenuAdmin',
-    eventCallback = function(source)
-        return SecureServe.IsMenuAdmin(source)
-    end
-}
-
-RegisterServerCallback {
-    eventName = 'SecureServe:Server_Callbacks:Protections:IsAdmin',
-    eventCallback = function(source)
-        return SecureServe.Isadmin(source)
-    end
-}
 
 send_log = LPH_JIT_MAX(function(webhook, title, message)
     local embed = {
