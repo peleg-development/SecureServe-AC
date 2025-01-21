@@ -2013,8 +2013,10 @@ function shouldPunishPlayer(playerId)
 end
 
 AddEventHandler('entityCreating', function(entity)
-    local src = NetworkGetEntityOwner(entity)
-    logEntityInfo(entity, "entityCreating")
+    if DoesEntityExist(entity) then
+        local src = NetworkGetEntityOwner(entity)
+        logEntityInfo(entity, "entityCreating")
+    end
 end)
 
 AddEventHandler('entityCreated', function(entity)
