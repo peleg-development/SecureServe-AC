@@ -921,37 +921,6 @@ initialize_protections_god_mode = function()
                         TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Triggered Protection Godmode", webhook, time)
                     end
                 end
-
-                if GetEntityModel(curPed) == `mp_m_freemode_01` then
-                    if GetEntityHealth(curPed) > 200 then
-                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Triggered Protection Godmode [Health]", webhook, time)
-                    end
-                end
-
-                if GetEntityModel(curPed) == `mp_f_freemode_01` then
-                    if GetEntityHealth(curPed) > 100 then
-                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Triggered Protection Godmode [Health]", webhook, time)
-                    end
-                end
-
-                if GetPedArmour(curPed) > 100 then
-                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Triggered Protection Godmode [Armour]", webhook, time)
-                end
-
-
-                -- If u want u can enable this but i dont recommend it
-                -- local _, bulletProof, fireProof, explosionProof, collisionProof, meleeProof, steamProof, p7, drownProof = GetEntityProofs(curPed)
-                -- if bulletProof == 1
-                --     and fireProof == 1
-                --     and explosionProof == 1
-                --     and collisionProof == 1
-                --     and meleeProof == 1
-                --     and steamProof == 1
-                --     and p7 == 1
-                --     and drownProof == 1
-                -- then
-                --     -- TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Triggered Protection Godmode [Proofs]", webhook, time)
-                -- end
             end
         end)
     end
