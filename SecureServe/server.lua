@@ -1736,16 +1736,16 @@ AddEventHandler('entityCreating', function(entity)
         local currentTime = GetGameTimer()
 
         if currentTime - playerData.lastSpawnTime < cooldownPeriod then
-            CancelEvent()
-            print(ownerPlayerId, "Entity spawning too quickly near players", 'this is a beta funciton please update us if its not working corretely')
+            -- CancelEvent()
+            -- print(ownerPlayerId, "Entity spawning too quickly near players", 'this is a beta funciton please update us if its not working corretely')
             return
         end
 
         local proximitySpawnCount = updateProximitySpawns(ownerPlayerId, currentTime)
 
         if proximitySpawnCount > maxProximitySpawns then
-            CancelEvent()
-            print(ownerPlayerId, "Excessive entity spawning near players detected: " .. proximitySpawnCount .. " spawns in " .. timeWindow/1000 .. " seconds", 'this is a beta funciton please update us if its not working corretely')
+            -- CancelEvent()
+            -- print(ownerPlayerId, "Excessive entity spawning near players detected: " .. proximitySpawnCount .. " spawns in " .. timeWindow/1000 .. " seconds", 'this is a beta funciton please update us if its not working corretely')
             return
         end
 
