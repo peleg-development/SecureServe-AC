@@ -2,7 +2,7 @@ fx_version "cerulean"
 game "gta5"
 
 author "SecureServe.net"
-version "1.0.0"
+version "1.1.30"
 
 ui_page 'index.html'
 files {

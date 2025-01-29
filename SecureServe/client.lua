@@ -137,6 +137,7 @@ for k,v in pairs(SecureServe.Protection.Simple) do
     dispatch = SecureServe.Protection.Simple[k].dispatch
     default = SecureServe.Protection.Simple[k].default
     defaultr = SecureServe.Protection.Simple[k].defaultr
+    tolerance = SecureServe.Protection.Simple[k].tolerance
     defaults = SecureServe.Protection.Simple[k].defaults
     time = SecureServe.Protection.Simple[k].time
     if type(time) ~= "number" then
@@ -219,6 +220,7 @@ for k,v in pairs(SecureServe.Protection.Simple) do
         Anti_Magic_Bullet_limit = limit
         Anti_Magic_Bullet_webhook = webhook
         Anti_Magic_Bullet_enabled = enabled
+        Anti_Magic_Bullet_tolerance = tolerance
     elseif name == "Anti Night Vision" then
         Anti_Night_Vision_time = time
         Anti_Night_Vision_limit = limit
@@ -749,23 +751,24 @@ initialize_protections_no_reload = function()
     end
 end
 
--- Function to get the script of an entity safely
-local SafeGetEntityScript = function (entity)
-    local success, result = pcall(GetEntityScript, entity)
-    
-    if not success then
-        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Created Suspicious Entity [Vehicle] with no script", webhook, time)
-        return nil
-    end
-    
-    if result then
-        return result
-    else
-        return nil
-    end
-end
+
 
 initialize_protections_entity_security = function()
+    local SafeGetEntityScript = function (entity)
+        local success, result = pcall(GetEntityScript, entity)
+        
+        if not success then
+            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Created Suspicious Entity [Vehicle] with no script", webhook, time)
+            return nil
+        end
+        
+        if result then
+            return result
+        else
+            return nil
+        end
+    end
+
     local entitySpawned = {}
     local entitySpawnedHashes = {}
     local whitelistedResources = {}
@@ -853,19 +856,19 @@ initialize_protections_entity_security = function()
 end
 
 initialize_protections_explosive_bullets = function()
-    -- if Anti_Explosion_Bullet_enabled then
-    --     Citizen.CreateThread(function()
-    --         while (true) do
-    --             Citizen.Wait(2500)
-    --             local weapon = GetSelectedPedWeapon(PlayerPedId())
-    --             local damageType = GetWeaponDamageType(weapon)
-    --             SetWeaponDamageModifier(GetHashKey("WEAPON_EXPLOSION"), 0.0)
-    --             if damageType == 4 or damageType == 5 then
-    --                 TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Explosive ammo", webhook, time)
-    --             end
-    --         end
-    --     end)
-    -- end
+    if Anti_Explosion_Bullet_enabled then
+        Citizen.CreateThread(function()
+            while (true) do
+                Citizen.Wait(2500)
+                local weapon = GetSelectedPedWeapon(PlayerPedId())
+                local damageType = GetWeaponDamageType(weapon)
+                SetWeaponDamageModifier(GetHashKey("WEAPON_EXPLOSION"), 0.0)
+                if damageType == 4 or damageType == 5 then
+                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Explosive ammo", webhook, time)
+                end
+            end
+        end)
+    end
 end
 
 initialize_protections_weapon = function()
@@ -988,10 +991,45 @@ initialize_protections_invisible = function()
     end
 end
 
+
+
+-- Credit - https://github.com/imn0th1ng/antimagicbullet/tree/main
 initialize_protections_magic_bullet = function()
+    if not Anti_Magic_Bullet_enabled then return end
+
+    AddEventHandler('gameEventTriggered', function(event, data)
+        if event ~= 'CEventNetworkEntityDamage' then return end
+        local victim, victimDied = data[1], data[4]
+        if not IsPedAPlayer(victim) then return end
+        local player = PlayerId()
+        local playerPed = PlayerPedId()
+        if victimDied and NetworkGetPlayerIndexFromPed(victim) == player and (IsPedDeadOrDying(victim, true) or IsPedFatallyInjured(victim))  then
+            local killerEntity, deathCause = GetPedSourceOfDeath(playerPed), GetPedCauseOfDeath(playerPed)
+            local killerClientId = NetworkGetPlayerIndexFromPed(killerEntity)
+            if killerEntity ~= playerPed and killerClientId and NetworkIsPlayerActive(killerClientId) then
+                attacker = GetPlayerPed(killerClientId)
+                checkKillerHasLOS(attacker, victim, killerClientId)
+            end
+        end
+    end)
+    
+    function checkKillerHasLOS(attacker, victim, killerClientId)
+        attempt = 0
+        for i=0,3,1 do
+            if not HasEntityClearLosToEntityInFront(attacker, victim) and not HasEntityClearLosToEntity(attacker, victim, 17) and HasEntityClearLosToEntity_2(attacker, victim, 17) == 0 then
+                attempt = attempt + 1
+            end
+            Wait(1500)
+        end
+        
+        if (attempt >= Anti_Magic_Bullet_tolerance) then
+            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Triggered Protection Semi Godmode [Semi goddmode]", webhook, time)
+        end
+    end
 end
 
 initialize_protections_no_ragdoll = function()
+    
 end
 
 
@@ -1135,19 +1173,19 @@ initialize_protections_resources = function()
 end
 
 initialize_protections_spectate = function()
-    -- if Anti_Spectate_enabled then
-    --     Citizen.CreateThread(function()
-    --         while (true) do
-    --             Citizen.Wait(2500)
-    --             if not IsAdmin(GetPlayerServerId(PlayerId())) then
-    --                 Citizen.Wait(2500)
-    --                 if (NetworkIsInSpectatorMode()) then
-    --                     TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti Spectate", webhook, time)
-    --                 end
-    --             end
-    --         end
-    --     end)
-    -- end
+    if Anti_Spectate_enabled then
+        Citizen.CreateThread(function()
+            while (true) do
+                Citizen.Wait(2500)
+                if not IsAdmin(GetPlayerServerId(PlayerId())) then
+                    Citizen.Wait(2500)
+                    if (NetworkIsInSpectatorMode()) then
+                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti Spectate", webhook, time)
+                    end
+                end
+            end
+        end)
+    end
 end
 
 initialize_protections_speed_hack = function()

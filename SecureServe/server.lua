@@ -592,14 +592,14 @@ exports('CheckTime', function(event, time, source)
                 Wait(500)
                 local encrypted_event = encryptEventName(event, encryption_key)
                 if not events[event] and not events[encrypted_event] then
-                    punish_player(source, "Triggered unauthorized event: " .. event, webhook, time)
+                    check_or_punish(source, "Triggered unauthorized event: " .. event, webhook, time)
                 end
             end
         else
             local eventTime = events[event]
             if eventTime == false then return end
             if eventTime and math.abs(time - eventTime) >= 10000  and not isWhitelisted(event) then
-                punish_player(source, "Exceeded timestamp for event: " .. event, webhook, time)
+                check_or_punish(source, "Exceeded timestamp for event: " .. event, webhook, time)
             end
         end
     end
@@ -610,7 +610,7 @@ exports('IsEventWhitelisted', LPH_NO_VIRTUALIZE(function(event_name, src)
     -- print(src, event_name, (GetPlayerPing(src) > 0) )
     if not isWhitelisted(event_name) then
         if src and GetPlayerPing(src) > 0 then
-            punish_player(src, "Triggerd server event via excutor: " .. event_name, webhook, 2147483647)
+            check_or_punish(source, "Triggered unauthorized event: " .. event, webhook, time)
         end
     end
 end))
@@ -643,16 +643,17 @@ end
 IsMenuAdmin = function(pl)
     local identifiers = GetPlayerIdentifiers(pl)
     for _, id in ipairs(identifiers) do
-        if string.sub(id, 1, 6) == "steam:" then
-            for _, adminID in ipairs(SecureServe.AdminMenu.Admins) do
-                if id == adminID then
-                    return true 
-                end
+        local prefix = string.sub(id, 1, string.find(id, ":") - 1)  
+        
+        for _, adminID in ipairs(SecureServe.AdminMenu.Admins) do
+            if id == adminID then
+                return true
             end
         end
     end
     return false
 end
+
 
 
 RegisterNetEvent('SecureServe:RequestAdminStatus', function(player, cb)
@@ -855,6 +856,15 @@ function fast_punish_player(player, reason, webhook, raw_time)
             )
         end
     end
+    if SecureServe.AutoConfig then
+        local isEvent = reason:match("Triggered unauthorized event: (.+)") or reason:match("Exceeded timestamp for event: (.+)")
+        if isEvent then
+            check_or_punish(player, reason, webhook, time)
+        end
+    else
+        DropPlayer(source, "You have been punished from " .. SecureServe.ServerName .. 
+        ".\nTo view more information please reconnect to the server.")
+    end 
     banned[player] = nil
 end
 
@@ -950,15 +960,16 @@ end
 
 
 RegisterNetEvent('SecureServe:Server:Methods:Upload', function (screenshot, reason, id, time)
-    local playername = GetPlayerName(source)
+    local src = source
+    local playername = GetPlayerName(src)
     local punish = "ban"
     local banID = id
 
-    local HWID = GetPlayerToken(source, 1)
-    local HWID2 = GetPlayerToken(source, 2)
-    local HWID3 = GetPlayerToken(source, 3)
-    local HWID4 = GetPlayerToken(source, 4)
-    local HWID5 = GetPlayerToken(source, 5)
+    local HWID = GetPlayerToken(src, 1)
+    local HWID2 = GetPlayerToken(src, 2)
+    local HWID3 = GetPlayerToken(src, 3)
+    local HWID4 = GetPlayerToken(src, 4)
+    local HWID5 = GetPlayerToken(src, 5)
     if HWID5 == nil then HWID5 = "Not Found" end
     if HWID4 == nil then HWID4 = "Not Found" end
     if HWID3 == nil then HWID3 = "Not Found" end
@@ -971,7 +982,7 @@ RegisterNetEvent('SecureServe:Server:Methods:Upload', function (screenshot, reas
     local license = "Not Found"
     local fivem = "Not Found"
 
-    for k, v in pairs(GetPlayerIdentifiers(source)) do
+    for k, v in pairs(GetPlayerIdentifiers(src)) do
       if string.sub(v, 1, string.len("steam:")) == "steam:" then
         steam = v
       elseif string.sub(v, 1, string.len("license:")) == "license:" then
@@ -999,14 +1010,21 @@ RegisterNetEvent('SecureServe:Server:Methods:Upload', function (screenshot, reas
     })
 
 
-    ScreenshotLog({license=license,discord=discord,steam=steam,ip=ip,fivem=fivem,hwid=HWID,image=screenshot,playerId=tostring(source)}, reason, punish, banID)
+    ScreenshotLog({license=license,discord=discord,steam=steam,ip=ip,fivem=fivem,hwid=HWID,image=screenshot,playerId=tostring(src)}, reason, punish, banID)
     
-    banned[source] = true
-    if reason ~= 'External Executor Detected (Player Usally Has (SkriptGG, HX, TZX)' then
-    DropPlayer(source, "You have been punished from " .. SecureServe.ServerName .. 
-    ".\nTo view more information please reconnect to the server.")
-    end
-    banned[source] = nil
+    banned[src] = true
+    if SecureServe.AutoConfig then
+        local isEvent = reason:match("Triggered unauthorized event: (.+)") or reason:match("Exceeded timestamp for event: (.+)")
+        if isEvent then
+            check_or_punish(src, reason, webhook, time)
+        end
+    else
+        if reason ~= 'External Executor Detected (Player Usally Has (SkriptGG, HX, TZX)' then
+            DropPlayer(src, "You have been punished from " .. SecureServe.ServerName .. 
+            ".\nTo view more information please reconnect to the server.")
+            end
+    end 
+    banned[src] = nil
 end)
 
 RegisterNetEvent('TEST', function()
@@ -1019,6 +1037,38 @@ RegisterNetEvent("SecureServe:Server:Methods:PunishPlayer" .. GlobalState.Secure
     if not player then player = source end
     punish_player(player, reason, webhook, time)
 end)
+
+
+--[Auto Config]--
+function check_or_punish(source, reason, webhook, time)
+    if SecureServe.AutoConfig then
+        local configPath = GetResourcePath(GetCurrentResourceName()) .. "/config.lua"
+        local configFile = LoadResourceFile(GetCurrentResourceName(), "config.lua")
+
+        if configFile then
+            local isEvent = reason:match("Triggered unauthorized event: (.+)") or reason:match("Exceeded timestamp for event: (.+)")
+            local reasonToAdd = isEvent or reason  
+            
+            local isWhitelisted = false
+            for _, whitelistedItem in ipairs(SecureServe.EventWhitelist) do
+                if whitelistedItem == reasonToAdd then
+                    isWhitelisted = true
+                    break
+                end
+            end
+
+            if not isWhitelisted then
+                local newConfig = configFile:gsub("SecureServe%.EventWhitelist%s*=%s*{", "SecureServe.EventWhitelist = {\n\t\"" .. reasonToAdd .. "\",")
+                SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
+                print("[SecureServe] Added '" .. reasonToAdd .. "' to the whitelist in config.lua")
+            end
+        else
+            print("[SecureServe] Error: Unable to load config.lua")
+        end
+    else
+        punish_player(source, reason, webhook, time)
+    end
+end
 
 
 
@@ -1305,6 +1355,36 @@ initialize_protections_entity_spam = LPH_JIT_MAX(function()
     local SV_OBJECT = {}
     local SV_Userver = {}
 
+    -- Removed 
+    -- AddEventHandler('entityCreating', function(entity)
+    --     if (not SecureServe.EntityBeta) then return end
+    --     local model
+    --     local owner
+    --     local entityType
+    
+    --     if not DoesEntityExist(entity) then
+    --         CancelEvent()
+    --         return
+    --     end
+    
+    --     if DoesEntityExist(entity) then
+    --         model = GetEntityModel(entity)
+    --         entityType = GetEntityType(entity)
+    --         owner = NetworkGetEntityOwner(entity)
+    --     end
+    --     if entityType == 3 then
+    --         for _, player in pairs(GetPlayers()) do
+    --             local playerPed = GetPlayerPed(player)
+    --             local playerCoords = GetEntityCoords(playerPed)
+    --             local entityCoords = GetEntityCoords(entity)
+    --             local distance = #(playerCoords - entityCoords)
+    
+    --             if distance < 5 then
+    --                 CancelEvent()
+    --             end
+    --         end
+    --     end
+    -- end)
 
     AddEventHandler('entityCreated', function (entity)
         if DoesEntityExist(entity) then
@@ -1526,35 +1606,6 @@ initialize_protections_explosions = LPH_JIT_MAX(function()
 
 end)
 
-AddEventHandler('entityCreating', function(entity)
-    local model
-    local owner
-    local entityType
-
-    if not DoesEntityExist(entity) then
-        CancelEvent()
-        return
-    end
-
-    if DoesEntityExist(entity) then
-        model = GetEntityModel(entity)
-        entityType = GetEntityType(entity)
-        owner = NetworkGetEntityOwner(entity)
-    end
-    if entityType == 3 then
-        for _, player in pairs(GetPlayers()) do
-            local playerPed = GetPlayerPed(player)
-            local playerCoords = GetEntityCoords(playerPed)
-            local entityCoords = GetEntityCoords(entity)
-            local distance = #(playerCoords - entityCoords)
-
-            if distance < 5 then
-                CancelEvent()
-            end
-        end
-    end
-end)
-
 local playerHeartbeats = {}
 
 local function onPlayerDisconnected()
@@ -1665,10 +1716,7 @@ AddEventHandler('entityCreating', function(entity)
     if entityType == 2 and DoesEntityExist(entity) then
         local src = NetworkGetEntityOwner(entity)
         local entityPopulationType = GetEntityPopulationType(entity)
-    
-        if src == nil or owner == nil then
-          CancelEvent()
-        end
+
 
         for k, v in pairs(SecureServe.Protection.BlacklistedVehicles) do
             if model == GetHashKey(v.name) then
@@ -1783,6 +1831,66 @@ RegisterServerCallback {
         return SecureServe
     end
 }
+
+
+CreateThread(function()
+    Wait(5000) 
+
+    if GetResourceState("qb-core") == "started" then
+        SecureServe.AdminFramework = "qb-core"
+        SecureServe.IsAdmin = function(Player)
+            local QBCore = exports['qb-core']:GetCoreObject()
+            return QBCore.Functions.HasPermission(Player, "admin")
+        end
+        print("^2[SecureServe] Detected QB-Core - Using QB Admin Permissions.^7")
+
+    elseif GetResourceState("es_extended") == "started" then
+        SecureServe.AdminFramework = "es_extended"
+        SecureServe.IsAdmin = function(Player)
+            local ESX = exports['es_extended']:getSharedObject()
+            if ESX then
+                local xPlayer = ESX.GetPlayerFromId(Player)
+                if xPlayer then
+                    local group = xPlayer.getGroup()
+                    return group == 'admin' or group == 'mod' or group == 'superadmin' or group == 'god'
+                end
+            end
+            return false
+        end
+        print("^2[SecureServe] Detected ESX - Using ESX Admin Permissions.^7")
+
+    elseif GetResourceState("vrp") == "started" then
+        SecureServe.AdminFramework = "vrp"
+        SecureServe.IsAdmin = function(Player)
+            local Tunnel = module("vrp", "lib/Tunnel")
+            local Proxy = module("vrp", "lib/Proxy")
+            local vRP = Proxy.getInterface("vRP")
+            local user_id = vRP.getUserId({Player})
+            return user_id and vRP.hasPermission({user_id, "admin"})
+        end
+        print("^2[SecureServe] Detected vRP - Using vRP Admin Permissions.^7")
+
+    elseif GetResourceState("qbox") == "started" then
+        SecureServe.AdminFramework = "qbox"
+        SecureServe.IsAdmin = function(Player)
+            local QBOX = exports['qbox-core']:GetCoreObject()
+            return QBOX.Functions.HasPermission(Player, "admin")
+        end
+        print("^2[SecureServe] Detected QBOX - Using QBOX Admin Permissions.^7")
+
+    elseif GetResourceState("taze") == "started" then
+        SecureServe.AdminFramework = "taze"
+        SecureServe.IsAdmin = function(Player)
+            return exports["taze"]:CheckAdmin(Player)
+        end
+        print("^2[SecureServe] Detected TAZE - Using TAZE Admin Permissions.^7")
+
+    else
+        SecureServe.AdminFramework = "custom"
+        print("^3[SecureServe] No supported core detected - Please edit SecureServe.IsAdmin in config.lua in SecureServe resource.^7")
+    end
+end)
+
 
 Citizen.CreateThread(function()
     Citizen.Wait(1000)
@@ -2131,3 +2239,4 @@ AddEventHandler('onResourceStop', function(resourceName)
         {name = "Timestamp", value = os.date("%Y-%m-%d %H:%M:%S"), inline = false}
     })
 end)
+
