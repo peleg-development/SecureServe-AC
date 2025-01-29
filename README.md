@@ -1,4 +1,4 @@
-## 50 Stars to this git repo ill make a web panel
+## new update comming out soon
 # SecureServe - Free & Open Source Fivem Anti-Cheat
 
 - **Discord:** [Join Our Server](https://discord.gg/z6qGGtbcr4) for live support and updates.
