@@ -26,6 +26,10 @@ SecureServe.GlobalBans = false                                                  
 SecureServe.IdentifierCheck = true                                                            -- Checks when player connects if his identifiers are valid. if not it won't let him join the server.
 SecureServe.Debug = false 																      -- Enables debug mode, this will print debug messages in the console.
 
+-- this will auto config explosions safeevents and entity security for u make sure to use only when u are in server cause this will whitelist events meaning they will not ban players
+-- while this is on players cannot be banned for events or anything like that
+SecureServe.AutoConfig = false 
+
 -- SecureServe Logs they are
 SecureServe.OtherLogs = {
     JoinWebhook = "YOUR_WEBHOOK_URL", -- Logs when a player connects to the server, including their identifiers such as Steam ID, Discord ID, license, and IP address.
@@ -131,7 +135,7 @@ SecureServe.Protection.Simple = {
 	{ protection = "Anti Play Sound",             time = "Ban", webhook = "",       enabled = true },                     -- Disables Sound Routing Event
 	{ protection = "Anti AFK Injection",          time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player uses afk injection usally used while dumping
 	{ protection = "Anti Car Ram",                time = "Ban", webhook = "",       enabled = false },                     -- Takes action if player tries to ram player with a mod menu
-	{ protection = "Anti Magic Bullet",           time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player uses magic bullet
+	{ protection = "Anti Magic Bullet",           time = "Ban", webhook = "",       enabled = true, tolerance = 3 },                     -- Takes action if player uses magic bullet
 }
 
 SecureServe.Webhooks.SpamEntities = ""  

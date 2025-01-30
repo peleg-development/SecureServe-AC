@@ -16,6 +16,7 @@ files {
 server_scripts {
     "config.lua",
     "server.lua",
+    "server.js",
     "admin_panel_sv.lua"
 }
 
