@@ -1,6 +1,6 @@
 local createEntity = function(originalFunction, ...)
 	local entity = originalFunction(...)
-	if entity then
+	if entity and DoesEntityExist(entity) then
 		if IsDuplicityVersion() then
 			TriggerClientEvent('entity2', -1, GetEntityModel(entity))
 			TriggerEvent("entityCreatedByScript", entity, 'fdgfd', true, GetEntityModel(entity))
@@ -63,12 +63,7 @@ local xor_decrypt = function(encrypted_text, key)
     return table.concat(res)
 end
 
-local decryptEventName = function(encrypted_name, key)
-    if not encrypted_name:match("^%d+$") or (#encrypted_name % 3 ~= 0) then
-        -- print("Decryption failed: invalid encrypted_name format ->", encrypted_name)
-        return encrypted_name
-    end
-
+local decryptEventName = LPH_NO_VIRTUALIZE(function(encrypted_name, key)
     local encrypted = {}
     for i = 1, #encrypted_name, 3 do
         local byte_str = encrypted_name:sub(i, i + 2)
@@ -77,17 +72,11 @@ local decryptEventName = function(encrypted_name, key)
             table.insert(encrypted, string.char(byte))
         else
             -- print("Decryption failed: invalid byte detected ->", byte_str)
-            return nil
+            return encrypted_name
         end
     end
-
-    local concatenated = table.concat(encrypted)
-    -- print("Concatenated Encrypted String:", concatenated) -- Debugging
-    local decrypted = xor_decrypt(concatenated, key)
-    -- print("Decrypted Event Name:", decrypted) -- Debugging
-
-    return decrypted
-end
+    return xor_decrypt(table.concat(encrypted), key)
+end)
 
 
 local fxEvents = {
@@ -179,12 +168,13 @@ if IsDuplicityVersion() then
             local decrypted_name = decryptEventName(event_name, encryption_key)
             if decrypted_name then
 				_RegisterNetEvent(decrypted_name, function(...)
+					local src = source;
 					if not event_name or type(event_name) ~= "string" then
 						local TE = TriggerEvent
 						local rencrypted_event_namea = encryptEventName("SecureServe:Server:Methods:PunishPlayer", encryption_key)
 						TE(rencrypted_event_namea, source, "Triggerd server event via excutor: " .. (event_name or "nice try"), webhook, 2147483647)
 					end
-					exports['SecureServe']:IsEventWhitelisted(decrypted_name, source) 
+					exports['SecureServe']:IsEventWhitelisted(decrypted_name, src) 
 				end)
             else
                 -- print("Failed to decrypt event name: " .. event_name .. "Event wont be protected and will be needed to chnage manully to use only RegisterNetEvent")

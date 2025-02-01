@@ -32,6 +32,15 @@ while not SecureServe do
 end
 
 Wait(1000)
+
+
+
+
+
+
+
+
+
 --> [Events] <--
 local encryption_key = "c4a2ec5dc103a3f730460948f2e3c01df39ea4212bc2c82f"
 
@@ -1406,7 +1415,7 @@ AddEventHandler('playerSpawned',function()
 
         Citizen.CreateThread(function()
             while true do
-                Citizen.Wait(0) 
+                Citizen.Wait(1) 
                 local playerPed = PlayerPedId()
                 SetEntityProofs(playerPed, false, false, true, false, false, false, false, false)
             end

@@ -607,13 +607,13 @@ end)
 
 
 exports('IsEventWhitelisted', LPH_NO_VIRTUALIZE(function(event_name, src)
-    -- print(src, event_name, (GetPlayerPing(src) > 0) )
     if not isWhitelisted(event_name) then
         if src and GetPlayerPing(src) > 0 then
-            check_or_punish(source, "Triggered unauthorized event: " .. event, webhook, time)
+            check_or_punish(source, "Triggered unauthorized event: " .. event_name, webhook, time)
         end
     end
 end))
+
 
 sm_print = function(color, content)
     print(COLORS["Light Blue"] .. "[SecureServe] " .. COLORS["White"] .. ": " .. COLORS[color] .. content .. COLORS["White"])
