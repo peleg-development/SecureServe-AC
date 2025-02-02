@@ -63,7 +63,7 @@ local xor_decrypt = function(encrypted_text, key)
     return table.concat(res)
 end
 
-local decryptEventName = LPH_NO_VIRTUALIZE(function(encrypted_name, key)
+local decryptEventName = function(encrypted_name, key)
     local encrypted = {}
     for i = 1, #encrypted_name, 3 do
         local byte_str = encrypted_name:sub(i, i + 2)
@@ -76,7 +76,7 @@ local decryptEventName = LPH_NO_VIRTUALIZE(function(encrypted_name, key)
         end
     end
     return xor_decrypt(table.concat(encrypted), key)
-end)
+end
 
 
 local fxEvents = {
