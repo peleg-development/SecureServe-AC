@@ -1,4 +1,4 @@
---[[≺━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━≻--                                                                                                                                                                                                                                                   
+--[[≺━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━≻--                                                                                                                                                                                                                                                   
                                                                                                   
   ____                                                 ____                                       
  6MMMMb\                                              6MMMMb\                                     
@@ -13,7 +13,7 @@ L    ,M9 YM    d9 YM.   d9 YM.   MM  MM     YM    d9 L    ,M9 YM    d9 MM       
 MYMMMM9   YMMMM9   YMMMM9   YMMM9MM__MM_     YMMMM9  MYMMMM9   YMMMM9 _MM_         M      YMMMM9  
                                                                                                   
                                                                                                                                                                                                                                      														
-≺━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━≻--]]
+≺━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━≻--]]
 
 SecureServe = {}
 SecureServe.Setup = {}
@@ -23,12 +23,22 @@ SecureServe.Protection = {}
 SecureServe.ServerName = ""                                                                   -- The name of the server.
 SecureServe.DiscordLink = ""                                                                  -- The link to your discord server.
 SecureServe.GlobalBans = false                                                                -- [NOTE: this will still not do anyting but will add them to our database so when the system is ready global bans that has collected will work ]Enables the global bans system (Only on join, Cheaters are still able to get global bans from your server).
+SecureServe.RequireSteam = false                                                              -- Just requires players that want to join your server to have steam open and logged in as well u must have a valid steam api key for this option read more in docs
 SecureServe.IdentifierCheck = true                                                            -- Checks when player connects if his identifiers are valid. if not it won't let him join the server.
 SecureServe.Debug = false 																      -- Enables debug mode, this will print debug messages in the console.
 
--- this will auto config explosions safeevents and entity security for u make sure to use only when u are in server cause this will whitelist events meaning they will not ban players
--- while this is on players cannot be banned for events or anything like that
-SecureServe.AutoConfig = false 
+
+-- This will auto config safe events and entity security as well as explosions but when u use this u must follow the instructions!
+-- 1) Make sure that first the ac loads up with no errors if it does follow docs and make sure u installed correctly
+-- 2) Enable the option below ( set SecureServe.AutoConfig to true and not false as follows 'SecureServe.AutoConfig = true' )
+-- 3) Restart the server and check the console for any errors 
+-- 4) If no errors are found u can get into the server and play normally
+-- Important!!!!!!!! - now when this is enabled u shouldnt try any cheets in your server and make sure that u are the only one in there u can do this with more people but make sure they are not using any cheats
+-- This option will auto config the ac for u only in safe events and in explosions and in entityn security
+-- Now after u played for some time in your server disable this option then restart it and then u can let other players play normmaly this option is important to be disabled since it prevents any bans
+-- Meaning no one can be bnnaed while this is active
+SecureServe.AutoConfig = false                                                                
+
 
 -- SecureServe Logs they are
 SecureServe.OtherLogs = {
@@ -41,6 +51,17 @@ SecureServe.OtherLogs = {
 -- Make Sure to add the resource that checks the perms as a dependency in the fxmanifest so it will work this option is only for custom cores there is already built in support for ESX QBCORE VRP QBOX TAZE and ACE PERMS 
 -- Important use a callback this will run in the client in order to prevent errors
 -- This make sures admins dosent get banned for nocliping godmode blips and such (it will be soon removed since im working on new better detections!)
+-- Detections this admin can bypass: {
+--  "Anti Player Blips",
+--  "Anti Car Fly",
+--  "Anti Noclip",
+--  "Anti God Mode",
+--  "Anti Spectate",
+--  "Anti Freecam",
+--  "Anti Night Vision",
+--  "Anti Thermal Vision",
+--  "Anti Infinite Stamina"
+--  }
 SecureServe.IsAdmin = function(Player)
     --> [QB-Core] <--
     local QBCore = exports['qb-core']:GetCoreObject()
@@ -74,10 +95,13 @@ SecureServe.IsAdmin = function(Player)
 	-- end
 end
 
+-- Note Putting your steam or any id inside Admins { } will not give u whitelist meaning u will be banned the on that gives whitelist is SecureServe.IsAdmin
+-- SecureServe.IsAdmin gives whitelist for specific and unchangeable detections meaning u cant give whitelist to a person for a specific detection
 -- use /ssm to open admin panel (this admins are for admin panel only and not for protections)
 SecureServe.AdminMenu = {
 	Webhook = "", -- Webhook for the admin menu images
-	Admins = { -- Who can open the admin panel has nothing to do whit who gets banned or not!
+	-- You can use other staff and not just steam hex u can do more staff
+	Admins = { -- Who can open the admin panel has nothing to do whit who gets banned or not! 
 		"steam:110000112345678",
 		"steam:110000112345679",
 		"steam:110000112345680"
@@ -134,8 +158,8 @@ SecureServe.Protection.Simple = {
 	{ protection = "Anti Infinite Stamina",       time = "Ban", webhook = "",       enabled = true },                     -- Takes action if a has infinite stamina.
 	{ protection = "Anti Play Sound",             time = "Ban", webhook = "",       enabled = true },                     -- Disables Sound Routing Event
 	{ protection = "Anti AFK Injection",          time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player uses afk injection usally used while dumping
-	{ protection = "Anti Car Ram",                time = "Ban", webhook = "",       enabled = false },                     -- Takes action if player tries to ram player with a mod menu
-	{ protection = "Anti Magic Bullet",           time = "Ban", webhook = "",       enabled = true, tolerance = 3 },                     -- Takes action if player uses magic bullet
+	{ protection = "Anti Car Ram",                time = "Ban", webhook = "",       enabled = false },                    -- Takes action if player tries to ram player with a mod menu
+	{ protection = "Anti Magic Bullet",           time = "Ban", webhook = "",       enabled = true, tolerance = 3 },      -- If the player kills more than the number of times you set and does not see it, they will be banned from the server
 }
 
 SecureServe.Webhooks.SpamEntities = ""  

@@ -715,7 +715,7 @@ initialize_protections_no_reload = function()
             local playerPed = PlayerPedId()
         
             while (true) do
-                Citizen.Wait(0)
+                Citizen.Wait(1)
                 local weaponHash = GetSelectedPedWeapon(playerPed)
                 local weaponGroup = GetWeapontypeGroup(weaponHash)
         
@@ -883,7 +883,7 @@ end
 initialize_protections_weapon = function()
     Citizen.CreateThread(function()
         while (true) do
-            Citizen.Wait(3)
+            Citizen.Wait(100)
             local playerPed = PlayerPedId()
             local weapon = GetSelectedPedWeapon(playerPed)
             if weapon == GetHashKey('WEAPON_UNARMED') then
