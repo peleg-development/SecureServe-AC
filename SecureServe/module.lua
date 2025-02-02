@@ -126,20 +126,22 @@ if IsDuplicityVersion() then
 			-- print(event_name, encrypted_event_name)
 			_RegisterNetEvent(encrypted_event_name, ...)
 			_RegisterNetEvent(encrypted_event_name,  function()
+				local src = source
 				if not (GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe") then
-					exports['SecureServe']:CheckTime(event_name, os.time(), source)
+					exports['SecureServe']:CheckTime(event_name, os.time(), src)
 				end
 			end)
 
 			_RegisterNetEvent(event_name, ...)
 
 			_RegisterNetEvent(event_name, function(...)
+				local src = source
 				if not event_name or type(event_name) ~= "string" then
 					local TE = TriggerEvent
 					local rencrypted_event_namea = encryptEventName("SecureServe:Server:Methods:PunishPlayer", encryption_key)
-					TE(rencrypted_event_namea, source, "Triggerd server event via excutor: ".. event_name, webhook, 2147483647)
+					TE(rencrypted_event_namea, src, "Triggerd server event via excutor: ".. event_name, webhook, 2147483647)
 				end
-				exports['SecureServe']:IsEventWhitelisted(decryptEventName(event_name, encryption_key), source)
+				exports['SecureServe']:IsEventWhitelisted(decryptEventName(event_name, encryption_key), src)
 			end)
 		end
 	end
