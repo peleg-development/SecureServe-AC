@@ -1,14 +1,3 @@
-function LPH_JIT_MAX(func)
-    return function(...)
-        return func(...)
-    end
-end
-function LPH_NO_VIRTUALIZE(func)
-    return function(...)
-        return func(...)
-    end
-end
-
 local alive = {}
 local allowedStop = {}
 local failureCount = {}
@@ -16,7 +5,15 @@ local failureCount = {}
 local checkInterval = 5000  
 local maxFailures = 40   
 
-Citizen.CreateThread(LPH_NO_VIRTUALIZE(function()
+printDebug = function(...)
+    if SecureServe.Debug then
+        print("^4[SecureServe DEBUG]^7", ...) 
+    end
+end
+
+GlobalState.SecureServeResource = GetCurrentResourceName()
+
+Citizen.CreateThread(function()
     while true do
         local players = GetPlayers()
         for _, playerId in ipairs(players) do
@@ -37,17 +34,17 @@ Citizen.CreateThread(LPH_NO_VIRTUALIZE(function()
             end
         end
     end
-end))
+end)
 
-RegisterNetEvent('addalive', LPH_NO_VIRTUALIZE(function()
+RegisterNetEvent('addalive', function()
     local src = source
     alive[tonumber(src)] = true
-end))
+end)
 
-RegisterNetEvent('allowedStop', LPH_NO_VIRTUALIZE(function()
+RegisterNetEvent('allowedStop', function()
     local src = source
     allowedStop[src] = true
-end))
+end)
 
 AddEventHandler('playerDropped', function()
     local src = source
@@ -69,12 +66,12 @@ local function setTimeState()
     GlobalState.SecureServe = os.time()
 end
 
-Citizen.CreateThread(LPH_JIT_MAX(function()
+Citizen.CreateThread(function()
     while true do
         setTimeState()  
         Citizen.Wait(760)
     end
-end))
+end)
 
 local playerStates = {}
 
@@ -483,6 +480,7 @@ for k,v in pairs(SecureServe.Protection.BlacklistedObjects) do
     if not ProtectionCount["SecureServe.Protection.BlacklistedObjects"] then ProtectionCount["SecureServe.Protection.BlacklistedObjects"] = 0 end
     ProtectionCount["SecureServe.Protection.BlacklistedObjects"] = ProtectionCount["SecureServe.Protection.BlacklistedObjects"] + 1
 end
+
 --> [Methoods] <--
 local COLORS = {
     ["Red Orange"] = "^1",
@@ -499,7 +497,7 @@ local COLORS = {
 --> [EVENTS] <--
 local encryption_key = "c4a2ec5dc103a3f730460948f2e3c01df39ea4212bc2c82f"
 
-local xor_encrypt = LPH_NO_VIRTUALIZE(function(text, key)
+local xor_encrypt = function(text, key)
     local res = {}
     local key_len = #key
     for i = 1, #text do
@@ -507,41 +505,16 @@ local xor_encrypt = LPH_NO_VIRTUALIZE(function(text, key)
         res[i] = string.char(xor_byte)
     end
     return table.concat(res)
-end)
+end
 
-local encryptEventName = LPH_NO_VIRTUALIZE(function(event_name, key)
+local encryptEventName = function(event_name, key)
     local encrypted = xor_encrypt(event_name, key)
     local result = ""
     for i = 1, #encrypted do
         result = result .. string.format("%03d", string.byte(encrypted, i))
     end
     return result
-end)
-
-local xor_decrypt = LPH_NO_VIRTUALIZE(function(encrypted_text, key)
-    local res = {}
-    local key_len = #key
-    for i = 1, #encrypted_text do
-        local xor_byte = string.byte(encrypted_text, i) ~ string.byte(key, (i - 1) % key_len + 1)
-        res[i] = string.char(xor_byte)
-    end
-    return table.concat(res)
-end)
-
-local decryptEventName = LPH_NO_VIRTUALIZE(function(encrypted_name, key)
-    local encrypted = {}
-    for i = 1, #encrypted_name, 3 do
-        local byte_str = encrypted_name:sub(i, i + 2)
-        local byte = tonumber(byte_str)
-        if byte and byte >= 0 and byte <= 255 then
-            table.insert(encrypted, string.char(byte))
-        else
-            -- print("Decryption failed: invalid byte detected ->", byte_str)
-            return encrypted_name
-        end
-    end
-    return xor_decrypt(table.concat(encrypted), key)
-end)
+end
 
 local events = {}
 
@@ -552,12 +525,12 @@ end)
 
 local function isWhitelisted(event_name)
     if not SecureServe or not SecureServe.EventWhitelist or type(SecureServe.EventWhitelist) ~= "table" then
-        -- print("Error: EventWhitelist is missing or not a table.")
+        printDebug("Error: EventWhitelist is missing or not a table.")
         return false
     end
 
     if not event_name or type(event_name) ~= "string" or event_name == "" then
-        -- print("Error: event_name is invalid or empty.")
+        printDebug("Error: event_name is invalid or empty.")
         return false
     end    
 
@@ -567,7 +540,7 @@ local function isWhitelisted(event_name)
                 return true
             end
         else
-            -- print("Warning: Non-string value found in EventWhitelist. Skipping.")
+            printDebug("Warning: Non-string value found in EventWhitelist. Skipping.")
         end
     end
 
@@ -579,7 +552,6 @@ exports('CheckTime', function(event, time, source)
     Wait(1000)
 
     if type(event) ~= "string" or event == "" then
-        -- print("Invalid event name:", tostring(event))
         punish_player(source, "Triggered invalid event: " .. tostring(event), webhook, time)
         return
     end
@@ -606,13 +578,13 @@ exports('CheckTime', function(event, time, source)
 end)
 
 
-exports('IsEventWhitelisted', LPH_NO_VIRTUALIZE(function(event_name, src)
+exports('IsEventWhitelisted', function(event_name, src)
     if not isWhitelisted(event_name) then
         if src and GetPlayerPing(src) > 0 then
             check_or_punish(source, "Triggered unauthorized event: " .. event_name, webhook, time)
         end
     end
-end))
+end)
 
 
 sm_print = function(color, content)
@@ -668,7 +640,7 @@ RegisterNetEvent('SecureServe:RequestMenuAdminStatus', function(player, cb)
     TriggerClientEvent('SecureServe:ReturnMenuAdminStatus', src, isMenuAdmin)
 end)
 
-send_log = LPH_JIT_MAX(function(webhook, title, message)
+send_log = function(webhook, title, message)
     local embed = {
         {
             ["color"] = "3447003",
@@ -682,7 +654,7 @@ send_log = LPH_JIT_MAX(function(webhook, title, message)
     }
     
     PerformHttpRequest(webhook, function(error, text, footer) end, "POST", json.encode({username = "SecureServe | Logging System", avatar_url = "https://images-ext-1.discordapp.net/external/ATCidz-Uio1fj26KQZH1mmy20YnxQxQxv-sc0gBFGFw/%3Fformat%3Dwebp%26quality%3Dlossless/https/images-ext-1.discordapp.net/external/z9bSkH3p8iTlOClfnK7zVOEC9i5xcORJZfsuqlcf1XA/https/cdn.discordapp.com/icons/814390233898156063/c959fc0889d2436b87ccbf2f73d4f30e.png?format=webp&quality=lossless", embeds = embed}), {["Content-Type"] = "application/json"})
-end)
+end
 
 function ScreenshotLog(data, reason, punishment, banId, webhook)
   local steam = data.steam
@@ -1070,8 +1042,6 @@ function check_or_punish(source, reason, webhook, time)
     end
 end
 
-
-
 AddEventHandler("playerConnecting", function(name, setCallback, deferrals)
     local src = source
     local tokens = {}
@@ -1214,90 +1184,8 @@ AddEventHandler("playerConnecting", function(name, setCallback, deferrals)
     deferrals.done()
 end)
 
-
---> [Misc] <--
-initialize_misc_module = function()
---     local ac_name = GetCurrentResourceName()
-
---     local function has_script_keywords(manifest_code)
---         local keywords = {"client_script", "client_scripts", "server_script", "server_scripts", "shared_script", "shared_scripts"}
---         for _, keyword in ipairs(keywords) do
---             if string.find(manifest_code, keyword) then
---                 return true
---             end
---         end
---         return false
---     end
-
---     local function install_module()
---         local num_resources = GetNumResources()
---         local changes = 0
-    
---         for i = 0, num_resources - 1 do
---             local resource = GetResourceByFindIndex(i)
-    
---             if (resource ~= "_cfx_internal" and resource ~= "monitor") and (resource ~= ac_name) then
---                 local fxmanifest = LoadResourceFile(resource, "fxmanifest.lua")
---                 local resource_lua = LoadResourceFile(resource, "__resource.lua")
---                 local manifest_file = (fxmanifest and "fxmanifest.lua") or (resource_lua and "__resource.lua")
---                 local manifest_code = LoadResourceFile(resource, manifest_file)
-    
---                 if manifest_code and not string.find(manifest_code, string.format([[shared_script "@%s/module.lua"]], ac_name)) then
---                     if has_script_keywords(manifest_code) then
---                         local str = string.format([[shared_script "@%s/module.lua"
--- %s]], ac_name, manifest_code)
---                         SaveResourceFile(resource, manifest_file, str, -1)
---                         changes = changes + 1
---                     end
---                 end
---             end
---         end
-    
---         if changes > 0 then
---             print("Exiting in 5 seconds...")
---             sm_print("Blood Red", "Please Restart your server so the module will work! make sure secureserve is ensured first!")
---             Citizen.Wait(5000)
---         else
---             print("No applicable resources need the module, or all already have it installed.")
---         end
---     end
-    
---     RegisterCommand("ssinstall", function(source, args, rawCommand)
---         install_module()
---     end, true)
-    
---     RegisterCommand("ssuninstall", function(_, args)
---         local num_resources = GetNumResources()
-        
---         for i = 0, num_resources - 1 do
---             local resource_name = GetResourceByFindIndex(i)
---             if (resource_name ~= "_cfx_internal" and resource_name ~= "monitor") and (resource_name ~= ac_name) then
---                 local fxmanifest = LoadResourceFile(resource_name, "fxmanifest.lua")
---                 local resource = LoadResourceFile(resource_name, "__resource.lua")
---                 local manifest_file = (fxmanifest and "fxmanifest.lua") or (resource and "__resource.lua")
---                 local manifest_code = LoadResourceFile(resource_name, manifest_file)
-    
---                 SaveResourceFile(resource_name, manifest_file, manifest_code:gsub(string.format([[shared_script "@%s/module.lua"]], args[1] or ac_name), ""), -1)
---             end
---         end
-    
---         print("Module has been uninstalled from all resources!")
---         print("Exiting in 5 seconds...")
---         Citizen.Wait(5000)
---         os.exit(0)
---     end, true)
-
---     AddEventHandler('onResourceStart', function(resource)
---         if resource == ac_name then
---             install_module()
---         end
---     end)
-end
-
-initialize_misc_module()
-
 --> [Prtoections] <--
-initialize_protections_damage = LPH_JIT_MAX(function ()
+initialize_protections_damage = function ()
     AddEventHandler("weaponDamageEvent", function(source, data)
         if true and data.weaponType == 3452007600 and data.weaponDamage == 512 then
             punish_player(source, "Tried to kill player using cheats", webhook, time)
@@ -1315,7 +1203,7 @@ initialize_protections_damage = LPH_JIT_MAX(function ()
             end
         end
     end)
-end)
+end
 
 initialize_protections_entity_lockdown = function()
     Citizen.CreateThread(function ()
@@ -1349,42 +1237,11 @@ function clear()
     end
 end
 
-initialize_protections_entity_spam = LPH_JIT_MAX(function()
+initialize_protections_entity_spam = function()
     local SV_VEHICLES = {}
     local SV_PEDS = {}
     local SV_OBJECT = {}
     local SV_Userver = {}
-
-    -- Removed 
-    -- AddEventHandler('entityCreating', function(entity)
-    --     if (not SecureServe.EntityBeta) then return end
-    --     local model
-    --     local owner
-    --     local entityType
-    
-    --     if not DoesEntityExist(entity) then
-    --         CancelEvent()
-    --         return
-    --     end
-    
-    --     if DoesEntityExist(entity) then
-    --         model = GetEntityModel(entity)
-    --         entityType = GetEntityType(entity)
-    --         owner = NetworkGetEntityOwner(entity)
-    --     end
-    --     if entityType == 3 then
-    --         for _, player in pairs(GetPlayers()) do
-    --             local playerPed = GetPlayerPed(player)
-    --             local playerCoords = GetEntityCoords(playerPed)
-    --             local entityCoords = GetEntityCoords(entity)
-    --             local distance = #(playerCoords - entityCoords)
-    
-    --             if distance < 5 then
-    --                 CancelEvent()
-    --             end
-    --         end
-    --     end
-    -- end)
 
     AddEventHandler('entityCreated', function (entity)
         if DoesEntityExist(entity) then
@@ -1498,13 +1355,13 @@ initialize_protections_entity_spam = LPH_JIT_MAX(function()
         end
     end
     ECount = {}
-end)
+end
 
 RegisterNetEvent("serverwhitels", function (entity)
     TriggerClientEvent('addtowhitelist', -1, entity)
 end)
 
-initialize_protections_explosions = LPH_JIT_MAX(function()
+initialize_protections_explosions = function()
     local whitelist = {}
 
     RegisterNetEvent("SecureServe:Explosions:Whitelist", function(data)
@@ -1532,6 +1389,7 @@ initialize_protections_explosions = LPH_JIT_MAX(function()
     
         print(string.format("Explosion detected! Type: %s | Position: %s | Damage Scale: %s | Owner: %s", 
             explosionType, explosionPos, explosionDamage, explosionOwner))
+
         local resourceName = GetInvokingResource()
         if GetPlayerPing(sender) > 0  then
             if whitelist[sender] or SecureServe.ExplosionsWhitelist[resourceName] then
@@ -1603,8 +1461,7 @@ initialize_protections_explosions = LPH_JIT_MAX(function()
             CancelEvent()
         end
     end)
-
-end)
+end
 
 local playerHeartbeats = {}
 
@@ -1623,7 +1480,7 @@ RegisterNetEvent("mMkHcvct3uIg04STT16I:cbnF2cR9ZTt8NmNx2jQS", function(key)
     end
 end)
 
-Citizen.CreateThread(LPH_JIT_MAX(function()
+Citizen.CreateThread(function()
     while true do
         Citizen.Wait(10 * 1000)
         for playerId, lastHeartbeatTime in pairs(playerHeartbeats) do
@@ -1639,7 +1496,7 @@ Citizen.CreateThread(LPH_JIT_MAX(function()
             end
         end
     end
-end))
+end)
 
 initialize_server_protections_play_sound = function()
     if (Anti_Play_Sound_enabled) then
@@ -1648,7 +1505,7 @@ initialize_server_protections_play_sound = function()
     end
 end
 
-initialize_protections_ptfx = LPH_JIT_MAX(function()
+initialize_protections_ptfx = function()
     local particlesSpawned = {}
     AddEventHandler('ptFxEvent', function(sender, data)
         if (Anti_Particles_enabled) then
@@ -1665,10 +1522,10 @@ initialize_protections_ptfx = LPH_JIT_MAX(function()
             CancelEvent()
         end
     end)
-end)
+end
 
 
-initialize_server_protections_anti_resource = LPH_JIT_MAX(function()
+initialize_server_protections_anti_resource = function()
     local stoppedResources = {}
     local startedResources = {}
     local restarted = {}
@@ -1695,124 +1552,38 @@ initialize_server_protections_anti_resource = LPH_JIT_MAX(function()
             return stoppedResources[resourceName], startedResources[resourceName], restarteda
         end
     }
-end)
+end
+
+initialize_server_protections_anti_car_blacklist = function()
+    AddEventHandler('entityCreating', function(entity)
+        local model
+        local owner
+        local entityType
+    
+        if not DoesEntityExist(entity) then
+        CancelEvent()
+        return
+        end
+    
+        if DoesEntityExist(entity) then
+        model = GetEntityModel(entity)
+        entityType = GetEntityType(entity)
+        owner = NetworkGetEntityOwner(entity)
+        end
+        if entityType == 2 and DoesEntityExist(entity) then
+            local src = NetworkGetEntityOwner(entity)
+            local entityPopulationType = GetEntityPopulationType(entity)
 
 
-AddEventHandler('entityCreating', function(entity)
-    local model
-    local owner
-    local entityType
-  
-    if not DoesEntityExist(entity) then
-      CancelEvent()
-      return
-    end
-  
-    if DoesEntityExist(entity) then
-      model = GetEntityModel(entity)
-      entityType = GetEntityType(entity)
-      owner = NetworkGetEntityOwner(entity)
-    end
-    if entityType == 2 and DoesEntityExist(entity) then
-        local src = NetworkGetEntityOwner(entity)
-        local entityPopulationType = GetEntityPopulationType(entity)
-
-
-        for k, v in pairs(SecureServe.Protection.BlacklistedVehicles) do
-            if model == GetHashKey(v.name) then
-                    punish_player(source, "Blacklisted Vehicle (" .. v.name .. ")", webhook, time)
-            CancelEvent()
+            for k, v in pairs(SecureServe.Protection.BlacklistedVehicles) do
+                if model == GetHashKey(v.name) then
+                        punish_player(source, "Blacklisted Vehicle (" .. v.name .. ")", webhook, time)
+                CancelEvent()
+                end
             end
         end
-    end
-end)  
-
-
-local playerProximitySpawns = {}
-local proximityThreshold = 10.0 
-local timeWindow = 60000 
-local maxProximitySpawns = 15 
-local cooldownPeriod = 1000 
-
-local function initializePlayerData(playerId)
-    playerProximitySpawns[playerId] = {
-        spawns = {},
-        lastSpawnTime = 0
-    }
+    end)  
 end
-
-local function isEntityNearAnyPlayer(entity)
-    local entityCoords = GetEntityCoords(entity)
-    local players = GetPlayers()
-    for _, playerId in ipairs(players) do
-        local playerPed = GetPlayerPed(playerId)
-        local playerCoords = GetEntityCoords(playerPed)
-        local distance = #(playerCoords - entityCoords)
-        if distance <= proximityThreshold then
-            return true, playerId
-        end
-    end
-    return false, nil
-end
-
-local function updateProximitySpawns(playerId, currentTime)
-    local playerData = playerProximitySpawns[playerId]
-    
-    for i = #playerData.spawns, 1, -1 do
-        if currentTime - playerData.spawns[i] > timeWindow then
-            table.remove(playerData.spawns, i)
-        else
-            break 
-        end
-    end
-    
-    table.insert(playerData.spawns, currentTime)
-    
-    return #playerData.spawns
-end
-
-AddEventHandler('entityCreating', function(entity)
-    local ownerPlayerId = NetworkGetEntityOwner(entity)
-    local isNearPlayer, nearestPlayerId = isEntityNearAnyPlayer(entity)
-    
-    if isNearPlayer then
-        if not playerProximitySpawns[ownerPlayerId] then
-            initializePlayerData(ownerPlayerId)
-        end
-
-        local playerData = playerProximitySpawns[ownerPlayerId]
-        local currentTime = GetGameTimer()
-
-        if currentTime - playerData.lastSpawnTime < cooldownPeriod then
-            -- CancelEvent()
-            -- print(ownerPlayerId, "Entity spawning too quickly near players", 'this is a beta funciton please update us if its not working corretely')
-            return
-        end
-
-        local proximitySpawnCount = updateProximitySpawns(ownerPlayerId, currentTime)
-
-        if proximitySpawnCount > maxProximitySpawns then
-            -- CancelEvent()
-            -- print(ownerPlayerId, "Excessive entity spawning near players detected: " .. proximitySpawnCount .. " spawns in " .. timeWindow/1000 .. " seconds", 'this is a beta funciton please update us if its not working corretely')
-            return
-        end
-
-        playerData.lastSpawnTime = currentTime
-
-        if proximitySpawnCount == maxProximitySpawns - 3 then
-            print(ownerPlayerId, "You are approaching the entity spawn limit near players", 'this is a beta funciton please update us if its not working corretely')
-        end
-
-        if nearestPlayerId ~= ownerPlayerId then
-            print(nearestPlayerId, "An entity was spawned near you by another player", 'this is a beta funciton please update us if its not working corretely')
-        end
-    end
-end)
-
-AddEventHandler('playerDropped', function()
-    local playerId = source
-    playerProximitySpawns[playerId] = nil
-end)
 
 --> [Init] <--
 
@@ -1891,6 +1662,10 @@ CreateThread(function()
     end
 end)
 
+if (not (SecureServe.EnableAutoSafeEvents == GlobalState.EnableAutoSafeEvents)) then
+    GlobalState.EnableAutoSafeEvents = SecureServe.EnableAutoSafeEvents
+    print("^1[SecureServe] Changed Auto Safe Events to: " .. tostring(SecureServe.EnableAutoSafeEvents) .. "^7")
+end
 
 Citizen.CreateThread(function()
     Citizen.Wait(1000)
@@ -1926,124 +1701,17 @@ MYMMMM9   YMMMM9   YMMMM9   YMMM9MM__MM_     YMMMM9  MYMMMM9   YMMMM9 _MM_      
 
     sm_print("Light Green", "I'm here dont worry im working!")
 
-    --> [Modules] <--
-    initialize_misc_module()
-
     --> [Protections] <--
     initialize_server_protections_anti_resource()
     initialize_server_protections_play_sound()
     initialize_protections_explosions()
     initialize_protections_entity_spam()
+    initialize_server_protections_anti_car_blacklist()
     initialize_protections_damage()
     initialize_protections_entity_lockdown()
     initialize_protections_ptfx()
     
 end)
-
--- local function replaceEventRegistrations(filePath)
---     local file = io.open(filePath, "r")
---     if not file then
---         -- print("Could not open file: " .. filePath)
---         return
---     end
-
---     local content = file:read("*all")
---     file:close()
-
---     local netEventPattern = "RegisterNetEvent%s*%('([^']+)'%s*%)%s*AddEventHandler%s*%('%1'%s*,%s*function%(([^)]*)%)"
---     content = content:gsub(netEventPattern, "RegisterNetEvent('%1', function(%2)")
-
---     local serverEventPattern = "RegisterServerEvent%s*%('([^']+)'%s*%)%s*AddEventHandler%s*%('%1'%s*,%s*function%(([^)]*)%)"
---     content = content:gsub(serverEventPattern, "RegisterNetEvent('%1', function(%2)")
-
---     local outputFile = io.open(filePath, "w")
---     if not outputFile then
---         -- print("Could not open file for writing: " .. filePath)
---         return
---     end
-
---     outputFile:write(content)
---     outputFile:close()
---     -- print("Updated file: " .. filePath)
--- end
-
--- local function fileContainsLine(filePath, lineToFind)
---     local file = io.open(filePath, "r")
---     if not file then
---         -- print("Could not open file: " .. filePath)
---         return false
---     end
-
---     for line in file:lines() do
---         if line:match(lineToFind) then
---             file:close()
---             return true
---         end
---     end
-
---     file:close()
---     return false
--- end
-
-
--- local function searchInDirectory(directory, resourceName)
---     local findCommand
---     if os.getenv("OS") == "Windows_NT" then
---         findCommand = 'dir /s /b "' .. directory .. '\\*.lua"'
---     else
---         findCommand = 'find "' .. directory .. '" -type f -name "*.lua"'
---     end
-
---     local p = io.popen(findCommand)
---     if not p then
---         print("Could not open directory: " .. directory)
---         return
---     end
-
-
-    
---     for file in p:lines() do
---         replaceEventRegistrations(file)
---         -- if fileContainsLine(file, "CreateObject") or fileContainsLine(file, "CreateVehicle") or
---         --    fileContainsLine(file, "CreatePed") or fileContainsLine(file, "CreatePedInsideVehicle") or
---         --    fileContainsLine(file, "CreateRandomPed") or fileContainsLine(file, "CreateRandomPedAsDriver") then
---         --     -- print("Whitelisted resource with entity creation: " .. resourceName)
---         --     table.insert(SecureServe.EntitySecurity, {resource = resourceName, whitelist = true})
---         -- end
---     end
-
---     p:close()
--- end
-
--- function SearchForAssetPackDependency()
---     SecureServe.EntitySecurity = SecureServe.EntitySecurity or {}
-
---     local resources = GetNumResources()
---     for i = 0, resources - 1 do
---         local resourceName = GetResourceByFindIndex(i)
---         local resourcePath = GetResourcePath(resourceName)
---         if not resourcePath then
---             -- print("Could not find resource path for: " .. resourceName)
---             goto continue
---         end
-
---         local fxManifestPath = resourcePath .. "/fxmanifest.lua"
---         local resourceLuaPath = resourcePath .. "/__resource.lua"
-
---         if fileContainsLine(fxManifestPath, "dependency '/assetpacks'") or fileContainsLine(resourceLuaPath, "dependency '/assetpacks'") then
---             -- print("Whitelisted encrypted resource: " .. resourceName)
---             -- table.insert(SecureServe.EntitySecurity, {resource = resourceName, whitelist = true})
---         else
---             searchInDirectory(resourcePath, resourceName)
---         end
-
-
---         ::continue::
---     end
--- end
-
--- SearchForAssetPackDependency()
-
 
 exports('isResourceWhitelistedServer', function(resourceName)
     for _, resource in ipairs(SecureServe.EntitySecurity) do
@@ -2071,70 +1739,15 @@ RegisterNetEvent('entityCreatedByScript', function(entity, resource, can, hash)
     if scriptCreatedEntities[hashNumber] == nil then
         scriptCreatedEntities[hashNumber] = {}
     end
-    scriptCreatedEntities[hashNumber][source] = true
+    scriptCreatedEntities[hashNumber][player] = true
     Wait(1500)
     if scriptCreatedEntities[hashNumber] == nil then
         scriptCreatedEntities[hashNumber] = {}
-        scriptCreatedEntities[tonumber(hash)][source] = false
+        scriptCreatedEntities[tonumber(hash)][player] = false
     else
         scriptCreatedEntities[tonumber(hash)][player] = false
     end
 end)
-
-local function logEntityInfo(entity, eventName)
-    -- if DoesEntityExist(entity) then
-    --     local entityModel = GetEntityModel(entity) or "Unknown"
-    --     local entityCoords = GetEntityCoords(entity) or vector3(0, 0, 0)
-    --     local entityOwner = NetworkGetEntityOwner(entity) or "Unknown"
-    --     local entityType = GetEntityType(entity) or "Unknown"
-    --     local entityHealth = GetEntityHealth(entity) or -1
-    --     local entityMaxHealth = GetEntityMaxHealth(entity) or -1
-    --     local entityScript = GetEntityScript(entity) or "Unknown"
-    --     local entityPopulationType = GetEntityPopulationType(entity)
-    --     if entityPopulationType == 0 then
-    --         if not tonumber(entityOwner) and tonumber(entityOwner) ~= 0 then return end
-    --         Wait(1050)
-    --         if DoesEntityExist(entity) then
-    --             if not scriptCreatedEntities[tonumber(entityModel)][source] then 
-    --                 if not shouldPunishPlayer(entityOwner) then return end
-    --                 DeleteEntity(entity)
-    --                 local message = string.format(
-    --                     "have been removed from the server for creating a suspicious entity.\n\nDetails:\n- Entity Model: %s\n- Entity Type: %s\n- Entity Coordinates: %s\n- Health: %d/%d\n- Script: %s",
-    --                     entityModel, entityType, entityCoords, entityHealth, entityMaxHealth, entityScript
-    --                 )
-    --                 punish_player(entityOwner, message, webhook, time)   
-    --             end            
-    --         end
-    --     end
-    -- else
-    --     print(string.format("[%s] Entity does not exist or was deleted: %d", eventName, entity))
-    -- end
-end
-
-function shouldPunishPlayer(playerId)
-    local playerState = playerStates[playerId]
-    if playerState and playerState.loaded then
-        local elapsedTime = GetGameTimer() - playerState.loadTime
-        return elapsedTime > 30000 
-    end
-    return true
-end
-
-AddEventHandler('entityCreating', function(entity)
-    if DoesEntityExist(entity) then
-        local src = NetworkGetEntityOwner(entity)
-        logEntityInfo(entity, "entityCreating")
-    end
-end)
-
-AddEventHandler('entityCreated', function(entity)
-    local src = NetworkGetEntityOwner(entity)
-    logEntityInfo(entity, "entityCreated")
-end)
-
-
-
-
 
 local function sendToDiscord(webhook, title, description, color, fields)
     if not webhook or webhook == "" or webhook == "YOUR_WEBHOOK_URL"  then

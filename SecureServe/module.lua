@@ -1,3 +1,5 @@
+local resrouceName = GlobalState.SecureServe_events
+
 local createEntity = function(originalFunction, ...)
 	local entity = originalFunction(...)
 	if entity and DoesEntityExist(entity) then
@@ -109,8 +111,8 @@ local fxEvents = {
 	["msk_core:server:triggerCallback"] = true,
 }
 
-
-if IsDuplicityVersion() then
+local autoSafeEvents = GlobalState.EnableAutoSafeEvents
+if IsDuplicityVersion() and autoSafeEvents then
     local _AddEventHandler = AddEventHandler
     local _RegisterNetEvent = RegisterNetEvent
 
@@ -127,8 +129,8 @@ if IsDuplicityVersion() then
 			_RegisterNetEvent(encrypted_event_name, ...)
 			_RegisterNetEvent(encrypted_event_name,  function()
 				local src = source
-				if not (GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe") then
-					exports['SecureServe']:CheckTime(event_name, os.time(), src)
+				if not (GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == resrouceName) then
+					exports[resrouceName]:CheckTime(event_name, os.time(), src)
 				end
 			end)
 
@@ -141,7 +143,7 @@ if IsDuplicityVersion() then
 					local rencrypted_event_namea = encryptEventName("SecureServe:Server:Methods:PunishPlayer", encryption_key)
 					TE(rencrypted_event_namea, src, "Triggerd server event via excutor: ".. event_name, webhook, 2147483647)
 				end
-				exports['SecureServe']:IsEventWhitelisted(decryptEventName(event_name, encryption_key), src)
+				exports[resrouceName]:IsEventWhitelisted(decryptEventName(event_name, encryption_key), src)
 			end)
 		end
 	end
@@ -176,7 +178,7 @@ if IsDuplicityVersion() then
 						local rencrypted_event_namea = encryptEventName("SecureServe:Server:Methods:PunishPlayer", encryption_key)
 						TE(rencrypted_event_namea, source, "Triggerd server event via excutor: " .. (event_name or "nice try"), webhook, 2147483647)
 					end
-					exports['SecureServe']:IsEventWhitelisted(decrypted_name, src) 
+					exports[resrouceName]:IsEventWhitelisted(decrypted_name, src) 
 				end)
             else
                 -- print("Failed to decrypt event name: " .. event_name .. "Event wont be protected and will be needed to chnage manully to use only RegisterNetEvent")
@@ -185,57 +187,58 @@ if IsDuplicityVersion() then
     end)
 
 	RegisterServerEvent = RegisterNetEvent
-
 else
-	local whitelistedEvents = {}
+	if autoSafeEvents then
+		local whitelistedEvents = {}
 
-	Citizen.CreateThread(function()
-		if GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe" then
-			whitelistedEvents = {}
-		else
-			local success, events = pcall(function()
-				return exports['SecureServe']:GetEventWhitelist()
-			end)
-	
-			if success and events then
+		Citizen.CreateThread(function()
+			if GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == resrouceName then
 				whitelistedEvents = {}
-	
-				for _, eventName in ipairs(events) do
-					local encryptedEventName = encryptEventName(eventName, encryption_key)
-					whitelistedEvents[eventName] = true
-					whitelistedEvents[encryptedEventName] = true
+			else
+				local success, events = pcall(function()
+					return exports[resrouceName]:GetEventWhitelist()
+				end)
+		
+				if success and events then
+					whitelistedEvents = {}
+		
+					for _, eventName in ipairs(events) do
+						local encryptedEventName = encryptEventName(eventName, encryption_key)
+						whitelistedEvents[eventName] = true
+						whitelistedEvents[encryptedEventName] = true
+					end
+				else
+					whitelistedEvents = {}
+				end
+			end
+		end)
+		
+		local allowed = false
+		RegisterNetEvent('allowed', function ()
+			allowed = true
+		end)
+
+		local _TriggerServerEvent = TriggerServerEvent
+		TriggerServerEvent = function(event_name, ...)
+			local value = false
+			if GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == resrouceName then
+				value = false
+			elseif whitelistedEvents[event_name] or fxEvents[event_name] then
+				value = true
+			else
+				value = false
+			end
+			if not value then
+				local encrypted_event_name = encryptEventName(event_name, encryption_key)
+				_TriggerServerEvent(encrypted_event_name, ...)
+				if not  (GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == resrouceName) then
+					if allowed then
+						exports[resrouceName]:TriggeredEvent(event_name, GlobalState.SecureServe)
+					end
 				end
 			else
-				whitelistedEvents = {}
+				_TriggerServerEvent(event_name, ...)
 			end
-		end
-	end)
-	
-	local allowed = false
-	RegisterNetEvent('allowed', function ()
-		allowed = true
-	end)
-
-	local _TriggerServerEvent = TriggerServerEvent
-	TriggerServerEvent = function(event_name, ...)
-		local value = false
-		if GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe" then
-			value = false
-		elseif whitelistedEvents[event_name] or fxEvents[event_name] then
-			value = true
-		else
-			value = false
-		end
-		if not value then
-			local encrypted_event_name = encryptEventName(event_name, encryption_key)
-			_TriggerServerEvent(encrypted_event_name, ...)
-			if not  (GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe") then
-				if allowed then
-					exports['SecureServe']:TriggeredEvent(event_name, GlobalState.SecureServe)
-				end
-			end
-		else
-			_TriggerServerEvent(event_name, ...)
 		end
 	end
 
@@ -316,6 +319,4 @@ else
 		end
 		_ShootSingleBulletBetweenCoords(x1, y1, z1, x2, y2, z2, damage, isAudible, weaponHash, owner, isExplosiveAmmo, ignoreEntity, speed)
 	end
-	
-
 end

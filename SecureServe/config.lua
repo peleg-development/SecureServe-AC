@@ -20,6 +20,14 @@ SecureServe.Setup = {}
 SecureServe.Webhooks = {}
 SecureServe.Protection = {}
 
+
+
+
+
+
+--  ______ _______ __   _ _______  ______ _______       
+-- |  ____ |______ | \  | |______ |_____/ |_____| |     
+-- |_____| |______ |  \_| |______ |    \_ |     | |_____
 SecureServe.ServerName = ""                                                                   -- The name of the server.
 SecureServe.DiscordLink = ""                                                                  -- The link to your discord server.
 SecureServe.GlobalBans = false                                                                -- [NOTE: this will still not do anyting but will add them to our database so when the system is ready global bans that has collected will work ]Enables the global bans system (Only on join, Cheaters are still able to get global bans from your server).
@@ -28,6 +36,11 @@ SecureServe.IdentifierCheck = true                                              
 SecureServe.Debug = false 																      -- Enables debug mode, this will print debug messages in the console.
 
 
+
+
+-- _______ _    _ _______ __   _ _______ _______
+-- |______  \  /  |______ | \  |    |    |______
+-- |______   \/   |______ |  \_|    |    ______|
 -- This will auto config safe events and entity security as well as explosions but when u use this u must follow the instructions!
 -- 1) Make sure that first the ac loads up with no errors if it does follow docs and make sure u installed correctly
 -- 2) Enable the option below ( set SecureServe.AutoConfig to true and not false as follows 'SecureServe.AutoConfig = true' )
@@ -38,7 +51,25 @@ SecureServe.Debug = false 																      -- Enables debug mode, this will
 -- Now after u played for some time in your server disable this option then restart it and then u can let other players play normmaly this option is important to be disabled since it prevents any bans
 -- Meaning no one can be bnnaed while this is active
 SecureServe.AutoConfig = false                                                                
+SecureServe.EnableAutoSafeEvents = true -- Enables auto safe events meaning it will by defualt install the module for you
+SecureServe.EventWhitelist = {
+	-- If u get the fowlling ban: 
+    -- "A player has been banned for Trigger Event with an executor (name of the event)"
+	-- And its a false ban add the event name to here
+	-- [Note] enableautosafe events must be on for this to work
+	"TestEvent",
+	"test",
+}
+SecureServe.ProtectedEvents = {
+	-- This will only work if enable auto safe events is false this will protect only the events listed here 
+	["event_name"] = true
+}
 
+
+
+-- _____   ______ _______ _______
+-- |      |     | |  ____ |______
+-- |_____ |_____| |_____| ______|
 
 -- SecureServe Logs they are
 SecureServe.OtherLogs = {
@@ -48,6 +79,12 @@ SecureServe.OtherLogs = {
     ResourceWebhook = "YOUR_WEBHOOK_URL" -- Logs resource-related events such as when a resource starts or stops on the server. Useful for monitoring the health and status of server resources.
 }
 
+
+
+
+-- _______ ______  _______ _____ __   _ _______
+-- |_____| |     \ |  |  |   |   | \  | |______
+-- |     | |_____/ |  |  | __|__ |  \_| ______|
 -- Make Sure to add the resource that checks the perms as a dependency in the fxmanifest so it will work this option is only for custom cores there is already built in support for ESX QBCORE VRP QBOX TAZE and ACE PERMS 
 -- Important use a callback this will run in the client in order to prevent errors
 -- This make sures admins dosent get banned for nocliping godmode blips and such (it will be soon removed since im working on new better detections!)
@@ -108,6 +145,12 @@ SecureServe.AdminMenu = {
 	}	
 }
 
+
+
+
+-- _____   ______  _____  _______ _______ _______ _______ _____  _____  __   _
+-- |_____] |_____/ |     |    |    |______ |          |      |   |     | | \  |
+-- |       |    \_ |_____|    |    |______ |_____     |    __|__ |_____| |  \_|
 SecureServe.BanTimes = { -- Preset ban times, preset name can be used in the protections.
 	["Ban"] = 2147483647, -- Perm
 	["Kick"] = -1,        -- Kick
@@ -189,13 +232,6 @@ SecureServe.ExplosionsWhitelist = {
     -- Example: ["my_custom_resource"] = true,
 }
 
--- If u get the fowlling ban: 
-    -- "A player has been banned for Trigger Event with an executor (name of the event)"
--- And its a false ban add the event name to here
-SecureServe.EventWhitelist = {
-	"TestEvent",
-	"test",
-}
 
 SecureServe.OCR = { -- Words on scrren that will get player banned
 	"FlexSkazaMenu","SidMenu","Lynx8","LynxEvo","Maestro Menu","redEngine","HamMafia","HamHaxia","Dopameme","redMENU","Desudo","explode","gamesense","Anticheat","Tapatio","Malossi","RedStonia","Chocohax",

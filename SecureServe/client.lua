@@ -1,14 +1,3 @@
-function LPH_JIT_MAX(func)
-    return function(...)
-        return func(...)
-    end
-end
-function LPH_NO_VIRTUALIZE(func)
-    return function(...)
-        return func(...)
-    end
-end
-
 code = GlobalState.SecureServe_events;
 
 
@@ -32,14 +21,6 @@ while not SecureServe do
 end
 
 Wait(1000)
-
-
-
-
-
-
-
-
 
 --> [Events] <--
 local encryption_key = "c4a2ec5dc103a3f730460948f2e3c01df39ea4212bc2c82f"
@@ -72,13 +53,13 @@ local function isWhitelisted(event_name)
     return false
 end
 
-exports('IsEventWhitelistedClient', LPH_NO_VIRTUALIZE(function(event_name)
+exports('IsEventWhitelistedClient', function(event_name)
     return isWhitelisted(event_name)
-end))
+end)
 
-exports('GetEventWhitelist', LPH_NO_VIRTUALIZE(function()
+exports('GetEventWhitelist', function()
     return SecureServe.EventWhitelist
-end))
+end)
 
 exports('TriggeredEvent', function(event, time)
     if not time then print('banned', GetPlayerServerId(PlayerId())) end
