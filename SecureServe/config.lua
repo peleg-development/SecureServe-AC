@@ -36,8 +36,6 @@ SecureServe.IdentifierCheck = true                                              
 SecureServe.Debug = false 																      -- Enables debug mode, this will print debug messages in the console.
 
 
-
-
 -- _______ _    _ _______ __   _ _______ _______
 -- |______  \  /  |______ | \  |    |    |______
 -- |______   \/   |______ |  \_|    |    ______|
@@ -60,6 +58,7 @@ SecureServe.EventWhitelist = {
 	"TestEvent",
 	"test",
 }
+
 SecureServe.ProtectedEvents = {
 	-- This will only work if enable auto safe events is false this will protect only the events listed here 
 	["event_name"] = true
@@ -67,7 +66,7 @@ SecureServe.ProtectedEvents = {
 
 
 
--- _____   ______ _______ _______
+-- |       ______ _______ _______
 -- |      |     | |  ____ |______
 -- |_____ |_____| |_____| ______|
 
@@ -148,7 +147,7 @@ SecureServe.AdminMenu = {
 
 
 
--- _____   ______  _____  _______ _______ _______ _______ _____  _____  __   _
+-- _____   ______   _____  _______ _______ _______ _______ _____  _____  __   _
 -- |_____] |_____/ |     |    |    |______ |          |      |   |     | | \  |
 -- |       |    \_ |_____|    |    |______ |_____     |    __|__ |_____| |  \_|
 SecureServe.BanTimes = { -- Preset ban times, preset name can be used in the protections.
