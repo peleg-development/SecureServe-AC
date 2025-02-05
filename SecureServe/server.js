@@ -2,6 +2,19 @@ const acName = GetCurrentResourceName();
 const fs = require("fs");
 const path = require("path");
 
+
+function isAutoSafeEventsEnabled() {
+  const configPath = path.join(__dirname, "config.lua");
+  if (!fs.existsSync(configPath)) {
+      console.error("config.lua not found!");
+      return false;
+  }
+
+  const configContent = fs.readFileSync(configPath, "utf8");
+  return configContent.includes("SecureServe.EnableAutoSafeEvents = true");
+}
+
+
 function hasScriptKeywords(manifestCode) {
     const keywords = [
         "client_script", "client_scripts",
@@ -79,11 +92,6 @@ RegisterCommand("ssuninstall", (source, args) => {
     setTimeout(() => process.exit(0), 5000);
 }, true);
 
-on("onResourceStart", (resource) => {
-    if (resource === acName) {
-        installModule();
-    }
-});
 
 function replaceEventRegistrations(filePath) {
   try {
@@ -192,4 +200,14 @@ function searchForAssetPackDependency() {
   });
 }
 
-searchForAssetPackDependency();
+if (isAutoSafeEventsEnabled()) {
+  console.log("Auto Safe Events is enabled. Proceeding with installation...");
+  on("onResourceStart", (resource) => {
+    if (resource === acName) {
+        installModule();
+    }
+  });
+  searchForAssetPackDependency();
+} else {
+  console.log("Auto Safe Events is disabled. No changes will be made.");
+}
