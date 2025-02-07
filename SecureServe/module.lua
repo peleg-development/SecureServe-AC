@@ -110,10 +110,7 @@ local fxEvents = {
 	["msk_core:server:triggerCallback"] = true,
 }
 
-local autoSafeEvents = GlobalState.EnableAutoSafeEvents
 if IsDuplicityVersion() and autoSafeEvents then
-	local "SecureServe" = GlobalState.SecureServeResource
-
     local _AddEventHandler = AddEventHandler
     local _RegisterNetEvent = RegisterNetEvent
 
@@ -189,7 +186,6 @@ if IsDuplicityVersion() and autoSafeEvents then
 
 	RegisterServerEvent = RegisterNetEvent
 else
-	local "SecureServe" = GlobalState.SecureServeResource
 	if autoSafeEvents then
 		local whitelistedEvents = {}
 
