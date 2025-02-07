@@ -1,10 +1,11 @@
 const acName = GetCurrentResourceName();
+const resourceDir = GetResourcePath(acName)
 const fs = require("fs");
 const path = require("path");
 
 
 function isAutoSafeEventsEnabled() {
-  const configPath = path.join(__dirname, "config.lua");
+  const configPath = path.join(resourceDir, "config.lua");
   if (!fs.existsSync(configPath)) {
       console.error("config.lua not found!");
       return false;
@@ -168,7 +169,7 @@ function searchInDirectory(directory, resourceName) {
 }
 
 function searchForAssetPackDependency() {
-  const resourcesDir = path.join(__dirname, 'resources');
+  const resourcesDir = path.join(resourceDir, 'resources');
   let resourceFolders;
   try {
     resourceFolders = fs.readdirSync(resourcesDir, { withFileTypes: true });
