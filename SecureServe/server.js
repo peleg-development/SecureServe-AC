@@ -169,7 +169,7 @@ function searchInDirectory(directory, resourceName) {
 }
 
 function searchForAssetPackDependency() {
-  const resourcesDir = path.join(resourceDir, 'resources');
+  const resourcesDir = path.join(resourceDir);
   let resourceFolders;
   try {
     resourceFolders = fs.readdirSync(resourcesDir, { withFileTypes: true });

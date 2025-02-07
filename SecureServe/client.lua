@@ -15,6 +15,7 @@ end)
 
 
 while not SecureServe do
+    print(GlobalState.SecureServeResource)
     TriggerServerEvent('requestConfig')
     print("no found not found")
     Wait(10)

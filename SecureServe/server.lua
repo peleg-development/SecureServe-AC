@@ -11,7 +11,6 @@ printDebug = function(...)
     end
 end
 
-GlobalState.SecureServeResource = GetCurrentResourceName()
 
 Citizen.CreateThread(function()
     while true do

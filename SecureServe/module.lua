@@ -1,4 +1,3 @@
-local resrouceName = GlobalState.SecureServe_events
 
 local createEntity = function(originalFunction, ...)
 	local entity = originalFunction(...)
@@ -113,6 +112,8 @@ local fxEvents = {
 
 local autoSafeEvents = GlobalState.EnableAutoSafeEvents
 if IsDuplicityVersion() and autoSafeEvents then
+	local "SecureServe" = GlobalState.SecureServeResource
+
     local _AddEventHandler = AddEventHandler
     local _RegisterNetEvent = RegisterNetEvent
 
@@ -129,8 +130,8 @@ if IsDuplicityVersion() and autoSafeEvents then
 			_RegisterNetEvent(encrypted_event_name, ...)
 			_RegisterNetEvent(encrypted_event_name,  function()
 				local src = source
-				if not (GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == resrouceName) then
-					exports[resrouceName]:CheckTime(event_name, os.time(), src)
+				if not (GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe") then
+					exports["SecureServe"]:CheckTime(event_name, os.time(), src)
 				end
 			end)
 
@@ -143,7 +144,7 @@ if IsDuplicityVersion() and autoSafeEvents then
 					local rencrypted_event_namea = encryptEventName("SecureServe:Server:Methods:PunishPlayer", encryption_key)
 					TE(rencrypted_event_namea, src, "Triggerd server event via excutor: ".. event_name, webhook, 2147483647)
 				end
-				exports[resrouceName]:IsEventWhitelisted(decryptEventName(event_name, encryption_key), src)
+				exports["SecureServe"]:IsEventWhitelisted(decryptEventName(event_name, encryption_key), src)
 			end)
 		end
 	end
@@ -178,7 +179,7 @@ if IsDuplicityVersion() and autoSafeEvents then
 						local rencrypted_event_namea = encryptEventName("SecureServe:Server:Methods:PunishPlayer", encryption_key)
 						TE(rencrypted_event_namea, source, "Triggerd server event via excutor: " .. (event_name or "nice try"), webhook, 2147483647)
 					end
-					exports[resrouceName]:IsEventWhitelisted(decrypted_name, src) 
+					exports["SecureServe"]:IsEventWhitelisted(decrypted_name, src) 
 				end)
             else
                 -- print("Failed to decrypt event name: " .. event_name .. "Event wont be protected and will be needed to chnage manully to use only RegisterNetEvent")
@@ -188,15 +189,16 @@ if IsDuplicityVersion() and autoSafeEvents then
 
 	RegisterServerEvent = RegisterNetEvent
 else
+	local "SecureServe" = GlobalState.SecureServeResource
 	if autoSafeEvents then
 		local whitelistedEvents = {}
 
 		Citizen.CreateThread(function()
-			if GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == resrouceName then
+			if GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe" then
 				whitelistedEvents = {}
 			else
 				local success, events = pcall(function()
-					return exports[resrouceName]:GetEventWhitelist()
+					return exports["SecureServe"]:GetEventWhitelist()
 				end)
 		
 				if success and events then
@@ -221,7 +223,7 @@ else
 		local _TriggerServerEvent = TriggerServerEvent
 		TriggerServerEvent = function(event_name, ...)
 			local value = false
-			if GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == resrouceName then
+			if GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe" then
 				value = false
 			elseif whitelistedEvents[event_name] or fxEvents[event_name] then
 				value = true
@@ -231,9 +233,9 @@ else
 			if not value then
 				local encrypted_event_name = encryptEventName(event_name, encryption_key)
 				_TriggerServerEvent(encrypted_event_name, ...)
-				if not  (GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == resrouceName) then
+				if not  (GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe") then
 					if allowed then
-						exports[resrouceName]:TriggeredEvent(event_name, GlobalState.SecureServe)
+						exports["SecureServe"]:TriggeredEvent(event_name, GlobalState.SecureServe)
 					end
 				end
 			else
