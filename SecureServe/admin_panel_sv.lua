@@ -143,7 +143,7 @@ AddEventHandler("onResourceStart", function(resourceName)
 
     Citizen.CreateThread(function()
         while true do
-            Citizen.Wait(60 * 60 * 1000)  -- 60 minutes in ms
+            Citizen.Wait(60 * 60 * 1000)  
             updateUptime()
         end
     end)
@@ -201,6 +201,5 @@ RegisterNetEvent('executeServerOption:restartServer', function()
 
     Citizen.Wait(5000)
 
-    -- Restart the server (if your hosting supports auto-restart)
-    os.exit() -- Replace with your hosting provider's restart command if necessary
+    os.exit() 
 end)

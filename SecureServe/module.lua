@@ -186,7 +186,6 @@ if IsDuplicityVersion() and autoSafeEvents then
 
 	RegisterServerEvent = RegisterNetEvent
 else
-	if autoSafeEvents then
 		local whitelistedEvents = {}
 
 		Citizen.CreateThread(function()
@@ -211,33 +210,20 @@ else
 			end
 		end)
 		
-		local allowed = false
-		RegisterNetEvent('allowed', function ()
-			allowed = true
-		end)
-
 		local _TriggerServerEvent = TriggerServerEvent
 		TriggerServerEvent = function(event_name, ...)
 			local value = false
-			if GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe" then
-				value = false
-			elseif whitelistedEvents[event_name] or fxEvents[event_name] then
-				value = true
-			else
-				value = false
+		
+			if GetCurrentResourceName() ~= "monitor" and GetCurrentResourceName() ~= "SecureServe" then
+				value = whitelistedEvents[event_name] or fxEvents[event_name]
 			end
-			if not value then
-				local encrypted_event_name = encryptEventName(event_name, encryption_key)
-				_TriggerServerEvent(encrypted_event_name, ...)
-				if not  (GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe") then
-					if allowed then
-						exports["SecureServe"]:TriggeredEvent(event_name, GlobalState.SecureServe)
-					end
-				end
-			else
+		
+			if value then
 				_TriggerServerEvent(event_name, ...)
+			else
+				_TriggerServerEvent(encryptEventName(event_name, encryption_key), ...)
 			end
-		end
+		end		
 	end
 
 	local function isValidResource(resourceName)
