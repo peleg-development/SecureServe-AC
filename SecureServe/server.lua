@@ -1013,9 +1013,8 @@ function check_or_punish(source, reason, webhook, time)
         while isModifyingConfig do
             Citizen.Wait(100) 
         end
-        
+
         isModifyingConfig = true
-        local configPath = GetResourcePath(GetCurrentResourceName()) .. "/config.lua"
         local configFile = LoadResourceFile(GetCurrentResourceName(), "config.lua")
 
         if configFile then
@@ -1023,12 +1022,10 @@ function check_or_punish(source, reason, webhook, time)
             local detectedResource = reason:match("Created Suspicious Entity %[(.-)%] at script: (.+)")
 
             if isEvent then
-                for _, whitelistedItem in ipairs(SecureServe.EventWhitelist) do
-                    if whitelistedItem == isEvent then
-                        print("\27[31m[SecureServe] Event '" .. isEvent .. "' is already in the whitelist!\27[0m")
-                        isModifyingConfig = false
-                        return
-                    end
+                if configFile:find('"' .. isEvent .. '"', 1, true) or configFile:find("'" .. isEvent .. "'", 1, true) then
+                    printDebug("\27[31m[SecureServe] Event '" .. isEvent .. "' is already in the whitelist!\27[0m")
+                    isModifyingConfig = false
+                    return
                 end
 
                 local newConfig = configFile:gsub("SecureServe%.EventWhitelist%s*=%s*{", "SecureServe.EventWhitelist = {\n\t\"" .. isEvent .. "\",")
@@ -1037,12 +1034,11 @@ function check_or_punish(source, reason, webhook, time)
 
             elseif detectedResource then
                 local resourceToWhitelist = detectedResource
-                for _, entry in ipairs(SecureServe.EntitySecurity) do
-                    if entry.resource == resourceToWhitelist then
-                        print("\27[31m[SecureServe] Resource '" .. resourceToWhitelist .. "' is already whitelisted!\27[0m")
-                        isModifyingConfig = false
-                        return
-                    end
+
+                if configFile:find('resource = "' .. resourceToWhitelist .. '"', 1, true) or configFile:find("resource = '" .. resourceToWhitelist .. "'", 1, true) then
+                    printDebug("\27[31m[SecureServe] Resource '" .. resourceToWhitelist .. "' is already whitelisted!\27[0m")
+                    isModifyingConfig = false
+                    return
                 end
 
                 local newConfig = configFile:gsub("SecureServe%.EntitySecurity%s*=%s*{", "SecureServe.EntitySecurity = {\n\t{ resource = \"" .. resourceToWhitelist .. "\", whitelist = true },")
@@ -1058,6 +1054,7 @@ function check_or_punish(source, reason, webhook, time)
         punish_player(source, reason, webhook, time)
     end
 end
+
 
 
 AddEventHandler("playerConnecting", function(name, setCallback, deferrals)
