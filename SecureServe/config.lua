@@ -47,6 +47,8 @@ SecureServe.Debug = false 																      -- Enables debug mode, this will
 -- Now after u played for some time in your server disable this option then restart it and then u can let other players play normmaly this option is important to be disabled since it prevents any bans
 -- Meaning no one can be bnnaed while this is active
 SecureServe.AutoConfig = false              
+-- Once u start the server explnation about this option will come up please read everything
+SecureServe.InstructionsPrint = true
 
 -- _______ _    _ _______ __   _ _______ _______
 -- |______  \  /  |______ | \  |    |    |______

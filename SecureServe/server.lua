@@ -1754,6 +1754,8 @@ if (not (SecureServe.EnableAutoSafeEvents == GlobalState.EnableAutoSafeEvents)) 
     print("^1[SecureServe] Changed Auto Safe Events to: " .. tostring(SecureServe.EnableAutoSafeEvents) .. "^7")
 end
 
+
+-->[Startup Prints]<--
 Citizen.CreateThread(function()
     Citizen.Wait(1000)
     print(
@@ -1776,28 +1778,91 @@ MYMMMM9   YMMMM9   YMMMM9   YMMM9MM__MM_     YMMMM9  MYMMMM9   YMMMM9 _MM_      
 ≺━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━≻                                                                                                                                                                                                       
 ^0]])
     
-    sm_print("Light Blue", "Authenticating with server...")
+    Citizen.Wait(500)
 
-        
-        Citizen.Wait(1000)
-
+    print("\27[36m[SecureServe] Authenticating with server...\27[0m")
+    Citizen.Wait(1000)
 
     SetConvar("Anti Cheat", "SecureServe-ac.com")
     SetConvarServerInfo("Anti Cheat", "SecureServe-ac.com")
     SetConvarReplicated("Anti Cheat", "SecureServe-ac.com")
 
-    sm_print("Light Green", "I'm here dont worry im working!")
+    print("\27[32m[SecureServe] Authentication Successful - AC is active and monitoring!\27[0m")
 
-    --> [Protections] <--
-    initialize_server_protections_anti_resource()
-    initialize_server_protections_play_sound()
-    initialize_protections_explosions()
-    initialize_protections_entity_spam()
-    initialize_server_protections_anti_car_blacklist()
-    initialize_protections_damage()
-    initialize_protections_entity_lockdown()
-    initialize_protections_ptfx()
+    --> [Protection Systems Startup] <--
+    Citizen.Wait(500)
+    print("\27[36m[SecureServe] Initializing protection systems...\27[0m")
     
+    Citizen.Wait(500)
+    print("\27[33m[SecureServe] Loading Anti-Resource Injection Protections...\27[0m")
+    initialize_server_protections_anti_resource()
+    
+    Citizen.Wait(500)
+    print("\27[33m[SecureServe] Enabling Sound Exploit Protections...\27[0m")
+    initialize_server_protections_play_sound()
+    
+    Citizen.Wait(500)
+    print("\27[33m[SecureServe] Securing Against Explosions...\27[0m")
+    initialize_protections_explosions()
+    
+    Citizen.Wait(500)
+    print("\27[33m[SecureServe] Enabling Entity Spam Protections...\27[0m")
+    initialize_protections_entity_spam()
+    
+    Citizen.Wait(500)
+    print("\27[33m[SecureServe] Enabling Car Blacklist Protections...\27[0m")
+    initialize_server_protections_anti_car_blacklist()
+    
+    Citizen.Wait(500)
+    print("\27[33m[SecureServe] Activating Damage Protections...\27[0m")
+    initialize_protections_damage()
+    
+    Citizen.Wait(500)
+    print("\27[33m[SecureServe] Locking Down Entity Security...\27[0m")
+    initialize_protections_entity_lockdown()
+    
+    Citizen.Wait(500)
+    print("\27[33m[SecureServe] Enabling Particle Effect Protections...\27[0m")
+    initialize_protections_ptfx()
+
+    Citizen.Wait(1000)
+    print("\27[32m[SecureServe] All protection systems are now active and monitoring!\27[0m")
+    print("\27[34m================================================================================\27[0m")
+
+    --> [Auto Config Prints] <--
+    if SecureServe.InstructionsPrint then
+        local red = "\27[31m"     -- Red color
+        local yellow = "\27[33m"  -- Yellow color
+        local reset = "\27[0m"    -- Reset color
+
+        print(red .. "====================================")
+        print(" SecureServe AutoConfig - WARNING ")
+        print("====================================" .. reset)
+        print("This feature automatically configures safe events, entity security, and explosion protection.")
+        print("However, you " .. yellow .. "MUST" .. reset .. " follow these instructions carefully to avoid issues.")
+        print("")
+        print(yellow .. "Step-by-Step Instructions:" .. reset)
+        print("1. Make sure the Anti-Cheat (AC) loads with " .. red .. "NO errors." .. reset)
+        print("   - If you see errors, check the documentation and ensure correct installation.")
+        print("2. Enable AutoConfig by setting:")
+        print("   " .. yellow .. "SecureServe.AutoConfig = true" .. reset)
+        print("3. Restart the server and check the console for any errors.")
+        print("4. If there are no errors, you can enter the server and play normally.")
+        print("")
+        print(red .. "IMPORTANT - READ BEFORE CONTINUING" .. reset)
+        print(" - While AutoConfig is enabled, " .. red .. "DO NOT" .. reset .. " test cheats on your server.")
+        print(" - Ensure you are " .. yellow .. "alone in the server" .. reset .. " or only with trusted players.")
+        print(" - This feature " .. red .. "temporarily prevents bans," .. reset .. " meaning NO ONE can be banned while active.")
+        print("")
+        print(yellow .. "Final Step - Disable AutoConfig Once Done" .. reset)
+        print(" - After verifying everything works, disable AutoConfig:")
+        print("   " .. yellow .. "SecureServe.AutoConfig = false" .. reset)
+        print(" - Restart the server again to apply changes and restore normal ban enforcement.")
+        print("")
+        print("Once disabled, your server will run normally, and bans will be enforced again.")
+        print(red .. "====================================" .. reset)
+        print(yellow .. "To disable this message, set SecureServe.InstructionsPrint = false in config.lua" .. reset)
+    end    
 end)
 
 exports('isResourceWhitelistedServer', function(resourceName)
