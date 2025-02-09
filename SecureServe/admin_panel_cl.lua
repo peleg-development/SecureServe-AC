@@ -5,6 +5,10 @@ RegisterCommand('ssm', function()
     end
 end, false)
 
+function ac_notify(message) 
+    SendNUIMessage({ action = 'notification', message = message })
+end 
+
 RegisterNUICallback('close', function(data, cb)
     SetNuiFocus(false, false)
     cb('ok')
@@ -15,7 +19,6 @@ RegisterNUICallback("clearAllEntities", function(data, cb)
     TriggerServerEvent('anticheat:clearAllEntities')
     cb('ok')
 end)
-
 
 local playerOptions = {
     ESP = false,
@@ -57,8 +60,7 @@ RegisterNUICallback('toggleOptiona', function(data, cb)
     cb('ok')
 end)
 
-RegisterNetEvent('anticheat:notify')
-AddEventHandler('anticheat:notify', function(message)
+RegisterNetEvent('anticheat:notify', function(message)
     SendNUIMessage({ action = 'notification', message = message })
 end)
 
@@ -450,23 +452,35 @@ end)
 
 RegisterNUICallback('spectatePlayer', function(data, cb)
     local playerId = data.playerId
-    TriggerEvent('spectatePlayer', playerId)
-    cb('ok')
-end)
-
-RegisterNetEvent('spectatePlayer')
-AddEventHandler('spectatePlayer', function(playerId)
     local targetPed = GetPlayerPed(GetPlayerFromServerId(playerId))
+    
     if DoesEntityExist(targetPed) then
         local playerPed = PlayerPedId()
         local targetCoords = GetEntityCoords(targetPed)
+
         RequestCollisionAtCoord(targetCoords.x, targetCoords.y, targetCoords.z)
         NetworkSetInSpectatorMode(true, targetPed)
+
+        ac_notify("Spectating player " .. playerId .. ". Press BACKSPACE to exit.")
+
+        Citizen.CreateThread(function()
+            while NetworkIsInSpectatorMode() do
+                Citizen.Wait(0)
+                if IsControlJustReleased(0, 177) then -- 177 = Backspace
+                    NetworkSetInSpectatorMode(false, playerPed)
+                    ac_notify("Exited spectating mode.")
+                    break
+                end
+            end
+        end)
+
+        cb({ success = true })
+    else
+        cb({ success = false })
     end
 end)
 
-RegisterNetEvent('receivePlayers')
-AddEventHandler('receivePlayers', function(playerList)
+RegisterNetEvent('receivePlayers', function(playerList)
     SendNUIMessage({
         action = 'players',
         players = playerList
