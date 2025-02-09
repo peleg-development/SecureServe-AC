@@ -81,7 +81,10 @@ SecureServe.EntitySecurity = { -- Resources that are causing false bans add to h
 	{ resource = "6x_houserobbery",  whitelist = true},
 }
 
-
+SecureServe.Webhooks.SpamEntities = ""  
+SecureServe.maxVehicle = 5 -- How many vehicles can player spawn before getting banned
+SecureServe.maxPed = 5 -- How many peds can player spawn before getting banned
+SecureServe.maxObject = 10 -- How many objects can player spawn before getting banned
 
 
 -- _______ _     _  _____          _____  _______ _____  _____  __   _ _______
@@ -115,8 +118,6 @@ SecureServe.OtherLogs = {
     KillWebhook = "YOUR_WEBHOOK_URL", -- Logs player kills in the server. It records details about the attacker, victim, and possibly the weapon or method used.
     ResourceWebhook = "YOUR_WEBHOOK_URL" -- Logs resource-related events such as when a resource starts or stops on the server. Useful for monitoring the health and status of server resources.
 }
-
-
 
 
 -- _______ ______  _______ _____ __   _ _______
@@ -255,11 +256,6 @@ SecureServe.Protection.Simple = {
 	{ protection = "Anti Car Ram",                time = "Ban", webhook = "",       enabled = false },                    -- Takes action if player tries to ram player with a mod menu
 	{ protection = "Anti Magic Bullet",           time = "Ban", webhook = "",       enabled = true, tolerance = 3 },      -- If the player kills more than the number of times you set and does not see it, they will be banned from the server
 }
-
-SecureServe.Webhooks.SpamEntities = ""  
-SecureServe.maxVehicle = 5 -- How many vehicles can player spawn before getting banned
-SecureServe.maxPed = 5 -- How many peds can player spawn before getting banned
-SecureServe.maxObject = 10 -- How many objects can player spawn before getting banned
 
 SecureServe.Webhooks.AntiInternal = ""
 SecureServe.AntiInternal = { -- this will protect your server from cheaters when cheater will open any cheat RedEngine Skript GG Eulen after sometime in menu he will be banned
