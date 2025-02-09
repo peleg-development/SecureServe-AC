@@ -1053,6 +1053,82 @@ AddEventHandler("playerConnecting", function(name, setCallback, deferrals)
 
     local data = getBanList()
     local identifiers = GetPlayerIdentifiers(src)
+    local hasSteam = false
+
+    for _, identifier in ipairs(identifiers) do
+        if string.match(identifier, "steam:") then
+            hasSteam = true
+            break
+        end
+    end
+
+    if not hasSteam and SecureServe.RequireSteam then
+        local steamCard = [[
+            {
+                "type": "AdaptiveCard",
+                "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                "version": "1.3",
+                "backgroundImage": {
+                    "url": "https://www.transparenttextures.com/patterns/black-linen.png"
+                },
+                "body": [
+                    {
+                        "type": "Container",
+                        "style": "emphasis",
+                        "bleed": true,
+                        "items": [
+                            {
+                                "type": "Image",
+                                "url": "https://img.icons8.com/color/452/error.png",
+                                "horizontalAlignment": "Center",
+                                "size": "Large",
+                                "spacing": "Large"
+                            },
+                            {
+                                "type": "TextBlock",
+                                "text": "Steam Account Required",
+                                "wrap": true,
+                                "horizontalAlignment": "Center",
+                                "size": "ExtraLarge",
+                                "weight": "Bolder",
+                                "color": "Attention",
+                                "spacing": "Medium"
+                            },
+                            {
+                                "type": "TextBlock",
+                                "text": "You need to have Steam open and linked to your FiveM account to join this server.",
+                                "wrap": true,
+                                "horizontalAlignment": "Center",
+                                "size": "Large",
+                                "weight": "Bolder",
+                                "color": "Attention",
+                                "spacing": "Small"
+                            },
+                            {
+                                "type": "TextBlock",
+                                "text": "Make sure Steam is running before launching FiveM, then try again.",
+                                "wrap": true,
+                                "horizontalAlignment": "Center",
+                                "size": "Medium",
+                                "spacing": "Medium"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]]
+        
+        deferrals.presentCard(steamCard, function(data, rawData) end)
+        Citizen.CreateThread(function()
+            while true do
+                Wait(0)
+                deferrals.presentCard(steamCard, function(data, rawData) end)
+                CancelEvent()
+            end
+        end)
+        return
+    end
+
     local isBanned = false
 
     for _, identifier in ipairs(identifiers) do
