@@ -174,12 +174,26 @@ end
 -- use /ssm to open admin panel (this admins are for admin panel only and not for protections)
 SecureServe.AdminMenu = {
 	Webhook = "", -- Webhook for the admin menu images
-	-- You can use other staff and not just steam hex u can do more staff
-	Admins = { -- Who can open the admin panel has nothing to do whit who gets banned or not! 
-		"steam:110000112345678",
-		"steam:110000112345679",
-		"steam:110000112345680"
-	}	
+	Admins = { 
+		-- Who can open the admin panel has nothing to do whit who gets banned or not! 
+		-- You can use other staff and not just steam hex u can do more staff
+		"steam:steamhexhere",
+		"discord:discordidhere",
+	},
+	CanOpenAdminPanel = function(Player) 
+		-- [NOTE] this step is optinal and i recommend to usse steam/discord ids
+		-- example use case optional in case u prefer to use ace perms or other methods
+		-- add this to server.cfg 
+		-- add_ace group.admin "adminpanel.access" allow
+
+		-- local playerIdentifier = GetPlayerIdentifier(Player, 0)
+
+		-- if IsPlayerAceAllowed(Player, "adminpanel.access") then
+		-- 	return true
+		-- else
+		-- 	return false
+		-- end
+	end
 }
 
 
