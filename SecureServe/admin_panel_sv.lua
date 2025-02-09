@@ -204,9 +204,3 @@ RegisterNetEvent('executeServerOption:restartServer', function()
     -- Restart the server (if your hosting supports auto-restart)
     os.exit() -- Replace with your hosting provider's restart command if necessary
 end)
-
-RegisterNetEvent('SecureServe:screenshotPlayer', function(playerId, screenshot)
-    local src = source
-    local webhookUrl = SecureServe.AdminMenu.Webhook
-    TriggerClientEvent('SecureServe:screenshotPlayerResult', src, screenshot)
-end)
