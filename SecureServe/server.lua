@@ -998,11 +998,6 @@ RegisterNetEvent('SecureServe:Server:Methods:Upload', function (screenshot, reas
     banned[src] = nil
 end)
 
-RegisterNetEvent('TEST', function()
-    print('tes')
-end)
-
-
 
 RegisterNetEvent("SecureServe:Server:Methods:PunishPlayer" .. GlobalState.SecureServe_events, function(player, reason, webhook, time)
     if not player then player = source end
@@ -1018,20 +1013,38 @@ function check_or_punish(source, reason, webhook, time)
 
         if configFile then
             local isEvent = reason:match("Triggered unauthorized event: (.+)") or reason:match("Exceeded timestamp for event: (.+)")
-            local reasonToAdd = isEvent or reason  
-            
-            local isWhitelisted = false
-            for _, whitelistedItem in ipairs(SecureServe.EventWhitelist) do
-                if whitelistedItem == reasonToAdd then
-                    isWhitelisted = true
-                    break
-                end
-            end
+            local detectedResource = reason:match("Created Suspicious Entity %[(.-)%] at script: (.+)")
 
-            if not isWhitelisted then
-                local newConfig = configFile:gsub("SecureServe%.EventWhitelist%s*=%s*{", "SecureServe.EventWhitelist = {\n\t\"" .. reasonToAdd .. "\",")
-                SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
-                print("[SecureServe] Added '" .. reasonToAdd .. "' to the whitelist in config.lua")
+            if isEvent then
+                local isWhitelisted = false
+                for _, whitelistedItem in ipairs(SecureServe.EventWhitelist) do
+                    if whitelistedItem == isEvent then
+                        isWhitelisted = true
+                        break
+                    end
+                end
+
+                if not isWhitelisted then
+                    local newConfig = configFile:gsub("SecureServe%.EventWhitelist%s*=%s*{", "SecureServe.EventWhitelist = {\n\t\"" .. isEvent .. "\",")
+                    SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
+                    print("[SecureServe] Added '" .. isEvent .. "' to the event whitelist in config.lua")
+                end
+            elseif detectedResource then
+                local resourceToWhitelist = detectedResource
+                local isWhitelisted = false
+
+                for _, entry in ipairs(SecureServe.EntitySecurity) do
+                    if entry.resource == resourceToWhitelist then
+                        isWhitelisted = true
+                        break
+                    end
+                end
+
+                if not isWhitelisted then
+                    local newConfig = configFile:gsub("SecureServe%.EntitySecurity%s*=%s*{", "SecureServe.EntitySecurity = {\n\t{ resource = \"" .. resourceToWhitelist .. "\", whitelist = true },")
+                    SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
+                    print("[SecureServe] Added '" .. resourceToWhitelist .. "' to the entity whitelist in config.lua")
+                end
             end
         else
             print("[SecureServe] Error: Unable to load config.lua")

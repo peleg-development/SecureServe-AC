@@ -1,3 +1,4 @@
+_T = TriggerServerEvent
 code = GlobalState.SecureServe_events;
 
 
@@ -16,7 +17,7 @@ end)
 
 while not SecureServe do
     print(GlobalState.SecureServeResource)
-    TriggerServerEvent('requestConfig')
+    _T('requestConfig')
     print("no found not found")
     Wait(10)
 end
