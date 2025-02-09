@@ -30,7 +30,6 @@ SecureServe.Protection = {}
 -- |_____| |______ |  \_| |______ |    \_ |     | |_____
 SecureServe.ServerName = ""                                                                   -- The name of the server.
 SecureServe.DiscordLink = ""                                                                  -- The link to your discord server.
-SecureServe.GlobalBans = false                                                                -- [NOTE: this will still not do anyting but will add them to our database so when the system is ready global bans that has collected will work ]Enables the global bans system (Only on join, Cheaters are still able to get global bans from your server).
 SecureServe.RequireSteam = false                                                              -- Just requires players that want to join your server to have steam open and logged in as well u must have a valid steam api key for this option read more in docs
 SecureServe.IdentifierCheck = true                                                            -- Checks when player connects if his identifiers are valid. if not it won't let him join the server.
 SecureServe.Debug = false 																      -- Enables debug mode, this will print debug messages in the console.
