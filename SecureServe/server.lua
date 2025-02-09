@@ -1006,8 +1006,15 @@ end)
 
 
 --[Auto Config]--
+local isModifyingConfig = false
+
 function check_or_punish(source, reason, webhook, time)
     if SecureServe.AutoConfig then
+        while isModifyingConfig do
+            Citizen.Wait(100) 
+        end
+        
+        isModifyingConfig = true
         local configPath = GetResourcePath(GetCurrentResourceName()) .. "/config.lua"
         local configFile = LoadResourceFile(GetCurrentResourceName(), "config.lua")
 
@@ -1016,43 +1023,42 @@ function check_or_punish(source, reason, webhook, time)
             local detectedResource = reason:match("Created Suspicious Entity %[(.-)%] at script: (.+)")
 
             if isEvent then
-                local isWhitelisted = false
                 for _, whitelistedItem in ipairs(SecureServe.EventWhitelist) do
                     if whitelistedItem == isEvent then
-                        isWhitelisted = true
-                        break
+                        print("\27[31m[SecureServe] Event '" .. isEvent .. "' is already in the whitelist!\27[0m")
+                        isModifyingConfig = false
+                        return
                     end
                 end
 
-                if not isWhitelisted then
-                    local newConfig = configFile:gsub("SecureServe%.EventWhitelist%s*=%s*{", "SecureServe.EventWhitelist = {\n\t\"" .. isEvent .. "\",")
-                    SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
-                    print("[SecureServe] Added '" .. isEvent .. "' to the event whitelist in config.lua")
-                end
+                local newConfig = configFile:gsub("SecureServe%.EventWhitelist%s*=%s*{", "SecureServe.EventWhitelist = {\n\t\"" .. isEvent .. "\",")
+                SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
+                print("[SecureServe] Added '" .. isEvent .. "' to the event whitelist in config.lua")
+
             elseif detectedResource then
                 local resourceToWhitelist = detectedResource
-                local isWhitelisted = false
-
                 for _, entry in ipairs(SecureServe.EntitySecurity) do
                     if entry.resource == resourceToWhitelist then
-                        isWhitelisted = true
-                        break
+                        print("\27[31m[SecureServe] Resource '" .. resourceToWhitelist .. "' is already whitelisted!\27[0m")
+                        isModifyingConfig = false
+                        return
                     end
                 end
 
-                if not isWhitelisted then
-                    local newConfig = configFile:gsub("SecureServe%.EntitySecurity%s*=%s*{", "SecureServe.EntitySecurity = {\n\t{ resource = \"" .. resourceToWhitelist .. "\", whitelist = true },")
-                    SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
-                    print("[SecureServe] Added '" .. resourceToWhitelist .. "' to the entity whitelist in config.lua")
-                end
+                local newConfig = configFile:gsub("SecureServe%.EntitySecurity%s*=%s*{", "SecureServe.EntitySecurity = {\n\t{ resource = \"" .. resourceToWhitelist .. "\", whitelist = true },")
+                SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
+                print("[SecureServe] Added '" .. resourceToWhitelist .. "' to the entity whitelist in config.lua")
             end
         else
             print("[SecureServe] Error: Unable to load config.lua")
         end
+
+        isModifyingConfig = false
     else
         punish_player(source, reason, webhook, time)
     end
 end
+
 
 AddEventHandler("playerConnecting", function(name, setCallback, deferrals)
     local src = source
