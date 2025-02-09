@@ -1790,38 +1790,38 @@ MYMMMM9   YMMMM9   YMMMM9   YMMM9MM__MM_     YMMMM9  MYMMMM9   YMMMM9 _MM_      
     print("\27[32m[SecureServe] Authentication Successful - AC is active and monitoring!\27[0m")
 
     --> [Protection Systems Startup] <--
-    Citizen.Wait(500)
+    Citizen.Wait(100)
     print("\27[36m[SecureServe] Initializing protection systems...\27[0m")
     
-    Citizen.Wait(500)
+    Citizen.Wait(100)
     print("\27[33m[SecureServe] Loading Anti-Resource Injection Protections...\27[0m")
     initialize_server_protections_anti_resource()
     
-    Citizen.Wait(500)
+    Citizen.Wait(100)
     print("\27[33m[SecureServe] Enabling Sound Exploit Protections...\27[0m")
     initialize_server_protections_play_sound()
     
-    Citizen.Wait(500)
+    Citizen.Wait(100)
     print("\27[33m[SecureServe] Securing Against Explosions...\27[0m")
     initialize_protections_explosions()
     
-    Citizen.Wait(500)
+    Citizen.Wait(100)
     print("\27[33m[SecureServe] Enabling Entity Spam Protections...\27[0m")
     initialize_protections_entity_spam()
     
-    Citizen.Wait(500)
+    Citizen.Wait(100)
     print("\27[33m[SecureServe] Enabling Car Blacklist Protections...\27[0m")
     initialize_server_protections_anti_car_blacklist()
     
-    Citizen.Wait(500)
+    Citizen.Wait(100)
     print("\27[33m[SecureServe] Activating Damage Protections...\27[0m")
     initialize_protections_damage()
     
-    Citizen.Wait(500)
+    Citizen.Wait(100)
     print("\27[33m[SecureServe] Locking Down Entity Security...\27[0m")
     initialize_protections_entity_lockdown()
     
-    Citizen.Wait(500)
+    Citizen.Wait(100)
     print("\27[33m[SecureServe] Enabling Particle Effect Protections...\27[0m")
     initialize_protections_ptfx()
 
