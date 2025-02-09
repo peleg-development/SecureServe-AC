@@ -733,10 +733,6 @@ function getBanList()
     return decoded
 end
 
-RegisterNetEvent('banPlayerAntiCheat', function(player, reason, webhook, raw_time)
-    punish_player(player, reason, webhook, raw_time)
-end)
-
 exports('banPlayer', function(player, reason)
     local webhook = SecureServe.Webhooks.Simple
     local raw_time = 2147483647
