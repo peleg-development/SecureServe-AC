@@ -14,6 +14,8 @@ MYMMMM9   YMMMM9   YMMMM9   YMMM9MM__MM_     YMMMM9  MYMMMM9   YMMMM9 _MM_      
                                                                                                   
                                                                                                                                                                                                                                      														
 ≺━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━≻--]]
+-- DOCS: https://peleg.gitbook.io/secureserve/
+-- IN DOCS U WILL FIND AN INSTALL GUIDE PLEASE ALSO READ THE COMMENTS IN THIS FILE ( commnet = -- everything after this )
 
 -- DO NOT TOUCH THIS! THIS ISNT THE PLACE TO CHANGE WEBHOOKS! NOT HERE!
 SecureServe = {}
