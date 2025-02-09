@@ -36,9 +36,7 @@ SecureServe.IdentifierCheck = true                                              
 SecureServe.Debug = false 																      -- Enables debug mode, this will print debug messages in the console.
 
 
--- _______ _    _ _______ __   _ _______ _______
--- |______  \  /  |______ | \  |    |    |______
--- |______   \/   |______ |  \_|    |    ______|
+
 -- This will auto config safe events and entity security as well as explosions but when u use this u must follow the instructions!
 -- 1) Make sure that first the ac loads up with no errors if it does follow docs and make sure u installed correctly
 -- 2) Enable the option below ( set SecureServe.AutoConfig to true and not false as follows 'SecureServe.AutoConfig = true' )
@@ -48,8 +46,12 @@ SecureServe.Debug = false 																      -- Enables debug mode, this will
 -- This option will auto config the ac for u only in safe events and in explosions and in entityn security
 -- Now after u played for some time in your server disable this option then restart it and then u can let other players play normmaly this option is important to be disabled since it prevents any bans
 -- Meaning no one can be bnnaed while this is active
-SecureServe.AutoConfig = false                                                                
-SecureServe.EnableAutoSafeEvents = true -- Enables auto safe events meaning it will by defualt install the module for you
+SecureServe.AutoConfig = false              
+
+-- _______ _    _ _______ __   _ _______ _______
+-- |______  \  /  |______ | \  |    |    |______
+-- |______   \/   |______ |  \_|    |    ______|                                                  
+SecureServe.EnableAutoSafeEvents = true  -- Enables auto safe events meaning it will by defualt install the module for you
 SecureServe.EventWhitelist = {
 	-- If u get the fowlling ban: 
     -- "A player has been banned for Trigger Event with an executor (name of the event)"
@@ -63,6 +65,38 @@ SecureServe.ProtectedEvents = {
 	-- This will only work if enable auto safe events is false this will protect only the events listed here 
 	["event_name"] = true
 }
+
+
+
+-- _______ __   _ _______ _____ _______ __   __
+-- |______ | \  |    |      |      |      \_/  
+-- |______ |  \_|    |    __|__    |       |   
+SecureServe.EntityLockdownMode = "inactive" -- relaxed: Only script-owned entities created by clients are blocked., strict: Only Server-Side Scripts can create entites. | inactive 
+SecureServe.EntitySecurity = { -- Resources that are causing false bans add to here make sure to use lowercases and put the name corretely
+	{ resource = "bob74_ipl",  whitelist = true},
+	{ resource = "6x_houserobbery",  whitelist = true},
+}
+
+
+
+
+-- _______ _     _  _____          _____  _______ _____  _____  __   _ _______
+-- |______  \___/  |_____] |      |     | |______   |   |     | | \  | |______
+-- |______ _/   \_ |       |_____ |_____| ______| __|__ |_____| |  \_| ______|
+-- the whitelist option should be enabled in case of repeted bans with the reason: 
+-- Explosion Details: Type: %s, Position: %s, Damage Scale: %s
+-- u will need to find the script causing the ban with a few steps ( TODO: this is only for now i will make it better in the future )
+-- 	1. first find when the players are getting banned what explosions causes the ban
+--  2. look for the resource that creates the explosion by finding its id or by the resource it self ( explosions ids can be found here: https://wiki.rage.mp/wiki/Explosions)
+--  3. add the name of the resource u found to SecureServe.ExplosionsWhitelist with the following format:
+SecureServe.ExplosionsWhitelist = {
+    -- Add resource names here to whitelist them for explosion events
+    ["resource_name_1"] = true,
+    ["resource_name_2"] = true,
+    -- Example: ["my_custom_resource"] = true,
+}
+-- in case u still are having issues disable the option by setting the option below to false:
+SecureServe.ExplosionsModule = true
 
 
 
@@ -215,22 +249,6 @@ SecureServe.AntiInternal = { -- this will protect your server from cheaters when
 	{ detection = "Anti Internal",  punishType = "Ban", enabled = false,  webhook = "" }, -- it is also anti external may false ban but hgihly recommended
 	{ detection = "Destroy Input",  punishType = "Ban", enabled = true, webhook = "" }
 }
-
-
-
-SecureServe.EntityLockdownMode = "inactive" -- relaxed: Only script-owned entities created by clients are blocked., strict: Only Server-Side Scripts can create entites. | inactive 
-SecureServe.EntitySecurity = { -- Resources that are causing false bans add to here make sure to use lowercases and put the name corretely
-	{ resource = "bob74_ipl",  whitelist = true},
-	{ resource = "6x_houserobbery",  whitelist = true},
-}
-
-SecureServe.ExplosionsWhitelist = {
-    -- Add resource names here to whitelist them for explosion events
-    ["resource_name_1"] = true,
-    ["resource_name_2"] = true,
-    -- Example: ["my_custom_resource"] = true,
-}
-
 
 SecureServe.OCR = { -- Words on scrren that will get player banned
 	"FlexSkazaMenu","SidMenu","Lynx8","LynxEvo","Maestro Menu","redEngine","HamMafia","HamHaxia","Dopameme","redMENU","Desudo","explode","gamesense","Anticheat","Tapatio","Malossi","RedStonia","Chocohax",

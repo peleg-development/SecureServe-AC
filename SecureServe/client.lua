@@ -16,9 +16,13 @@ end)
 
 
 while not SecureServe do
-    print(GlobalState.SecureServeResource)
     _T('requestConfig')
-    print("no found not found")
+    print("Couldnot load SecureServe Config ( if this continues follow the steps below)")
+    print("1. make sure that u didnt change the ac resource name from SecureServe to something else")
+    print("2. make sure ac is ensured first in ur server.cfg file")
+    print("3. make sure u dont have any errors in server console")
+    print("if u couldnt fix the problem read our documentation https://peleg.gitbook.io/secureserve ")
+    print("in case this continues open a ticket at our discord server")
     Wait(10)
 end
 
@@ -845,6 +849,8 @@ initialize_protections_entity_security = function()
             end
         end
     end)
+
+
 end
 
 initialize_protections_explosive_bullets = function()

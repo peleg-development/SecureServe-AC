@@ -1365,7 +1365,7 @@ initialize_protections_entity_spam = function()
                             if not SV_Userver[HWID] then
                             SV_Userver[HWID] = true
                                 clear()
-                                punish_player(OWNER, "Try To Spam Vehicles: ".. SV_VEHICLES[HWID].COUNT, webhook, time)
+                                punish_player(OWNER, "Attempted to spam vehicles with count of: ".. SV_VEHICLES[HWID].COUNT, webhook, time)
                                 CancelEvent()
                             end
                         end
@@ -1393,7 +1393,7 @@ initialize_protections_entity_spam = function()
                         if SV_PEDS[HWID].COUNT >= SecureServe.maxPed then
                             if not SV_Userver[HWID] then
                             clear()
-                            punish_player(OWNER, "Try To Spam Peds: ".. SV_PEDS[HWID].COUNT, webhook, time)
+                            punish_player(OWNER, "Attempted to spam peds with count of: ".. SV_PEDS[HWID].COUNT, webhook, time)
                             CancelEvent()
                             SV_Userver[HWID] = true
                             end
@@ -1430,7 +1430,7 @@ initialize_protections_entity_spam = function()
                     if not SV_Userver[HWID] then
                         SV_Userver[HWID] = true
                         clear()
-                        punish_player(OWNER, "Try To Spam Objects: ".. SV_OBJECT[HWID].COUNT, webhook, time)
+                        punish_player(OWNER, "Attempted to spam objects with count of: ".. SV_OBJECT[HWID].COUNT, webhook, time)
                         CancelEvent()
                     end
                 end
@@ -1444,10 +1444,6 @@ initialize_protections_entity_spam = function()
     end
     ECount = {}
 end
-
-RegisterNetEvent("serverwhitels", function (entity)
-    TriggerClientEvent('addtowhitelist', -1, entity)
-end)
 
 initialize_protections_explosions = function()
     local whitelist = {}
@@ -1469,7 +1465,11 @@ initialize_protections_explosions = function()
 
     AddEventHandler('explosionEvent', function(sender, ev)
         explosions[sender] = explosions[sender] or {}
-    
+        
+        if ev.ownerNetId == 0 then
+            CancelEvent()
+        end
+
         local explosionType = ev.explosionType
         local explosionPos = ev.posX and ev.posY and ev.posZ and vector3(ev.posX, ev.posY, ev.posZ) or "Unknown"
         local explosionDamage = ev.damageScale or "Unknown"
@@ -1479,7 +1479,7 @@ initialize_protections_explosions = function()
             explosionType, explosionPos, explosionDamage, explosionOwner))
 
         local resourceName = GetInvokingResource()
-        if GetPlayerPing(sender) > 0  then
+        if GetPlayerPing(sender) > 0 and SecureServe.ExplosionsModule then
             if whitelist[sender] or SecureServe.ExplosionsWhitelist[resourceName] then
                 whitelist[sender] = false
             else
@@ -1543,10 +1543,6 @@ initialize_protections_explosions = function()
                     end
                 end
             end
-        end
-
-        if ev.ownerNetId == 0 then
-            CancelEvent()
         end
     end)
 end

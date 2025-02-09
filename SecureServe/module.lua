@@ -110,7 +110,7 @@ local fxEvents = {
 	["msk_core:server:triggerCallback"] = true,
 }
 
-if IsDuplicityVersion() and autoSafeEvents then
+if IsDuplicityVersion() then
     local _AddEventHandler = AddEventHandler
     local _RegisterNetEvent = RegisterNetEvent
 
@@ -186,45 +186,44 @@ if IsDuplicityVersion() and autoSafeEvents then
 
 	RegisterServerEvent = RegisterNetEvent
 else
-		local whitelistedEvents = {}
+	local whitelistedEvents = {}
 
-		Citizen.CreateThread(function()
-			if GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe" then
+	Citizen.CreateThread(function()
+		if GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe" then
+			whitelistedEvents = {}
+		else
+			local success, events = pcall(function()
+				return exports["SecureServe"]:GetEventWhitelist()
+			end)
+	
+			if success and events then
 				whitelistedEvents = {}
-			else
-				local success, events = pcall(function()
-					return exports["SecureServe"]:GetEventWhitelist()
-				end)
-		
-				if success and events then
-					whitelistedEvents = {}
-		
-					for _, eventName in ipairs(events) do
-						local encryptedEventName = encryptEventName(eventName, encryption_key)
-						whitelistedEvents[eventName] = true
-						whitelistedEvents[encryptedEventName] = true
-					end
-				else
-					whitelistedEvents = {}
+	
+				for _, eventName in ipairs(events) do
+					local encryptedEventName = encryptEventName(eventName, encryption_key)
+					whitelistedEvents[eventName] = true
+					whitelistedEvents[encryptedEventName] = true
 				end
-			end
-		end)
-		
-		local _TriggerServerEvent = TriggerServerEvent
-		TriggerServerEvent = function(event_name, ...)
-			local value = false
-		
-			if GetCurrentResourceName() ~= "monitor" and GetCurrentResourceName() ~= "SecureServe" then
-				value = whitelistedEvents[event_name] or fxEvents[event_name]
-			end
-		
-			if value then
-				_TriggerServerEvent(event_name, ...)
 			else
-				_TriggerServerEvent(encryptEventName(event_name, encryption_key), ...)
+				whitelistedEvents = {}
 			end
-		end		
-	end
+		end
+	end)
+	
+	local _TriggerServerEvent = TriggerServerEvent
+	TriggerServerEvent = function(event_name, ...)
+		local value = false
+	
+		if GetCurrentResourceName() ~= "monitor" and GetCurrentResourceName() ~= "SecureServe" then
+			value = whitelistedEvents[event_name] or fxEvents[event_name]
+		end
+	
+		if value then
+			_TriggerServerEvent(event_name, ...)
+		else
+			_TriggerServerEvent(encryptEventName(event_name, encryption_key), ...)
+		end
+	end		
 
 	local function isValidResource(resourceName)
 		local invalidResources = {
