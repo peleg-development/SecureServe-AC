@@ -790,10 +790,8 @@ body {
     grid-template-columns: auto 1fr auto;
     align-items: center;
     padding: 16px;
-    background: rgba(28, 28, 35, 0.95);
     backdrop-filter: blur(8px);
     border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
     position: relative;
     overflow: hidden;
 }
