@@ -1404,11 +1404,11 @@ AddEventHandler('playerSpawned',function()
 
         Citizen.CreateThread(function()
             while true do
-                Citizen.Wait(1) 
+                Citizen.Wait(4000) 
                 local playerPed = PlayerPedId()
                 SetEntityProofs(playerPed, false, false, true, false, false, false, false, false)
             end
-        end)
+        end)        
     end)
 end)
 

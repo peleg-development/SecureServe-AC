@@ -626,6 +626,7 @@ IsMenuAdmin = function(pl)
     -- check with custom function
     if SecureServe.Admin.CanOpenAdminPanel(pl) then
         return true
+    end
 
     return false
 end
