@@ -547,7 +547,7 @@ local function isWhitelisted(event_name)
 end
 
 
-exports('CheckTime', function(event, time, source)
+exports('TriggerdEvent', function(event, time, source)
     Wait(1000)
 
     if type(event) ~= "string" or event == "" then

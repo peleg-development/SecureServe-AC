@@ -128,7 +128,7 @@ if IsDuplicityVersion() then
 			_RegisterNetEvent(encrypted_event_name,  function()
 				local src = source
 				if not (GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe") then
-					exports["SecureServe"]:CheckTime(event_name, os.time(), src)
+					exports["SecureServe"]:TriggerdEvent(event_name, os.time(), src)
 				end
 			end)
 
@@ -231,7 +231,7 @@ else
 			"fivem", 
 			"gta", 
 			"citizen", 
-			"system" 
+			"system"
 		}
 	
 		for _, invalid in ipairs(invalidResources) do
@@ -302,4 +302,41 @@ else
 		end
 		_ShootSingleBulletBetweenCoords(x1, y1, z1, x2, y2, z2, damage, isAudible, weaponHash, owner, isExplosiveAmmo, ignoreEntity, speed)
 	end
+	
+	local _AddOwnedExplosion = AddOwnedExplosion
+	AddOwnedExplosion = function(owner, x, y, z, explosionType, damageScale, isAudible, isInvisible, cameraShake)
+		local resourceName = GetCurrentResourceName()
+		if isValidResource(resourceName) then
+			TriggerServerEvent("SecureServe:Explosions:Whitelist", {
+				source = GetPlayerServerId(PlayerId()),
+				resource = resourceName
+			})
+		end
+		_AddOwnedExplosion(owner, x, y, z, explosionType, damageScale, isAudible, isInvisible, cameraShake)
+	end
+	
+	local _StartScriptFire = StartScriptFire
+	StartScriptFire = function(x, y, z, maxChildren, isGasFire)
+		local resourceName = GetCurrentResourceName()
+		if isValidResource(resourceName) then
+			TriggerServerEvent("SecureServe:Explosions:Whitelist", {
+				source = GetPlayerServerId(PlayerId()),
+				resource = resourceName
+			})
+		end
+		_StartScriptFire(x, y, z, maxChildren, isGasFire)
+	end
+	
+	local _RemoveScriptFire = RemoveScriptFire
+	RemoveScriptFire = function(fireHandle)
+		local resourceName = GetCurrentResourceName()
+		if isValidResource(resourceName) then
+			TriggerServerEvent("SecureServe:Explosions:Whitelist", {
+				source = GetPlayerServerId(PlayerId()),
+				resource = resourceName
+			})
+		end
+		_RemoveScriptFire(fireHandle)
+	end	
+
 end
