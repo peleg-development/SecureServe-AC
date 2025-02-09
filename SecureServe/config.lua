@@ -15,6 +15,7 @@ MYMMMM9   YMMMM9   YMMMM9   YMMM9MM__MM_     YMMMM9  MYMMMM9   YMMMM9 _MM_      
                                                                                                                                                                                                                                      														
 ≺━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━≻--]]
 
+-- DO NOT TOUCH THIS! THIS ISNT THE PLACE TO CHANGE WEBHOOKS! NOT HERE!
 SecureServe = {}
 SecureServe.Setup = {}
 SecureServe.Webhooks = {}
