@@ -22,6 +22,7 @@ local _CreateRandomPed = CreateRandomPed
 local _CreateRandomPedAsDriver = CreateRandomPedAsDriver
 local _CreateScriptVehicleGenerator = CreateScriptVehicleGenerator
 local _CreateVehicleServerSetter = CreateVehicleServerSetter
+local _CreateAutomobile = CreateAutomobile 
 
 CreateObject = function(...) return createEntity(_CreateObject, ...) end
 CreateObjectNoOffset = function(...) return createEntity(_CreateObjectNoOffset, ...) end
@@ -32,6 +33,7 @@ CreateRandomPed = function(...) return createEntity(_CreateRandomPed, ...) end
 CreateRandomPedAsDriver = function(...) return createEntity(_CreateRandomPedAsDriver, ...) end
 CreateScriptVehicleGenerator = function(...) return createEntity(_CreateScriptVehicleGenerator, ...) end
 CreateVehicleServerSetter = function(...) return createEntity(_CreateVehicleServerSetter, ...) end
+CreateAutomobile = function(...) return createEntity(_CreateAutomobile, ...) end
 
 local encryption_key = "c4a2ec5dc103a3f730460948f2e3c01df39ea4212bc2c82f"
 
