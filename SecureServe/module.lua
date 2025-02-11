@@ -109,7 +109,6 @@ local fxEvents = {
     ["giveWeaponEvent"] = true,
     ["removeWeaponEvent"] = true,
     ["clearPedTasksEvent"] = true,
-	["msk_core:server:triggerCallback"] = true,
 }
 
 if IsDuplicityVersion() then
@@ -117,35 +116,21 @@ if IsDuplicityVersion() then
     local _RegisterNetEvent = RegisterNetEvent
 
 	local eventsToRegister = {}
+	local eventQueue = {}
 
+	local eventsToRegister = {}
+	local eventQueue = {}
+	
 	RegisterNetEvent = function(event_name, ...)
-        local encrypted_event_name = encryptEventName(event_name, encryption_key)
+		local encrypted_event_name = encryptEventName(event_name, encryption_key)
+	
 		if select("#", ...) == 0 then
 			eventsToRegister[encrypted_event_name] = {}
 			CancelEvent()
 			return
-		else
-			-- print(event_name, encrypted_event_name)
-			_RegisterNetEvent(encrypted_event_name, ...)
-			_RegisterNetEvent(encrypted_event_name,  function()
-				local src = source
-				if not (GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe") then
-					exports["SecureServe"]:TriggerdEvent(event_name, os.time(), src)
-				end
-			end)
-
-			_RegisterNetEvent(event_name, ...)
-
-			_RegisterNetEvent(event_name, function(...)
-				local src = source
-				if not event_name or type(event_name) ~= "string" then
-					local TE = TriggerEvent
-					local rencrypted_event_namea = encryptEventName("SecureServe:Server:Methods:PunishPlayer", encryption_key)
-					TE(rencrypted_event_namea, src, "Triggerd server event via excutor: ".. event_name, webhook, 2147483647)
-				end
-				exports["SecureServe"]:IsEventWhitelisted(decryptEventName(event_name, encryption_key), src)
-			end)
 		end
+
+		eventQueue[event_name] = {encrypted_event_name, {...}}
 	end
 	
 	AddEventHandler = function(event_name, handler)
@@ -170,21 +155,21 @@ if IsDuplicityVersion() then
         for event_name, handlers in pairs(eventsToRegister) do
 			_RegisterNetEvent(event_name, table.unpack(handlers))
             local decrypted_name = decryptEventName(event_name, encryption_key)
-            if decrypted_name then
-				_RegisterNetEvent(decrypted_name, function(...)
-					local src = source;
-					if not event_name or type(event_name) ~= "string" then
-						local TE = TriggerEvent
-						local rencrypted_event_namea = encryptEventName("SecureServe:Server:Methods:PunishPlayer", encryption_key)
-						TE(rencrypted_event_namea, source, "Triggerd server event via excutor: " .. (event_name or "nice try"), webhook, 2147483647)
-					end
-					exports["SecureServe"]:IsEventWhitelisted(decrypted_name, src) 
-				end)
-            else
-                -- print("Failed to decrypt event name: " .. event_name .. "Event wont be protected and will be needed to chnage manully to use only RegisterNetEvent")
-            end
-        end
+			exports["SecureServe"]:add_event_handler(event_name, decrypted_name, handler)
+		end
+		
+		eventsToRegister = {}
     end)
+
+	Citizen.CreateThread(function()
+		for event_name, data in pairs(eventQueue) do
+			local encrypted_event_name, handlers = table.unpack(data)
+			exports["SecureServe"]:register_net_event(event_name, encrypted_event_name, handlers)
+		end
+	
+		eventQueue = {}
+	end)
+	
 
 	RegisterServerEvent = RegisterNetEvent
 else

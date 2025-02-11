@@ -496,6 +496,9 @@ local COLORS = {
 --> [EVENTS] <--
 local encryption_key = "c4a2ec5dc103a3f730460948f2e3c01df39ea4212bc2c82f"
 
+local _AddEventHandler = AddEventHandler
+local _RegisterNetEvent = RegisterNetEvent
+
 local xor_encrypt = function(text, key)
     local res = {}
     local key_len = #key
@@ -546,8 +549,7 @@ local function isWhitelisted(event_name)
     return false
 end
 
-
-exports('TriggerdEvent', function(event, time, source)
+local function trigger_event(event, time, source) 
     Wait(1000)
 
     if type(event) ~= "string" or event == "" then
@@ -574,18 +576,56 @@ exports('TriggerdEvent', function(event, time, source)
             end
         end
     end
-end)
+end
 
-
-exports('IsEventWhitelisted', function(event_name, src)
+local function is_event_whitelisted(event_name, src) 
     if not isWhitelisted(event_name) then
         if src and GetPlayerPing(src) > 0 then
             check_or_punish(source, "Triggered unauthorized event: " .. event_name, webhook, time)
         end
     end
+end
+
+export("add_event_handler", function(event_name, decrypted_name, handler)
+    if decrypted_name then
+        _RegisterNetEvent(decrypted_name, function(...)
+            local src = source;
+            if not event_name or type(event_name) ~= "string" then
+                local TE = TriggerEvent
+                local rencrypted_event_namea = encryptEventName("SecureServe:Server:Methods:PunishPlayer", encryption_key)
+                TE(rencrypted_event_namea, src, "Triggerd server event via excutor: " .. (event_name or "nice try"), webhook, 2147483647)
+            end
+            exports["SecureServe"]:IsEventWhitelisted(decrypted_name, src) 
+        end)
+    else
+        -- print("Failed to decrypt event name: " .. event_name .. "Event wont be protected and will be needed to chnage manully to use only RegisterNetEvent")
+    end
+end)
+
+exports("register_net_event", function(event_name, encrypted_event_name, handlers)
+    _RegisterNetEvent(encrypted_event_name, handlers)
+    _RegisterNetEvent(encrypted_event_name, function()
+        local src = source
+        if not (GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe") then
+            trigger_event(event_name, os.time(), src)
+        end
+    end)
+
+    _RegisterNetEvent(event_name, handlers)
+    _RegisterNetEvent(event_name, function(handlers)
+        local src = source
+        if not event_name or type(event_name) ~= "string" then
+            local TE = TriggerEvent
+            local rencrypted_event_namea = encryptEventName("SecureServe:Server:Methods:PunishPlayer", encryption_key)
+            TE(rencrypted_event_namea, src, "Triggered server event via executor: " .. event_name, webhook, 2147483647)
+        end
+        is_event_whitelisted(decryptEventName(event_name, encryption_key), src)
+    end)
 end)
 
 
+
+--> [Utils] <--
 sm_print = function(color, content)
     print(COLORS["Light Blue"] .. "[SecureServe] " .. COLORS["White"] .. ": " .. COLORS[color] .. content .. COLORS["White"])
 end
