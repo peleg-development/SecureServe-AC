@@ -130,6 +130,9 @@ if IsDuplicityVersion() then
 			return
 		end
 
+		_RegisterNetEvent(encrypted_event_name, ...)
+		_RegisterNetEvent(event_name, ...)
+
 		eventQueue[event_name] = {encrypted_event_name, {...}}
 	end
 	
@@ -157,7 +160,7 @@ if IsDuplicityVersion() then
             local decrypted_name = decryptEventName(event_name, encryption_key)
 			exports["SecureServe"]:add_event_handler(event_name, decrypted_name, handler)
 		end
-		
+
 		eventsToRegister = {}
     end)
 
@@ -170,7 +173,6 @@ if IsDuplicityVersion() then
 		eventQueue = {}
 	end)
 	
-
 	RegisterServerEvent = RegisterNetEvent
 else
 	local whitelistedEvents = {}
@@ -180,7 +182,7 @@ else
 			whitelistedEvents = {}
 		else
 			local success, events = pcall(function()
-				return exports["SecureServe"]:GetEventWhitelist()
+				return exports["SecureServe"]:get_event_whitelist()
 			end)
 	
 			if success and events then
@@ -204,7 +206,9 @@ else
 		if GetCurrentResourceName() ~= "monitor" and GetCurrentResourceName() ~= "SecureServe" then
 			value = whitelistedEvents[event_name] or fxEvents[event_name]
 		end
-	
+
+		print("[DEBUG] Triggered Server Event ".. event_name)
+		
 		if value then
 			_TriggerServerEvent(event_name, ...)
 		else
@@ -230,100 +234,32 @@ else
 		return true
 	end
 	
+	local handleExplosionEvent = function(originalFunction, ...)
+		local resourceName = GetCurrentResourceName()
+		if isValidResource(resourceName) then
+			TriggerServerEvent("SecureServe:Explosions:Whitelist", {
+				source = GetPlayerServerId(PlayerId()),
+				resource = resourceName
+			})
+		end
+		return originalFunction(...)
+	end
+	
 	local _AddExplosion = AddExplosion
-	AddExplosion = function(x, y, z, explosionType, damageScale, isAudible, isInvisible, cameraShake)
-		local resourceName = GetCurrentResourceName()
-		if isValidResource(resourceName) then
-			TriggerServerEvent("SecureServe:Explosions:Whitelist", {
-				source = GetPlayerServerId(PlayerId()),
-				resource = resourceName
-			})
-		end
-		_AddExplosion(x, y, z, explosionType, damageScale, isAudible, isInvisible, cameraShake)
-	end
-	
 	local _AddExplosionWithUserVfx = AddExplosionWithUserVfx
-	AddExplosionWithUserVfx = function(x, y, z, explosionType, damageScale, isAudible, isInvisible, cameraShake)
-		local resourceName = GetCurrentResourceName()
-		if isValidResource(resourceName) then
-			TriggerServerEvent("SecureServe:Explosions:Whitelist", {
-				source = GetPlayerServerId(PlayerId()),
-				resource = resourceName
-			})
-		end
-		_AddExplosionWithUserVfx(x, y, z, explosionType, damageScale, isAudible, isInvisible, cameraShake)
-	end
-	
 	local _ExplodeVehicle = ExplodeVehicle
-	ExplodeVehicle = function(vehicle, isAudible, isInvisible)
-		local resourceName = GetCurrentResourceName()
-		if isValidResource(resourceName) then
-			TriggerServerEvent("SecureServe:Explosions:Whitelist", {
-				source = GetPlayerServerId(PlayerId()),
-				resource = resourceName
-			})
-		end
-		_ExplodeVehicle(vehicle, isAudible, isInvisible)
-	end
-	
 	local _NetworkExplodeVehicle = NetworkExplodeVehicle
-	NetworkExplodeVehicle = function(vehicle, isAudible, isInvisible, damageScale)
-		local resourceName = GetCurrentResourceName()
-		if isValidResource(resourceName) then
-			TriggerServerEvent("SecureServe:Explosions:Whitelist", {
-				source = GetPlayerServerId(PlayerId()),
-				resource = resourceName
-			})
-		end
-		_NetworkExplodeVehicle(vehicle, isAudible, isInvisible, damageScale)
-	end
-	
 	local _ShootSingleBulletBetweenCoords = ShootSingleBulletBetweenCoords
-	ShootSingleBulletBetweenCoords = function(x1, y1, z1, x2, y2, z2, damage, isAudible, weaponHash, owner, isExplosiveAmmo, ignoreEntity, speed)
-		local resourceName = GetCurrentResourceName()
-		if isValidResource(resourceName) then
-			TriggerServerEvent("SecureServe:Explosions:Whitelist", {
-				source = GetPlayerServerId(PlayerId()),
-				resource = resourceName
-			})
-		end
-		_ShootSingleBulletBetweenCoords(x1, y1, z1, x2, y2, z2, damage, isAudible, weaponHash, owner, isExplosiveAmmo, ignoreEntity, speed)
-	end
-	
 	local _AddOwnedExplosion = AddOwnedExplosion
-	AddOwnedExplosion = function(owner, x, y, z, explosionType, damageScale, isAudible, isInvisible, cameraShake)
-		local resourceName = GetCurrentResourceName()
-		if isValidResource(resourceName) then
-			TriggerServerEvent("SecureServe:Explosions:Whitelist", {
-				source = GetPlayerServerId(PlayerId()),
-				resource = resourceName
-			})
-		end
-		_AddOwnedExplosion(owner, x, y, z, explosionType, damageScale, isAudible, isInvisible, cameraShake)
-	end
-	
 	local _StartScriptFire = StartScriptFire
-	StartScriptFire = function(x, y, z, maxChildren, isGasFire)
-		local resourceName = GetCurrentResourceName()
-		if isValidResource(resourceName) then
-			TriggerServerEvent("SecureServe:Explosions:Whitelist", {
-				source = GetPlayerServerId(PlayerId()),
-				resource = resourceName
-			})
-		end
-		_StartScriptFire(x, y, z, maxChildren, isGasFire)
-	end
-	
 	local _RemoveScriptFire = RemoveScriptFire
-	RemoveScriptFire = function(fireHandle)
-		local resourceName = GetCurrentResourceName()
-		if isValidResource(resourceName) then
-			TriggerServerEvent("SecureServe:Explosions:Whitelist", {
-				source = GetPlayerServerId(PlayerId()),
-				resource = resourceName
-			})
-		end
-		_RemoveScriptFire(fireHandle)
-	end	
-
+	
+	AddExplosion = function(...) return handleExplosionEvent(_AddExplosion, ...) end
+	AddExplosionWithUserVfx = function(...) return handleExplosionEvent(_AddExplosionWithUserVfx, ...) end
+	ExplodeVehicle = function(...) return handleExplosionEvent(_ExplodeVehicle, ...) end
+	NetworkExplodeVehicle = function(...) return handleExplosionEvent(_NetworkExplodeVehicle, ...) end
+	ShootSingleBulletBetweenCoords = function(...) return handleExplosionEvent(_ShootSingleBulletBetweenCoords, ...) end
+	AddOwnedExplosion = function(...) return handleExplosionEvent(_AddOwnedExplosion, ...) end
+	StartScriptFire = function(...) return handleExplosionEvent(_StartScriptFire, ...) end
+	RemoveScriptFire = function(...) return handleExplosionEvent(_RemoveScriptFire, ...) end	
 end

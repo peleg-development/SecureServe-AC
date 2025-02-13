@@ -38,11 +38,10 @@ dependencies {
 lua54 "yes"
 
 exports {
-    'GetEventWhitelist',
-    "TriggeredEvent",
-    "IsEventWhitelisted"
+    "get_event_whitelist",
+    "add_event_handler",
+    "register_net_event"
 }
 
-server_export 'IsEventWhitelisted'
 server_export 'banPlayer'
 

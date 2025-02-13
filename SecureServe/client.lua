@@ -59,17 +59,8 @@ local function isWhitelisted(event_name)
     return false
 end
 
-exports('IsEventWhitelistedClient', function(event_name)
-    return isWhitelisted(event_name)
-end)
-
-exports('GetEventWhitelist', function()
+exports('get_event_whitelist', function()
     return SecureServe.EventWhitelist
-end)
-
-exports('TriggeredEvent', function(event, time)
-    if not time then print('banned', GetPlayerServerId(PlayerId())) end
-    TriggerServerEvent('TriggerdServerEventCheck', event, time)
 end)
 
 --> [Protections] <--

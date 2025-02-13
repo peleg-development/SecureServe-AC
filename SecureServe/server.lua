@@ -15,6 +15,7 @@ end
 Citizen.CreateThread(function()
     while true do
         local players = GetPlayers()
+
         for _, playerId in ipairs(players) do
             alive[tonumber(playerId)] = false
             TriggerClientEvent('checkalive', tonumber(playerId))
@@ -518,6 +519,31 @@ local encryptEventName = function(event_name, key)
     return result
 end
 
+local xor_decrypt = function(encrypted_text, key)
+    local res = {}
+    local key_len = #key
+    for i = 1, #encrypted_text do
+        local xor_byte = string.byte(encrypted_text, i) ~ string.byte(key, (i - 1) % key_len + 1)
+        res[i] = string.char(xor_byte)
+    end
+    return table.concat(res)
+end
+
+local decryptEventName = function(encrypted_name, key)
+    local encrypted = {}
+    for i = 1, #encrypted_name, 3 do
+        local byte_str = encrypted_name:sub(i, i + 2)
+        local byte = tonumber(byte_str)
+        if byte and byte >= 0 and byte <= 255 then
+            table.insert(encrypted, string.char(byte))
+        else
+            -- print("Decryption failed: invalid byte detected ->", byte_str)
+            return encrypted_name
+        end
+    end
+    return xor_decrypt(table.concat(encrypted), key)
+end
+
 local events = {}
 
 RegisterNetEvent("TriggerdServerEventCheck", function(event, time)
@@ -586,42 +612,56 @@ local function is_event_whitelisted(event_name, src)
     end
 end
 
-export("add_event_handler", function(event_name, decrypted_name, handler)
+exports("add_event_handler", function(event_name, decrypted_name, handler)
     if decrypted_name then
+        printDebug("[DEBUG] Registering decrypted event: " .. decrypted_name)
+
         _RegisterNetEvent(decrypted_name, function(...)
-            local src = source;
+            local src = source
+            printDebug("[DEBUG] Event triggered: " .. decrypted_name .. " | Source: " .. tostring(src))
+
             if not event_name or type(event_name) ~= "string" then
                 local TE = TriggerEvent
                 local rencrypted_event_namea = encryptEventName("SecureServe:Server:Methods:PunishPlayer", encryption_key)
-                TE(rencrypted_event_namea, src, "Triggerd server event via excutor: " .. (event_name or "nice try"), webhook, 2147483647)
+                TE(rencrypted_event_namea, src, "Triggered server event via executor: " .. (event_name or "nice try"), webhook, 2147483647)
+                printDebug("[SECURITY ALERT] Unauthorized event execution attempt detected: " .. (event_name or "Unknown"))
             end
-            exports["SecureServe"]:IsEventWhitelisted(decrypted_name, src) 
+            
+            is_event_whitelisted(decrypted_name, src)
         end)
     else
-        -- print("Failed to decrypt event name: " .. event_name .. "Event wont be protected and will be needed to chnage manully to use only RegisterNetEvent")
+        printDebug("[WARNING] Failed to decrypt event name: " .. event_name .. " | Event won't be protected.")
     end
 end)
 
 exports("register_net_event", function(event_name, encrypted_event_name, handlers)
-    _RegisterNetEvent(encrypted_event_name, handlers)
+    printDebug("[DEBUG] Registering event: " .. event_name .. " | Encrypted: " .. encrypted_event_name)
+
     _RegisterNetEvent(encrypted_event_name, function()
         local src = source
+        printDebug("[DEBUG] Encrypted event triggered: " .. encrypted_event_name .. " | Source: " .. tostring(src))
+
         if not (GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe") then
             trigger_event(event_name, os.time(), src)
+            printDebug("[SECURITY] Event monitored: " .. event_name .. " at " .. os.time())
         end
     end)
 
-    _RegisterNetEvent(event_name, handlers)
     _RegisterNetEvent(event_name, function(handlers)
         local src = source
+        printDebug("[DEBUG] Plain event triggered: " .. event_name .. " | Source: " .. tostring(src))
+
         if not event_name or type(event_name) ~= "string" then
             local TE = TriggerEvent
             local rencrypted_event_namea = encryptEventName("SecureServe:Server:Methods:PunishPlayer", encryption_key)
             TE(rencrypted_event_namea, src, "Triggered server event via executor: " .. event_name, webhook, 2147483647)
+            print("[SECURITY ALERT] Unauthorized access detected for event: " .. event_name)
         end
+
         is_event_whitelisted(decryptEventName(event_name, encryption_key), src)
     end)
 end)
+
 
 
 
@@ -869,6 +909,7 @@ function fast_punish_player(player, reason, webhook, raw_time)
             )
         end
     end
+
     if SecureServe.AutoConfig then
         local isEvent = reason:match("Triggered unauthorized event: (.+)") or reason:match("Exceeded timestamp for event: (.+)")
         if isEvent then
