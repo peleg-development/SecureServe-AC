@@ -66,9 +66,10 @@ SecureServe.EventWhitelist = {
 	"requestConfig",
 }
 
+-- manual safe events still requires module they are just if u dont want to use the auto which i dont see a reason why not with auto config as an option
 SecureServe.ProtectedEvents = {
 	-- This will only work if enable auto safe events is false this will protect only the events listed here 
-	["event_name"] = true
+	"event_name"
 }
 
 

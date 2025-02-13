@@ -662,7 +662,36 @@ exports("register_net_event", function(event_name, encrypted_event_name, handler
     end)
 end)
 
+local events_triggered = {}
 
+Citizen.CreateThread(function()
+    for eventName in pairs(SecureServe.ProtectedEvents) do
+        RegisterNetEvent(eventName, function()
+            local src = source
+            
+            if not events_triggered[src] then
+                events_triggered[src] = {} 
+            end
+
+            if not events_triggered[src][eventName] and GetPlayerPing(src) > 0 then
+                printDebug("[SECURITY ALERT] Unauthorized access detected for event: " .. event_name)
+                -- TE(rencrypted_event_namea, src, "[Manual Safe Events] Triggered server event via executor: " .. event_name, webhook, 2147483647)
+                return
+            end
+
+            Citizen.SetTimeout(3000, function()
+                events_triggered[src][eventName] = nil
+            end)
+        end)
+    end
+end)
+
+RegisterNetEvent("SecureServe:server:ManualSafeEventsTrigger", function(event_name)
+    local src = source
+    if GetPlayerPing(src) > 0 then
+        events_triggered[src][event_name] = true
+    end
+end)
 
 
 --> [Utils] <--
