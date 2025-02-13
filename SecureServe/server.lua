@@ -537,7 +537,7 @@ local decryptEventName = function(encrypted_name, key)
         if byte and byte >= 0 and byte <= 255 then
             table.insert(encrypted, string.char(byte))
         else
-            -- print("Decryption failed: invalid byte detected ->", byte_str)
+            printDebug("Decryption failed: invalid byte detected ->", byte_str)
             return encrypted_name
         end
     end
