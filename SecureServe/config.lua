@@ -125,6 +125,7 @@ SecureServe.OtherLogs = {
 -- _______ ______  _______ _____ __   _ _______
 -- |_____| |     \ |  |  |   |   | \  | |______
 -- |     | |_____/ |  |  | __|__ |  \_| ______|
+-- DO NOT UNCOMMENT ANYTHING ABOVE THE FUNCTION!
 -- Make Sure to add the resource that checks the perms as a dependency in the fxmanifest so it will work this option is only for custom cores there is already built in support for ESX QBCORE VRP QBOX TAZE and ACE PERMS 
 -- Important use a callback this will run in the client in order to prevent errors
 -- This make sures admins dosent get banned for nocliping godmode blips and such (it will be soon removed since im working on new better detections!)
