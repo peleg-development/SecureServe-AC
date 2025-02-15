@@ -62,8 +62,6 @@ SecureServe.EventWhitelist = {
 	-- And its a false ban add the event name to here
 	-- [Note] enableautosafe events must be on for this to work
 	"TestEvent",
-	"test",
-	"requestConfig",
 }
 
 -- manual safe events still requires module they are just if u dont want to use the auto which i dont see a reason why not with auto config as an option
@@ -140,7 +138,8 @@ SecureServe.OtherLogs = {
 --  "Anti Thermal Vision",
 --  "Anti Infinite Stamina"
 --  }
-SecureServe.IsAdmin = function(Player)
+SecureServe.AdminFramework = "" -- set this to custom if u want to use the function below to set whitelist
+SecureServe.IsWhitelisted = function(Player)
     --> [QB-Core] <--
     local QBCore = exports['qb-core']:GetCoreObject()
     if QBCore.Functions.HasPermission(Player, "admin") then
@@ -173,8 +172,8 @@ SecureServe.IsAdmin = function(Player)
 	-- end
 end
 
--- Note Putting your steam or any id inside Admins { } will not give u whitelist meaning u will be banned the on that gives whitelist is SecureServe.IsAdmin
--- SecureServe.IsAdmin gives whitelist for specific and unchangeable detections meaning u cant give whitelist to a person for a specific detection
+-- Note Putting your steam or any id inside Admins { } will not give u whitelist meaning u will be banned the on that gives whitelist is SecureServe.IsWhitelisted
+-- SecureServe.IsWhitelisted gives whitelist for specific and unchangeable detections meaning u cant give whitelist to a person for a specific detection
 -- use /ssm to open admin panel (this admins are for admin panel only and not for protections)
 SecureServe.AdminMenu = {
 	Webhook = "", -- Webhook for the admin menu images

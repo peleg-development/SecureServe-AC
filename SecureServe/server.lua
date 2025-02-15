@@ -1,58 +1,33 @@
-local alive = {}
-local allowedStop = {}
-local failureCount = {}
+local fx_events = {
+    ["onResourceStart"] = true,
+    ["onResourceStarting"] = true,
+    ["onResourceStop"] = true,
+    ["onServerResourceStart"] = true,
+    ["onServerResourceStop"] = true,
+    ["gameEventTriggered"] = true,
+    ["populationPedCreating"] = true,
+    ["rconCommand"] = true,
+    ["playerConnecting"] = true,
+    ["playerDropped"] = true,
+    ["onResourceListRefresh"] = true,
+    ["weaponDamageEvent"] = true,
+    ["vehicleComponentControlEvent"] = true,
+    ["respawnPlayerPedEvent"] = true,
+    ["explosionEvent"] = true,
+    ["fireEvent"] = true,
+    ["entityRemoved"] = true,
+    ["playerJoining"] = true,
+    ["startProjectileEvent"] = true,
+    ["playerEnteredScope"] = true,
+    ["playerLeftScope"] = true,
+    ["ptFxEvent"] = true,
+    ["removeAllWeaponsEvent"] = true,
+    ["giveWeaponEvent"] = true,
+    ["removeWeaponEvent"] = true,
+    ["clearPedTasksEvent"] = true,
+}
 
-local checkInterval = 5000  
-local maxFailures = 40   
-
-printDebug = function(...)
-    if SecureServe.Debug then
-        print("^4[SecureServe DEBUG]^7", ...) 
-    end
-end
-
-
-Citizen.CreateThread(function()
-    while true do
-        local players = GetPlayers()
-
-        for _, playerId in ipairs(players) do
-            alive[tonumber(playerId)] = false
-            TriggerClientEvent('checkalive', tonumber(playerId))
-        end
-
-        Wait(checkInterval)
-
-        for _, playerId in ipairs(players) do
-            if not alive[tonumber(playerId)] and allowedStop[tonumber(playerId)] then
-                failureCount[tonumber(playerId)] = (failureCount[tonumber(playerId)] or 0) + 1
-                if failureCount[tonumber(playerId)] >= maxFailures then
-                    punish_player(tonumber(playerId), 'You have been dropped for not responding to the server.', webhook, time)
-                end
-            else
-                failureCount[tonumber(playerId)] = 0
-            end
-        end
-    end
-end)
-
-RegisterNetEvent('addalive', function()
-    local src = source
-    alive[tonumber(src)] = true
-end)
-
-RegisterNetEvent('allowedStop', function()
-    local src = source
-    allowedStop[src] = true
-end)
-
-AddEventHandler('playerDropped', function()
-    local src = source
-    alive[src] = nil
-    allowedStop[src] = nil
-    failureCount[src] = nil
-end)
-
+SetConvar("secureserve_resource", GetCurrentResourceName())
 
 
 RegisterNetEvent('requestConfig', function()
@@ -72,14 +47,6 @@ Citizen.CreateThread(function()
         Citizen.Wait(760)
     end
 end)
-
-local playerStates = {}
-
-RegisterNetEvent('playerLoaded', function()
-    local src = source
-    playerStates[src] = { loaded = true, loadTime = GetGameTimer() }
-end)
-
 
 --> [Protections] <--
 ProtectionCount = {}
@@ -495,173 +462,12 @@ local COLORS = {
 }
 
 --> [EVENTS] <--
-local encryption_key = "c4a2ec5dc103a3f730460948f2e3c01df39ea4212bc2c82f"
 
-local _AddEventHandler = AddEventHandler
-local _RegisterNetEvent = RegisterNetEvent
+-- local trigger_list = {}
+-- local _AddEventHandler = AddEventHandler
+-- exports("listen_to_events", function (events_to_listen)
 
-local xor_encrypt = function(text, key)
-    local res = {}
-    local key_len = #key
-    for i = 1, #text do
-        local xor_byte = string.byte(text, i) ~ string.byte(key, (i - 1) % key_len + 1)
-        res[i] = string.char(xor_byte)
-    end
-    return table.concat(res)
-end
-
-local encryptEventName = function(event_name, key)
-    local encrypted = xor_encrypt(event_name, key)
-    local result = ""
-    for i = 1, #encrypted do
-        result = result .. string.format("%03d", string.byte(encrypted, i))
-    end
-    return result
-end
-
-local xor_decrypt = function(encrypted_text, key)
-    local res = {}
-    local key_len = #key
-    for i = 1, #encrypted_text do
-        local xor_byte = string.byte(encrypted_text, i) ~ string.byte(key, (i - 1) % key_len + 1)
-        res[i] = string.char(xor_byte)
-    end
-    return table.concat(res)
-end
-
-local decryptEventName = function(encrypted_name, key)
-    local encrypted = {}
-    for i = 1, #encrypted_name, 3 do
-        local byte_str = encrypted_name:sub(i, i + 2)
-        local byte = tonumber(byte_str)
-        if byte and byte >= 0 and byte <= 255 then
-            table.insert(encrypted, string.char(byte))
-        else
-            printDebug("Decryption failed: invalid byte detected ->", byte_str)
-            return encrypted_name
-        end
-    end
-    return xor_decrypt(table.concat(encrypted), key)
-end
-
-local events = {}
-
-RegisterNetEvent("TriggerdServerEventCheck", function(event, time)
-    events[event] = time
-end)
-
-
-local function isWhitelisted(event_name)
-    if not SecureServe or not SecureServe.EventWhitelist or type(SecureServe.EventWhitelist) ~= "table" then
-        printDebug("Error: EventWhitelist is missing or not a table.")
-        return false
-    end
-
-    if not event_name or type(event_name) ~= "string" or event_name == "" then
-        printDebug("Error: event_name is invalid or empty.")
-        return false
-    end    
-
-    for _, whitelisted_event in ipairs(SecureServe.EventWhitelist) do
-        if type(whitelisted_event) == "string" then
-            if event_name == whitelisted_event or event_name == encryptEventName(whitelisted_event, encryption_key) then
-                return true
-            end
-        else
-            printDebug("Warning: Non-string value found in EventWhitelist. Skipping.")
-        end
-    end
-
-    return false
-end
-
-local function trigger_event(event, time, source) 
-    Wait(1000)
-
-    if type(event) ~= "string" or event == "" then
-        punish_player(source, "Triggered invalid event: " .. tostring(event), webhook, time)
-        return
-    end
-
-    local playerState = playerStates[source]
-    if playerState and playerState.loaded then
-        if not events[event] and not isWhitelisted(event) then
-            Wait(500)
-            if not events[event] then
-                Wait(500)
-                local encrypted_event = encryptEventName(event, encryption_key)
-                if not events[event] and not events[encrypted_event] then
-                    check_or_punish(source, "Triggered unauthorized event: " .. event, webhook, time)
-                end
-            end
-        else
-            local eventTime = events[event]
-            if eventTime == false then return end
-            if eventTime and math.abs(time - eventTime) >= 10000  and not isWhitelisted(event) then
-                check_or_punish(source, "Exceeded timestamp for event: " .. event, webhook, time)
-            end
-        end
-    end
-end
-
-local function is_event_whitelisted(event_name, src) 
-    if not isWhitelisted(event_name) then
-        if src and GetPlayerPing(src) > 0 then
-            check_or_punish(source, "Triggered unauthorized event: " .. event_name, webhook, time)
-        end
-    end
-end
-
-exports("add_event_handler", function(event_name, decrypted_name, handler)
-    if decrypted_name then
-        printDebug("[DEBUG] Registering decrypted event: " .. decrypted_name)
-
-        _RegisterNetEvent(decrypted_name, function(...)
-            local src = source
-            printDebug("[DEBUG] Event triggered: " .. decrypted_name .. " | Source: " .. tostring(src))
-
-            if not event_name or type(event_name) ~= "string" then
-                local TE = TriggerEvent
-                local rencrypted_event_namea = encryptEventName("SecureServe:Server:Methods:PunishPlayer", encryption_key)
-                TE(rencrypted_event_namea, src, "Triggered server event via executor: " .. (event_name or "nice try"), webhook, 2147483647)
-                printDebug("[SECURITY ALERT] Unauthorized event execution attempt detected: " .. (event_name or "Unknown"))
-            end
-            
-            is_event_whitelisted(decrypted_name, src)
-        end)
-    else
-        printDebug("[WARNING] Failed to decrypt event name: " .. event_name .. " | Event won't be protected.")
-    end
-end)
-
-exports("register_net_event", function(event_name, encrypted_event_name, handlers)
-    printDebug("[DEBUG] Registering event: " .. event_name .. " | Encrypted: " .. encrypted_event_name)
-
-    _RegisterNetEvent(encrypted_event_name, function()
-        local src = source
-        printDebug("[DEBUG] Encrypted event triggered: " .. encrypted_event_name .. " | Source: " .. tostring(src))
-
-        if not (GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe") then
-            trigger_event(event_name, os.time(), src)
-            printDebug("[SECURITY] Event monitored: " .. event_name .. " at " .. os.time())
-        end
-    end)
-
-    _RegisterNetEvent(event_name, function(handlers)
-        local src = source
-        printDebug("[DEBUG] Plain event triggered: " .. event_name .. " | Source: " .. tostring(src))
-
-        if not event_name or type(event_name) ~= "string" then
-            local TE = TriggerEvent
-            local rencrypted_event_namea = encryptEventName("SecureServe:Server:Methods:PunishPlayer", encryption_key)
-            TE(rencrypted_event_namea, src, "Triggered server event via executor: " .. event_name, webhook, 2147483647)
-            print("[SECURITY ALERT] Unauthorized access detected for event: " .. event_name)
-        end
-
-        is_event_whitelisted(decryptEventName(event_name, encryption_key), src)
-    end)
-end)
-
+-- end)
 local events_triggered = {}
 
 Citizen.CreateThread(function()
@@ -709,15 +515,15 @@ end
 
 local admins = {}
 AddEventHandler("txAdmin:events:adminAuth",function (data)
-    if data.isAdmin then
+    if data.IsWhitelisted then
         table.insert(admins, data.netid)
         admins[data.netid] = true
         print(('^7[^4 AUTH ^7] ✅ Admin [%s] %s (%s) has been authenticated using txAdmin!'):format(data.netid,GetPlayerName(data.netid),data.username))
     end
 end)
 
-ServerIsadmin = function(pl)
-    return SecureServe.IsAdmin(pl) or admins[pl] == true
+ServerIsWhitelisted = function(pl)
+    return SecureServe.IsWhitelisted(pl) or admins[pl] == true
 end
 
 IsMenuAdmin = function(pl)
@@ -744,8 +550,8 @@ end
 
 RegisterNetEvent('SecureServe:RequestAdminStatus', function(player, cb)
     local src = source
-    local isAdmin = ServerIsadmin(src) 
-    TriggerClientEvent('SecureServe:ReturnAdminStatus', src, isAdmin)
+    local IsWhitelisted = ServerIsWhitelisted(src) 
+    TriggerClientEvent('SecureServe:ReturnAdminStatus', src, IsWhitelisted)
 end)
 
 RegisterNetEvent('SecureServe:RequestMenuAdminStatus', function(player, cb)
@@ -771,42 +577,42 @@ send_log = function(webhook, title, message)
 end
 
 function ScreenshotLog(data, reason, punishment, banId, webhook)
-  local steam = data.steam
-  local discord = data.discord
-  local license = data.license
-  local ip = data.ip
-  local HWID = data.hwid
-  local playerId = data.playerId
-  local steamDec = tonumber(steam:gsub("steam:", ""), 16)
-  local steamprofile = steam == "Not Found" and "Steam profile not found" or ("[Steam Profile](https://steamcommunity.com/profiles/%s)"):format(steamDec)
-  local discordping = "<@" .. discord:gsub('discord:', '') .. "> (".. discord:gsub('discord:', '') .. ")"
+    local steam = data.steam
+    local discord = data.discord
+    local license = data.license
+    local ip = data.ip
+    local HWID = data.hwid
+    local playerId = data.playerId
+    local playerName = data.PlayerName
+    local steamDec = tonumber(steam:gsub("steam:", ""), 16)
+    local steamprofile = steam == "Not Found" and "Steam profile not found" or ("[Steam Profile](https://steamcommunity.com/profiles/%s)"):format(steamDec)
+    local discordping = "<@" .. discord:gsub('discord:', '') .. "> (".. discord:gsub('discord:', '') .. ")"
+    local embed = {
+        {
+            color = 38880, 
+            author = {
+                name = "SecureServe Logs",
+                icon_url = "https://images-ext-1.discordapp.net/external/ATCidz-Uio1fj26KQZH1mmy20YnxQxQxv-sc0gBFGFw/%3Fformat%3Dwebp%26quality%3Dlossless/https/images-ext-1.discordapp.net/external/z9bSkH3p8iTlOClfnK7zVOEC9i5xcORJZfsuqlcf1XA/https/cdn.discordapp.com/icons/814390233898156063/c959fc0889d2436b87ccbf2f73d4f30e.png?format=webp&quality=lossless"
+            },
+            title = "Player Detected",
+            description = ("**Punishment Method:** %s\n**Reason:** %s\n**Ban ID:** %s"):format(punishment, reason, banId),
+            fields = {
+                { name = "Player", value = "[#" .. playerId .. "] " .. playerName, inline = true },
+                { name = "Discord", value = discordping, inline = true },
+                { name = "Steam", value = steamprofile, inline = true },
+                { name = "License", value = license or "N/A", inline = true },
+                { name = "HWID", value = HWID or "N/A", inline = true },
+                { name = "IP Address", value = ("[Info](https://ipinfo.io/%s)"):format(ip:gsub('ip:', '')), inline = true },
+            },
+            image = { url = data.image },
+            footer = {
+                text = "SecureServe Anticheat - " .. os.date('%d.%m.%Y - %H:%M:%S'),
+                icon_url = "https://images-ext-1.discordapp.net/external/ATCidz-Uio1fj26KQZH1mmy20YnxQxQxv-sc0gBFGFw/%3Fformat%3Dwebp%26quality%3Dlossless/https/images-ext-1.discordapp.net/external/z9bSkH3p8iTlOClfnK7zVOEC9i5xcORJZfsuqlcf1XA/https/cdn.discordapp.com/icons/814390233898156063/c959fc0889d2436b87ccbf2f73d4f30e.png?format=webp&quality=lossless"
+            }
+        }
+    }
 
-  local embed = {
-      {
-          color = 38880, 
-          author = {
-              name = "SecureServe Logs",
-              icon_url = "https://images-ext-1.discordapp.net/external/ATCidz-Uio1fj26KQZH1mmy20YnxQxQxv-sc0gBFGFw/%3Fformat%3Dwebp%26quality%3Dlossless/https/images-ext-1.discordapp.net/external/z9bSkH3p8iTlOClfnK7zVOEC9i5xcORJZfsuqlcf1XA/https/cdn.discordapp.com/icons/814390233898156063/c959fc0889d2436b87ccbf2f73d4f30e.png?format=webp&quality=lossless"
-          },
-          title = "Player Detected",
-          description = ("**Punishment Method:** %s\n**Reason:** %s\n**Ban ID:** %s"):format(punishment, reason, banId),
-          fields = {
-              { name = "Player", value = "[#" .. playerId .. "] " .. GetPlayerName(playerId), inline = true },
-              { name = "Discord", value = discordping, inline = true },
-              { name = "Steam", value = steamprofile, inline = true },
-              { name = "License", value = license or "N/A", inline = true },
-              { name = "HWID", value = HWID or "N/A", inline = true },
-              { name = "IP Address", value = ("[Info](https://ipinfo.io/%s)"):format(ip:gsub('ip:', '')), inline = true },
-          },
-          image = { url = data.image },
-          footer = {
-              text = "SecureServe Anticheat - " .. os.date('%d.%m.%Y - %H:%M:%S'),
-              icon_url = "https://images-ext-1.discordapp.net/external/ATCidz-Uio1fj26KQZH1mmy20YnxQxQxv-sc0gBFGFw/%3Fformat%3Dwebp%26quality%3Dlossless/https/images-ext-1.discordapp.net/external/z9bSkH3p8iTlOClfnK7zVOEC9i5xcORJZfsuqlcf1XA/https/cdn.discordapp.com/icons/814390233898156063/c959fc0889d2436b87ccbf2f73d4f30e.png?format=webp&quality=lossless"
-          }
-      }
-  }
-
-  PerformHttpRequest(SecureServe.Webhooks.Simple, function(err, text, headers) end, 'POST', json.encode({ username = "SecureServe Logs", avatar_url = "https://images-ext-1.discordapp.net/external/ATCidz-Uio1fj26KQZH1mmy20YnxQxQxv-sc0gBFGFw/%3Fformat%3Dwebp%26quality%3Dlossless/https/images-ext-1.discordapp.net/external/z9bSkH3p8iTlOClfnK7zVOEC9i5xcORJZfsuqlcf1XA/https/cdn.discordapp.com/icons/814390233898156063/c959fc0889d2436b87ccbf2f73d4f30e.png?format=webp&quality=lossless", embeds = embed }), { ['Content-Type'] = 'application/json' })
+    PerformHttpRequest(SecureServe.Webhooks.Simple, function(err, text, headers) end, 'POST', json.encode({ username = "SecureServe Logs", avatar_url = "https://images-ext-1.discordapp.net/external/ATCidz-Uio1fj26KQZH1mmy20YnxQxQxv-sc0gBFGFw/%3Fformat%3Dwebp%26quality%3Dlossless/https/images-ext-1.discordapp.net/external/z9bSkH3p8iTlOClfnK7zVOEC9i5xcORJZfsuqlcf1XA/https/cdn.discordapp.com/icons/814390233898156063/c959fc0889d2436b87ccbf2f73d4f30e.png?format=webp&quality=lossless", embeds = embed }), { ['Content-Type'] = 'application/json' })
 end
 
 local banned = {}
@@ -930,24 +736,10 @@ function fast_punish_player(player, reason, webhook, raw_time)
             "`\nHWID 4: `" .. hwid4 or "none".. 
             "`\nHWID 5: `" .. hwid5 or "none".. "`"
         )
-    
-        if time == 2147483647 then
-            send_log(
-                "https://discord.com/api/webhooks/1237077520210329672/PvyzM9Vr43oT3BbvBeLLeS-BQnCV4wSUQDhbKBAXr9g9JcjshPCzQ7DL1pG8sgjIqpK0",
-                "A player has been banned for " .. reason
-            )
-        end
     end
 
-    if SecureServe.AutoConfig then
-        local isEvent = reason:match("Triggered unauthorized event: (.+)") or reason:match("Exceeded timestamp for event: (.+)")
-        if isEvent then
-            check_or_punish(player, reason, webhook, time)
-        end
-    else
-        DropPlayer(source, "You have been punished from " .. SecureServe.ServerName .. 
-        ".\nTo view more information please reconnect to the server.")
-    end 
+    DropPlayer(source, "You have been punished from " .. SecureServe.ServerName .. 
+    ".\nTo view more information please reconnect to the server.")
     banned[player] = nil
 end
 
@@ -1031,14 +823,7 @@ if not banned[player] then
         "`\nHWID 4: `" .. hwid4 or "none".. 
         "`\nHWID 5: `" .. hwid5 or "none".. "`"
     )
-
-    if time == 2147483647 then
-        send_log(
-            "https://discord.com/api/webhooks/1237077520210329672/PvyzM9Vr43oT3BbvBeLLeS-BQnCV4wSUQDhbKBAXr9g9JcjshPCzQ7DL1pG8sgjIqpK0",
-            "A player has been banned for " .. reason
-        )
     end
-end
 end
 
 
@@ -1093,20 +878,13 @@ RegisterNetEvent('SecureServe:Server:Methods:Upload', function (screenshot, reas
     })
 
 
-    ScreenshotLog({license=license,discord=discord,steam=steam,ip=ip,fivem=fivem,hwid=HWID,image=screenshot,playerId=tostring(src)}, reason, punish, banID)
+    ScreenshotLog({license=license,discord=discord,steam=steam,ip=ip,fivem=fivem,hwid=HWID,image=screenshot,playerId=tostring(src), playerName = playername}, reason, punish, banID)
     
     banned[src] = true
-    if SecureServe.AutoConfig then
-        local isEvent = reason:match("Triggered unauthorized event: (.+)") or reason:match("Exceeded timestamp for event: (.+)")
-        if isEvent then
-            check_or_punish(src, reason, webhook, time)
-        end
-    else
-        if reason ~= 'External Executor Detected (Player Usally Has (SkriptGG, HX, TZX)' then
-            DropPlayer(src, "You have been punished from " .. SecureServe.ServerName .. 
-            ".\nTo view more information please reconnect to the server.")
-            end
-    end 
+
+    DropPlayer(src, "You have been punished from " .. SecureServe.ServerName .. 
+    ".\nTo view more information please reconnect to the server.")
+
     banned[src] = nil
 end)
 
@@ -1116,11 +894,16 @@ RegisterNetEvent("SecureServe:Server:Methods:PunishPlayer" .. GlobalState.Secure
     punish_player(player, reason, webhook, time)
 end)
 
+RegisterNetEvent("SecureServe:Server:Methods:ModulePunish" .. GlobalState.SecureServe_events, function(player, reason, webhook, time)
+    if not player then player = source end
+    module_ban(player, reason, webhook, time)
+end)
 
 --[Auto Config]--
 local isModifyingConfig = false
 
-function check_or_punish(source, reason, webhook, time)
+function module_ban(src, reason, webhook, time)
+    local isEvent, detectedResource = reason:match("Tried triggering a restricted event: (.+) in resource: (.+)")
     if SecureServe.AutoConfig then
         while isModifyingConfig do
             Citizen.Wait(100) 
@@ -1130,10 +913,7 @@ function check_or_punish(source, reason, webhook, time)
         local configFile = LoadResourceFile(GetCurrentResourceName(), "config.lua")
 
         if configFile then
-            local isEvent = reason:match("Triggered unauthorized event: (.+)") or reason:match("Exceeded timestamp for event: (.+)")
-            local detectedResource = reason:match("Created Suspicious Entity %[(.-)%] at script: (.+)")
-
-            if isEvent then
+            if isEvent and detectedResource then
                 if configFile:find('"' .. isEvent .. '"', 1, true) or configFile:find("'" .. isEvent .. "'", 1, true) then
                     printDebug("\27[31m[SecureServe] Event '" .. isEvent .. "' is already in the whitelist!\27[0m")
                     isModifyingConfig = false
@@ -1145,17 +925,15 @@ function check_or_punish(source, reason, webhook, time)
                 print("[SecureServe] Added '" .. isEvent .. "' to the event whitelist in config.lua")
 
             elseif detectedResource then
-                local resourceToWhitelist = detectedResource
-
-                if configFile:find('resource = "' .. resourceToWhitelist .. '"', 1, true) or configFile:find("resource = '" .. resourceToWhitelist .. "'", 1, true) then
-                    printDebug("\27[31m[SecureServe] Resource '" .. resourceToWhitelist .. "' is already whitelisted!\27[0m")
+                if configFile:find('resource = "' .. detectedResource .. '"', 1, true) or configFile:find("resource = '" .. detectedResource .. "'", 1, true) then
+                    printDebug("\27[31m[SecureServe] Resource '" .. detectedResource .. "' is already whitelisted!\27[0m")
                     isModifyingConfig = false
                     return
                 end
 
-                local newConfig = configFile:gsub("SecureServe%.EntitySecurity%s*=%s*{", "SecureServe.EntitySecurity = {\n\t{ resource = \"" .. resourceToWhitelist .. "\", whitelist = true },")
+                local newConfig = configFile:gsub("SecureServe%.EntitySecurity%s*=%s*{", "SecureServe.EntitySecurity = {\n\t{ resource = \"" .. detectedResource .. "\", whitelist = true },")
                 SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
-                print("[SecureServe] Added '" .. resourceToWhitelist .. "' to the entity whitelist in config.lua")
+                print("[SecureServe] Added '" .. detectedResource .. "' to the entity whitelist in config.lua")
             end
         else
             print("[SecureServe] Error: Unable to load config.lua")
@@ -1163,9 +941,17 @@ function check_or_punish(source, reason, webhook, time)
 
         isModifyingConfig = false
     else
-        punish_player(source, reason, webhook, time)
+        if isEvent then
+            if not (fx_events[isEvent] or SecureServe.EventWhitelist[isEvent]) then
+                punish_player(src, reason, webhook, 2147483647)
+            end
+        else
+            punish_player(src, reason, webhook, 2147483647)
+        end
     end
 end
+
+exports("module_ban", module_ban)
 
 
 
@@ -1662,41 +1448,6 @@ initialize_protections_explosions = function()
     end)
 end
 
-local playerHeartbeats = {}
-
-local function onPlayerDisconnected()
-    local playerId = source
-    playerHeartbeats[playerId] = nil
-end
-AddEventHandler("playerDropped", onPlayerDisconnected)
-
-RegisterNetEvent("mMkHcvct3uIg04STT16I:cbnF2cR9ZTt8NmNx2jQS", function(key)
-    local playerId = source
-    if string.len(key) < 15 or string.len(key) > 35 or key == nil then
-        punish_player(playerId, "Tried to stop the anticheat", webhook, -1)
-    else
-        playerHeartbeats[playerId] = os.time()
-    end
-end)
-
-Citizen.CreateThread(function()
-    while true do
-        Citizen.Wait(10 * 1000)
-        for playerId, lastHeartbeatTime in pairs(playerHeartbeats) do
-            if lastHeartbeatTime == nil then return end
-            local currentTime = os.time()
-            local timeSinceLastHeartbeat = currentTime - lastHeartbeatTime
-            if timeSinceLastHeartbeat > 15 * 1000 then
-                BetterPrint(
-                    ("Player [%s] %s didn't sent any heartbeat to the server in required time. Last response: %s seconds ago")
-                    :format(playerId, GetPlayerName(playerId), timeSinceLastHeartbeat), "info")
-                punish_player(playerId, "Tried to stop the anticheat", webhook, -1)
-                playerHeartbeats[playerId] = nil
-            end
-        end
-    end
-end)
-
 initialize_server_protections_play_sound = function()
     if (Anti_Play_Sound_enabled) then
         if (GetConvar("sv_enableNetworkedSounds", "true") == "false") then return end
@@ -1784,31 +1535,104 @@ initialize_server_protections_anti_car_blacklist = function()
     end)  
 end
 
---> [Init] <--
+initlize_heart_beat = function ()
+    local playerHeartbeats = {}
 
-local timeout = 0
-local ac_name = GetCurrentResourceName()
-local user_data = {
-    DiscordID = "N/A",
-    expire = "N/A",
-    date = "N/A",
-    is_expired = true
-}
-
-RegisterServerCallback {
-    eventName = 'SecureServe:Server_Callbacks:Protections:GetConfig',
-    eventCallback = function(source)
-        return SecureServe
+    local function onPlayerDisconnected()
+        local playerId = source
+        playerHeartbeats[playerId] = nil
     end
-}
+    AddEventHandler("playerDropped", onPlayerDisconnected)
+
+    RegisterNetEvent("mMkHcvct3uIg04STT16I:cbnF2cR9ZTt8NmNx2jQS", function(key)
+        local playerId = source
+        if string.len(key) < 15 or string.len(key) > 35 or key == nil then
+            punish_player(playerId, "Tried to stop the anticheat", webhook, -1)
+        else
+            playerHeartbeats[playerId] = os.time()
+        end
+    end)
+
+    Citizen.CreateThread(function()
+        while true do
+            Citizen.Wait(10 * 1000)
+            for playerId, lastHeartbeatTime in pairs(playerHeartbeats) do
+                if lastHeartbeatTime == nil then return end
+                local currentTime = os.time()
+                local timeSinceLastHeartbeat = currentTime - lastHeartbeatTime
+                if timeSinceLastHeartbeat > 15 * 1000 then
+                    BetterPrint(
+                        ("Player [%s] %s didn't sent any heartbeat to the server in required time. Last response: %s seconds ago")
+                        :format(playerId, GetPlayerName(playerId), timeSinceLastHeartbeat), "info")
+                    punish_player(playerId, "Tried to stop the anticheat", webhook, -1)
+                    playerHeartbeats[playerId] = nil
+                end
+            end
+        end
+    end)
+end
+
+initialize_check_alive = function () 
+    local alive = {}
+    local allowedStop = {}
+    local failureCount = {}
+
+    local checkInterval = 5000  
+    local maxFailures = 40   
+
+    printDebug = function(...)
+        if SecureServe.Debug then
+            print("^4[SecureServe DEBUG]^7", ...) 
+        end
+    end
 
 
-CreateThread(function()
-    Wait(5000) 
+    Citizen.CreateThread(function()
+        while true do
+            local players = GetPlayers()
 
+            for _, playerId in ipairs(players) do
+                alive[tonumber(playerId)] = false
+                TriggerClientEvent('checkalive', tonumber(playerId))
+            end
+
+            Wait(checkInterval)
+
+            for _, playerId in ipairs(players) do
+                if not alive[tonumber(playerId)] and allowedStop[tonumber(playerId)] then
+                    failureCount[tonumber(playerId)] = (failureCount[tonumber(playerId)] or 0) + 1
+                    if failureCount[tonumber(playerId)] >= maxFailures then
+                        punish_player(tonumber(playerId), 'You have been dropped for not responding to the server.', webhook, time)
+                    end
+                else
+                    failureCount[tonumber(playerId)] = 0
+                end
+            end
+        end
+    end)
+
+    RegisterNetEvent('addalive', function()
+        local src = source
+        alive[tonumber(src)] = true
+    end)
+
+    RegisterNetEvent('allowedStop', function()
+        local src = source
+        allowedStop[src] = true
+    end)
+
+    AddEventHandler('playerDropped', function()
+        local src = source
+        alive[src] = nil
+        allowedStop[src] = nil
+        failureCount[src] = nil
+    end)
+end
+
+initialize_auto_perms = function ()
     if GetResourceState("qb-core") == "started" then
         SecureServe.AdminFramework = "qb-core"
-        SecureServe.IsAdmin = function(Player)
+        SecureServe.IsWhitelisted = function(Player)
             local QBCore = exports['qb-core']:GetCoreObject()
             return QBCore.Functions.HasPermission(Player, "admin")
         end
@@ -1816,7 +1640,7 @@ CreateThread(function()
 
     elseif GetResourceState("es_extended") == "started" then
         SecureServe.AdminFramework = "es_extended"
-        SecureServe.IsAdmin = function(Player)
+        SecureServe.IsWhitelisted = function(Player)
             local ESX = exports['es_extended']:getSharedObject()
             if ESX then
                 local xPlayer = ESX.GetPlayerFromId(Player)
@@ -1831,7 +1655,7 @@ CreateThread(function()
 
     elseif GetResourceState("vrp") == "started" then
         SecureServe.AdminFramework = "vrp"
-        SecureServe.IsAdmin = function(Player)
+        SecureServe.IsWhitelisted = function(Player)
             local Tunnel = module("vrp", "lib/Tunnel")
             local Proxy = module("vrp", "lib/Proxy")
             local vRP = Proxy.getInterface("vRP")
@@ -1842,7 +1666,7 @@ CreateThread(function()
 
     elseif GetResourceState("qbox") == "started" then
         SecureServe.AdminFramework = "qbox"
-        SecureServe.IsAdmin = function(Player)
+        SecureServe.IsWhitelisted = function(Player)
             local QBOX = exports['qbox-core']:GetCoreObject()
             return QBOX.Functions.HasPermission(Player, "admin")
         end
@@ -1850,22 +1674,16 @@ CreateThread(function()
 
     elseif GetResourceState("taze") == "started" then
         SecureServe.AdminFramework = "taze"
-        SecureServe.IsAdmin = function(Player)
+        SecureServe.IsWhitelisted = function(Player)
             return exports["taze"]:CheckAdmin(Player)
         end
         print("^2[SecureServe] Detected TAZE - Using TAZE Admin Permissions.^7")
 
     else
         SecureServe.AdminFramework = "custom"
-        print("^3[SecureServe] No supported core detected - Please edit SecureServe.IsAdmin in config.lua in SecureServe resource.^7")
+        print("^3[SecureServe] No supported core detected - Please edit SecureServe.IsWhitelisted in config.lua in SecureServe resource.^7")
     end
-end)
-
-if (not (SecureServe.EnableAutoSafeEvents == GlobalState.EnableAutoSafeEvents)) then
-    GlobalState.EnableAutoSafeEvents = SecureServe.EnableAutoSafeEvents
-    print("^1[SecureServe] Changed Auto Safe Events to: " .. tostring(SecureServe.EnableAutoSafeEvents) .. "^7")
 end
-
 
 -->[Startup Prints]<--
 Citizen.CreateThread(function()
@@ -1892,9 +1710,9 @@ MYMMMM9   YMMMM9   YMMMM9   YMMM9MM__MM_     YMMMM9  MYMMMM9   YMMMM9 _MM_      
     
     Citizen.Wait(500)
 
-    print("\27[36m[SecureServe] Authenticating with server...\27[0m")
+    print("\27[36m[SecureServe] Starting Anticheat...\27[0m")
     Citizen.Wait(1000)
-
+    
     SetConvar("Anti Cheat", "SecureServe-ac.com")
     SetConvarServerInfo("Anti Cheat", "SecureServe-ac.com")
     SetConvarReplicated("Anti Cheat", "SecureServe-ac.com")
@@ -1937,9 +1755,27 @@ MYMMMM9   YMMMM9   YMMMM9   YMMM9MM__MM_     YMMMM9  MYMMMM9   YMMMM9 _MM_      
     print("\27[33m[SecureServe] Enabling Particle Effect Protections...\27[0m")
     initialize_protections_ptfx()
 
+    Citizen.Wait(100)
+    print("\27[33m[SecureServe] Enabling Check Alive Detection...\27[0m")
+    initialize_check_alive()
+    
+    Citizen.Wait(100)
+    print("\27[33m[SecureServe] Setting Admin Perms...\27[0m")
+    initialize_auto_perms()
+
+    Citizen.Wait(100)
+    print("\27[33m[SecureServe] Enabling Player Heart Beat...\27[0m")
+    initlize_heart_beat()
+
     Citizen.Wait(1000)
     print("\27[32m[SecureServe] All protection systems are now active and monitoring!\27[0m")
     print("\27[34m================================================================================\27[0m")
+
+    --> [Safe Events Perints] <--
+    if (not (SecureServe.EnableAutoSafeEvents == GlobalState.EnableAutoSafeEvents)) then
+        GlobalState.EnableAutoSafeEvents = SecureServe.EnableAutoSafeEvents
+        print("^1[SecureServe] Changed Auto Safe Events to: " .. tostring(SecureServe.EnableAutoSafeEvents) .. "^7")
+    end
 
     --> [Auto Config Prints] <--
     if SecureServe.InstructionsPrint then
@@ -2117,3 +1953,77 @@ AddEventHandler('onResourceStop', function(resourceName)
     })
 end)
 
+
+local resourcePath = GetResourcePath(GetCurrentResourceName()) .. "/bans.json"
+
+function loadBans()
+    local file = io.open(resourcePath, "r")
+    if file then
+        local content = file:read("*a")
+        file:close()
+        if content and content ~= "" then
+            local decoded = json.decode(content)
+            if type(decoded) == "table" then
+                return decoded
+            end
+        end
+    end
+    return {}
+end
+
+RegisterCommand("secureserve", function(source, args, rawCommand)
+    if source ~= 0 then
+        print("^1[ERROR] This command can only be executed from the server console!^0")
+        return
+    end
+
+    if not args[1] or not args[2] then
+        print("^1Usage: secureserve unban <ban_id>^0")
+        return
+    end
+
+    local action = args[1]
+    local banID = tonumber(args[2])
+
+    if action == "unban" and banID then
+        local bans = loadBans()
+        if not bans or #bans == 0 then
+            print("^1No bans found in bans.json!^0")
+            return
+        end
+
+        print("^3Loaded bans before removal:")
+        for _, ban in ipairs(bans) do
+            print("ID:", ban.id, "Name:", ban.name)
+        end
+
+        local newBans = {}
+        local removed = false
+
+        for _, ban in ipairs(bans) do
+            if tonumber(ban.id) ~= banID then
+                table.insert(newBans, ban)
+            else
+                removed = true
+            end
+        end
+
+        if not removed then
+            print(string.format("^1Ban ID %d not found!^0", banID))
+            return
+        end
+
+        SaveResourceFile(GetCurrentResourceName(), "bans.json", json.encode(newBans, { indent = true }), -1)
+
+        print("^2Successfully unbanned player with ID " .. banID .. "! New ban list:")
+        if #newBans == 0 then
+            print("^3No bans left in the list.^0")
+        else
+            for _, ban in ipairs(newBans) do
+                print("ID:", ban.id, "Name:", ban.name)
+            end
+        end
+    else
+        print("^1Invalid command. Usage: secureserve unban <ban_id>^0")
+    end
+end, true)

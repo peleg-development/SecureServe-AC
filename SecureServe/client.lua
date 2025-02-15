@@ -1,6 +1,6 @@
+
 _T = TriggerServerEvent
 code = GlobalState.SecureServe_events;
-
 
 RegisterNetEvent("checkalive", function ()
     TriggerServerEvent("addalive")
@@ -26,42 +26,7 @@ while not SecureServe do
     Wait(10)
 end
 
-Wait(1000)
 
---> [Events] <--
-local encryption_key = "c4a2ec5dc103a3f730460948f2e3c01df39ea4212bc2c82f"
-
-local xor_encrypt = function(text, key)
-    local res = {}
-    local key_len = #key
-    for i = 1, #text do
-        local xor_byte = string.byte(text, i) ~ string.byte(key, (i - 1) % key_len + 1)
-        res[i] = string.char(xor_byte)
-    end
-    return table.concat(res)
-end
-
-local encryptEventName = function(event_name, key)
-    local encrypted = xor_encrypt(event_name, key)
-    local result = ""
-    for i = 1, #encrypted do
-        result = result .. string.format("%03d", string.byte(encrypted, i))
-    end
-    return result
-end
-
-local function isWhitelisted(event_name)
-    for _, whitelisted_event in ipairs(SecureServe.EventWhitelist) do
-        if event_name == whitelisted_event or event_name == encryptEventName(whitelisted_event, encryption_key) then
-            return true
-        end
-    end
-    return false
-end
-
-exports('get_event_whitelist', function()
-    return SecureServe.EventWhitelist
-end)
 
 --> [Protections] <--
 ProtectionCount = {}
@@ -521,7 +486,7 @@ function GetAllEnumerators()
     return { vehicles = EnumerateVehicles, objects = EnumerateObjects, peds = EnumeratePeds, pickups = EnumeratePickups }
 end
 
-function IsAdmin(player)
+function IsWhitelisted(player)
     local promise = promise.new()
     
     TriggerServerEvent('SecureServe:RequestAdminStatus', player)
@@ -630,9 +595,6 @@ initialize_protections_AI = function()
         Citizen.CreateThread(function()
             while (true) do
                 Citizen.Wait(15000)
-                if IsPlayerCamControlDisabled() ~= false then
-                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti Menyoo", webhook, time)
-                end
                 local weapons = {
                     `COMPONENT_COMBATPISTOL_CLIP_01`,
                     `COMPONENT_COMBATPISTOL_CLIP_02`,
@@ -794,7 +756,7 @@ initialize_protections_entity_security = function()
                         local creator = GetPlayerServerId(NetworkGetEntityOwner(veh))
                         if creator ~= 0 and creator == GetPlayerServerId(PlayerId()) and SafeGetEntityScript(veh) ~= '' and SafeGetEntityScript(veh) ~= ' ' and SafeGetEntityScript(veh) ~= nil then
                             TriggerServerEvent('clearall')
-                            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Created Suspicious Entity [Vehicle] at script: " .. script, webhook, time)
+                            TriggerServerEvent("SecureServe:Server:Methods:ModulePunish" .. code, nil, "Created Suspicious Entity [Vehicle] at script: " .. script, webhook, time)
                             DeleteEntity(veh)
                         end
                     end
@@ -813,7 +775,7 @@ initialize_protections_entity_security = function()
                     if not isWhitelisted and not IsPedAPlayer(ped) and creator == GetPlayerServerId(PlayerId()) and SafeGetEntityScript(ped) ~= '' and SafeGetEntityScript(ped) ~= ' ' and SafeGetEntityScript(ped) ~= nil then
                         if creator ~= 0 then
                             TriggerServerEvent('clearall')
-                            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Created Suspicious Entity [Ped]" .. script, webhook, time)
+                            TriggerServerEvent("SecureServe:Server:Methods:ModulePunish" .. code, nil, "Created Suspicious Entity [Ped]" .. script, webhook, time)
                             DeleteEntity(ped)
                         end
                     end
@@ -831,7 +793,7 @@ initialize_protections_entity_security = function()
                         local creator = GetPlayerServerId(NetworkGetEntityOwner(object))
                         if creator ~= 0 and creator == GetPlayerServerId(PlayerId()) and SafeGetEntityScript(object) ~= '' and SafeGetEntityScript(object) ~= ' ' and SafeGetEntityScript(object) ~= nil then
                             TriggerServerEvent('clearall')
-                            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Created Suspicious Entity [Object] at script: " .. script, webhook, time)
+                            TriggerServerEvent("SecureServe:Server:Methods:ModulePunish" .. code, nil, "Created Suspicious Entity [Object] at script: " .. script, webhook, time)
                             DeleteEntity(object)
                             deleteAllObjects()
                         end
@@ -886,14 +848,14 @@ initialize_protections_god_mode = function()
         return (currentTime - playerSpawnTime) > (seconds * 1000)
     end
     
-    if Anti_God_Mode_enabled and not IsAdmin(GetPlayerServerId(PlayerId())) then
+    if Anti_God_Mode_enabled and not IsWhitelisted(GetPlayerServerId(PlayerId())) then
         local playerFlags = 0
         AddEventHandler("gameEventTriggered", function(name, data)
             if name == "CEventNetworkEntityDamage" then
                 local victim = data[1]
                 local attacker = data[2]
                 local victimHealth = GetEntityHealth(victim)
-                if attacker == -1 and (victimHealth == 199 or victimHealth == 0 and not IsPedDeadOrDying(victim)) and victim == PlayerPedId() and not IsAdmin(GetPlayerServerId(PlayerId())) then
+                if attacker == -1 and (victimHealth == 199 or victimHealth == 0 and not IsPedDeadOrDying(victim)) and victim == PlayerPedId() and not IsWhitelisted(GetPlayerServerId(PlayerId())) then
                     playerFlags += 1
                     if playerFlags >= 15 then
                         TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Triggered Protection Semi Godmode [Semi goddmode]", webhook, time)
@@ -908,7 +870,7 @@ initialize_protections_god_mode = function()
 
                 local curPed = PlayerPedId()
 
-                if not IsAdmin(GetPlayerServerId(PlayerId())) and not IsNuiFocused() and HasPlayerSpawnedLongerThan(50) then
+                if not IsWhitelisted(GetPlayerServerId(PlayerId())) and not IsNuiFocused() and HasPlayerSpawnedLongerThan(50) then
                     if GetPlayerInvincible_2(PlayerId()) and not IsEntityVisible(curPed) and not IsEntityVisibleToScript(curPed) then
                         TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Triggered Protection Godmode", webhook, time)
                     end
@@ -968,7 +930,7 @@ initialize_protections_invisible = function()
                     or (GetEntityAlpha(ped) <= 150 and GetEntityAlpha(ped) ~= 0) then
                         SetEntityVisible(GetPlayerPed(-1), true, false)
                         warns = warns + 1
-                        if not IsAdmin(GetPlayerServerId(PlayerId())) and warns > 3 then
+                        if not IsWhitelisted(GetPlayerServerId(PlayerId())) and warns > 3 then
                             TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Invisibility", webhook, time)
                         end
                     end
@@ -1088,7 +1050,7 @@ initialize_protections_noclip = function()
                     (ped == newPed)) and
                     not IsPedInVehicle(newPed) and
                     not IsPedJumping(newPed) and
-                    not IsAdmin(GetPlayerServerId(PlayerId())) then
+                    not IsWhitelisted(GetPlayerServerId(PlayerId())) then
                     
                     if (not IsEntityAttached(ped) == 1 or not IsEntityAttached(ped) == true) and
                     not IsEntityPlayingAnim(ped, 'missfinale_c2mcs_1', 'fin_c2_mcs_1_camman', 3) and not IsEntityPlayingAnim(ped, 'amb@world_human_bum_slumped@male@laying_on_left_side@base', 'base', 3) and not IsEntityPlayingAnim(ped, 'nm', 'firemans_carry', 3) then
@@ -1097,7 +1059,7 @@ initialize_protections_noclip = function()
                 end
                 if (noclipwarns > 12) then
                     noclipwarns = 0
-                    if not IsAdmin(GetPlayerServerId(PlayerId())) then
+                    if not IsWhitelisted(GetPlayerServerId(PlayerId())) then
                         TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti Noclip", webhook, time)
                     end
                 end
@@ -1120,7 +1082,7 @@ initialize_protections_player_blips = function()
                         local blip = GetBlipFromEntity(player_ped)
 
                         if DoesBlipExist(blip) then
-                            if not IsAdmin(GetPlayerServerId(PlayerId())) then
+                            if not IsWhitelisted(GetPlayerServerId(PlayerId())) then
                                 TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti Player Blips", webhook, time)
                             end
                         end
@@ -1166,7 +1128,7 @@ initialize_protections_spectate = function()
         Citizen.CreateThread(function()
             while (true) do
                 Citizen.Wait(2500)
-                if not IsAdmin(GetPlayerServerId(PlayerId())) then
+                if not IsWhitelisted(GetPlayerServerId(PlayerId())) then
                     Citizen.Wait(2500)
                     if (NetworkIsInSpectatorMode()) then
                         TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti Spectate", webhook, time)
