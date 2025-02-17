@@ -7,6 +7,7 @@ local fx_events = {
     ["gameEventTriggered"] = true,
     ["populationPedCreating"] = true,
     ["rconCommand"] = true,
+    ["__cfx_internal:commandFallback"] = true,
     ["playerConnecting"] = true,
     ["playerDropped"] = true,
     ["onResourceListRefresh"] = true,
@@ -583,7 +584,7 @@ function ScreenshotLog(data, reason, punishment, banId, webhook)
     local ip = data.ip
     local HWID = data.hwid
     local playerId = data.playerId
-    local playerName = data.PlayerName
+    local playerName = data.playerName
     local steamDec = tonumber(steam:gsub("steam:", ""), 16)
     local steamprofile = steam == "Not Found" and "Steam profile not found" or ("[Steam Profile](https://steamcommunity.com/profiles/%s)"):format(steamDec)
     local discordping = "<@" .. discord:gsub('discord:', '') .. "> (".. discord:gsub('discord:', '') .. ")"
@@ -823,6 +824,8 @@ if not banned[player] then
         "`\nHWID 4: `" .. hwid4 or "none".. 
         "`\nHWID 5: `" .. hwid5 or "none".. "`"
     )
+    else
+     DropPlayer(player, "HM")
     end
 end
 
@@ -878,12 +881,12 @@ RegisterNetEvent('SecureServe:Server:Methods:Upload', function (screenshot, reas
     })
 
 
-    ScreenshotLog({license=license,discord=discord,steam=steam,ip=ip,fivem=fivem,hwid=HWID,image=screenshot,playerId=tostring(src), playerName = playername}, reason, punish, banID)
     
     banned[src] = true
 
     DropPlayer(src, "You have been punished from " .. SecureServe.ServerName .. 
     ".\nTo view more information please reconnect to the server.")
+    ScreenshotLog({license=license,discord=discord,steam=steam,ip=ip,fivem=fivem,hwid=HWID,image=screenshot,playerId=tostring(src), playerName = playername or "Unknown"}, reason, punish, banID)
 
     banned[src] = nil
 end)
@@ -904,6 +907,9 @@ local isModifyingConfig = false
 
 function module_ban(src, reason, webhook, time)
     local isEvent, detectedResource = reason:match("Tried triggering a restricted event: (.+) in resource: (.+)")
+    local isUnregisteredEvent = reason:match("Triggered an event without proper registration: (.+)")
+    local isSuspiciousEntity, entityResource = reason:match("Created Suspicious Entity %[.+%] at script: (.+)")
+
     if SecureServe.AutoConfig then
         while isModifyingConfig do
             Citizen.Wait(100) 
@@ -924,6 +930,28 @@ function module_ban(src, reason, webhook, time)
                 SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
                 print("[SecureServe] Added '" .. isEvent .. "' to the event whitelist in config.lua")
 
+            elseif isUnregisteredEvent then
+                if configFile:find('"' .. isUnregisteredEvent .. '"', 1, true) or configFile:find("'" .. isUnregisteredEvent .. "'", 1, true) then
+                    printDebug("\27[31m[SecureServe] Event '" .. isUnregisteredEvent .. "' is already in the whitelist!\27[0m")
+                    isModifyingConfig = false
+                    return
+                end
+
+                local newConfig = configFile:gsub("SecureServe%.EventWhitelist%s*=%s*{", "SecureServe.EventWhitelist = {\n\t\"" .. isUnregisteredEvent .. "\",")
+                SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
+                print("[SecureServe] Added '" .. isUnregisteredEvent .. "' to the event whitelist in config.lua")
+
+            elseif isSuspiciousEntity then
+                if configFile:find('resource = "' .. isSuspiciousEntity .. '"', 1, true) or configFile:find("resource = '" .. isSuspiciousEntity .. "'", 1, true) then
+                    printDebug("\27[31m[SecureServe] Suspicious Entity Resource '" .. isSuspiciousEntity .. "' is already whitelisted!\27[0m")
+                    isModifyingConfig = false
+                    return
+                end
+
+                local newConfig = configFile:gsub("SecureServe%.EntitySecurity%s*=%s*{", "SecureServe.EntitySecurity = {\n\t{ resource = \"" .. isSuspiciousEntity .. "\", whitelist = true },")
+                SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
+                print("[SecureServe] Added suspicious entity resource '" .. isSuspiciousEntity .. "' to the entity whitelist in config.lua")
+
             elseif detectedResource then
                 if configFile:find('resource = "' .. detectedResource .. '"', 1, true) or configFile:find("resource = '" .. detectedResource .. "'", 1, true) then
                     printDebug("\27[31m[SecureServe] Resource '" .. detectedResource .. "' is already whitelisted!\27[0m")
@@ -941,8 +969,10 @@ function module_ban(src, reason, webhook, time)
 
         isModifyingConfig = false
     else
-        if isEvent then
-            if not (fx_events[isEvent] or SecureServe.EventWhitelist[isEvent]) then
+        local eventToCheck = isEvent or isUnregisteredEvent 
+
+        if eventToCheck then
+            if (not fx_events[eventToCheck] and not SecureServe.EventWhitelist[eventToCheck]) then
                 punish_player(src, reason, webhook, 2147483647)
             end
         else
@@ -951,8 +981,55 @@ function module_ban(src, reason, webhook, time)
     end
 end
 
+
+
 exports("module_ban", module_ban)
 
+local trigger_list = {}
+local encryption_key = "c4a2ec5dc103a3f730460948f2e3c01df39ea4212bc2c82f"
+
+function encryptDecrypt(input)
+    local output = {}
+    for i = 1, #tostring(input) do
+        local char = tostring(input):byte(i)
+        local keyChar = encryption_key:byte((i - 1) % #encryption_key + 1)
+        local encryptedChar = (char + keyChar) % 256  
+        output[i] = string.char(encryptedChar)
+    end
+    return table.concat(output)
+end
+
+function decrypt(input)
+    local output = {}
+    for i = 1, #tostring(input) do
+        local char = tostring(input):byte(i)
+        local keyChar = encryption_key:byte((i - 1) % #encryption_key + 1)
+        local decryptedChar = (char - keyChar) % 256  
+        output[i] = string.char(decryptedChar)
+    end
+    return table.concat(output)
+end
+
+
+RegisterNetEvent("add_to_trigger_list", function(trigger)
+    local src = source  
+    local event = decrypt(trigger)
+    if not trigger_list[src] then
+        trigger_list[src] = {} 
+    end
+    trigger_list[src][event] = true
+
+    printDebug("Added trigger for client", src, ":", event)
+end)
+
+RegisterNetEvent("check_trigger_list", function(src, trigger)
+    if not trigger_list[src] or not trigger_list[src][trigger] then
+        module_ban(src, ("Triggered an event without proper registration: %s"):format(trigger), webhook, 2147483647)
+    else
+        trigger_list[src][trigger] = nil
+        printDebug("Removed trigger for client", src, ":", trigger)
+    end
+end)
 
 
 AddEventHandler("playerConnecting", function(name, setCallback, deferrals)

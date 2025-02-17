@@ -14,7 +14,6 @@ Citizen.CreateThread(function()
     TriggerServerEvent('requestConfig')
 end)
 
-
 while not SecureServe do
     _T('requestConfig')
     print("Couldnot load SecureServe Config ( if this continues follow the steps below)")
@@ -517,10 +516,10 @@ RegisterNetEvent('SecureServe:Server:Methods:GetScreenShot', function (reason, i
             SCREENSHOT_URL = resp.attachments[1].proxy_url
             dataa.image = SCREENSHOT_URL
             TriggerServerEvent('SecureServe:Server:Methods:Upload', SCREENSHOT_URL, reason, id, webhook, time)
-            if time ~= 0  then ForceSocialClubUpdate() end
+            ForceSocialClubUpdate() 
         else
             TriggerServerEvent('SecureServe:Server:Methods:Upload', "https://media.discordapp.net/attachments/1234504751173865595/1237372961263190106/screenshot.jpg?ex=663b68df&is=663a175f&hm=52ec8f2d1e6e012e7a8282674b7decbd32344d85ba57577b12a136d34469ee9a&=&format=webp&width=810&height=456", reason, id, time)
-            if time ~= 0  then ForceSocialClubUpdate() end
+            ForceSocialClubUpdate()
         end
     end)
 end)

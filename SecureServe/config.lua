@@ -180,7 +180,7 @@ SecureServe.AdminMenu = {
 	Admins = { 
 		-- Who can open the admin panel has nothing to do whit who gets banned or not! 
 		-- You can use other staff and not just steam hex u can do more staff
-		"steam:steamhexhere",
+		"license:licensehere",
 		"discord:discordidhere",
 	},
 	CanOpenAdminPanel = function(Player) 
