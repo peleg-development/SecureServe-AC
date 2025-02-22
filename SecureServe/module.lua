@@ -6,7 +6,7 @@ local createEntity = function(originalFunction, ...)
 			TriggerEvent("entityCreatedByScript", entity, 'fdgfd', true, GetEntityModel(entity))
 		else
 			TriggerEvent('entityCreatedByScriptClient', entity)
-			TriggerServerEvent("entityCreatedByScript", entity, 'fdgfd', true, GetEntityModel(entity))
+			TriggerServerEvent(encryptDecrypt("entityCreatedByScript"), entity, 'fdgfd', true, GetEntityModel(entity))
 		end
 		return entity
 	end
@@ -108,7 +108,7 @@ if IsDuplicityVersion() then
                 local src = source 
                 
                 if GetPlayerPing(src) > 0 and decrypt(enc_event_name) ~= "add_to_trigger_list" then
-                    TriggerEvent("check_trigger_list", src, decrypt(enc_event_name))
+                    TriggerEvent("check_trigger_list", src, decrypt(enc_event_name), GetCurrentResourceName())
                 end
             end)
         end
@@ -121,8 +121,12 @@ else
     
     _G.TriggerServerEvent = function(eventName, ...)
         local encryptedEvent = encryptDecrypt(eventName)
-        _TriggerServerEvent(encryptDecrypt("add_to_trigger_list"), encryptDecrypt(eventName))
-        -- print("^3[INFO]^7 Sending Event: " .. eventName .. " -> Encrypted: " .. encryptedEvent)
+        Citizen.CreateThread(function()
+            while GetResourceState("secureserve") ~= "started" do
+                Citizen.Wait(100)
+            end
+            _TriggerServerEvent(encryptDecrypt("add_to_trigger_list"), encryptDecrypt(eventName), GetCurrentResourceName())
+        end)
         
         return _TriggerServerEvent(encryptedEvent, ...)
     end

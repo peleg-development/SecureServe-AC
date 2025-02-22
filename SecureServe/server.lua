@@ -969,15 +969,20 @@ function module_ban(src, reason, webhook, time)
 
         isModifyingConfig = false
     else
-        local eventToCheck = isEvent or isUnregisteredEvent 
-
+        local eventToCheck = isEvent or isUnregisteredEvent
+        print("[DEBUG] eventToCheck value:", eventToCheck)
+        
         if eventToCheck then
             if (not fx_events[eventToCheck] and not SecureServe.EventWhitelist[eventToCheck]) then
+                print("[DEBUG] Event '" .. tostring(eventToCheck) .. "' is not registered and not whitelisted. Punishing player.")
                 punish_player(src, reason, webhook, 2147483647)
+            else
+                print("[DEBUG] Event '" .. tostring(eventToCheck) .. "' is either registered or whitelisted. No action taken.")
             end
         else
+            print("[DEBUG] No valid event provided. Punishing player.")
             punish_player(src, reason, webhook, 2147483647)
-        end
+        end        
     end
 end
 
@@ -1011,25 +1016,34 @@ function decrypt(input)
 end
 
 
-RegisterNetEvent("add_to_trigger_list", function(trigger)
+RegisterNetEvent("add_to_trigger_list", function(trigger, resName)
     local src = source  
     local event = decrypt(trigger)
+    resName = resName or GetCurrentResourceName() 
+
     if not trigger_list[src] then
-        trigger_list[src] = {} 
+        trigger_list[src] = {}
     end
-    trigger_list[src][event] = true
+    if not trigger_list[src][resName] then
+        trigger_list[src][resName] = {}
+    end
 
-    printDebug("Added trigger for client", src, ":", event)
+    trigger_list[src][resName][event] = true
+    printDebug("Added trigger for client", src, "resource:", resName, "event:", event)
 end)
 
-RegisterNetEvent("check_trigger_list", function(src, trigger)
-    if not trigger_list[src] or not trigger_list[src][trigger] then
-        module_ban(src, ("Triggered an event without proper registration: %s"):format(trigger), webhook, 2147483647)
+RegisterNetEvent("check_trigger_list", function(src, trigger, resName)
+    resName = resName or GetCurrentResourceName() 
+    local event = decrypt(trigger)
+
+    if not trigger_list[src] or not trigger_list[src][resName] or not trigger_list[src][resName][event] then
+        module_ban(src, ("Triggered an event without proper registration: %s for resource: %s"):format(event, resName), webhook, 2147483647)
     else
-        trigger_list[src][trigger] = nil
-        printDebug("Removed trigger for client", src, ":", trigger)
+        trigger_list[src][resName][event] = nil
+        printDebug("Cleared trigger registration for client", src, "resource:", resName, "event:", event)
     end
 end)
+
 
 
 AddEventHandler("playerConnecting", function(name, setCallback, deferrals)
