@@ -905,20 +905,36 @@ end)
 --[Auto Config]--
 local isModifyingConfig = false
 
+local function appendToTable(configFile, tableName, entry)
+    local pattern = "(" .. tableName .. "%s*=%s*{)(.-)(})"
+    local newConfig, n = configFile:gsub(pattern, function(prefix, content, suffix)
+        local newContent = content
+        newContent = newContent:gsub("%s*$", "")
+        newContent = newContent .. "\n\t\"" .. entry .. "\",\n"
+        return prefix .. newContent .. suffix
+    end, 1)
+    return newConfig, n > 0
+end
+
 function module_ban(src, reason, webhook, time)
     local isEvent, detectedResource = reason:match("Tried triggering a restricted event: (.+) in resource: (.+)")
     local isUnregisteredEvent = reason:match("Triggered an event without proper registration: (.+)")
     local isSuspiciousEntity, entityResource = reason:match("Created Suspicious Entity %[.+%] at script: (.+)")
+
+    if detectedResource and detectedResource == "SecureServe" then
+        return 
+    end
 
     if SecureServe.AutoConfig then
         while isModifyingConfig do
             Citizen.Wait(100) 
         end
 
-        isModifyingConfig = true
         local configFile = LoadResourceFile(GetCurrentResourceName(), "config.lua")
+        isModifyingConfig = true
 
         if configFile then
+            local updated = false
             if isEvent and detectedResource then
                 if configFile:find('"' .. isEvent .. '"', 1, true) or configFile:find("'" .. isEvent .. "'", 1, true) then
                     printDebug("\27[31m[SecureServe] Event '" .. isEvent .. "' is already in the whitelist!\27[0m")
@@ -926,9 +942,12 @@ function module_ban(src, reason, webhook, time)
                     return
                 end
 
-                local newConfig = configFile:gsub("SecureServe%.EventWhitelist%s*=%s*{", "SecureServe.EventWhitelist = {\n\t\"" .. isEvent .. "\",")
-                SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
-                print("[SecureServe] Added '" .. isEvent .. "' to the event whitelist in config.lua")
+                local newConfig, success = appendToTable(configFile, "SecureServe.EventWhitelist", isEvent)
+                if success then
+                    SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
+                    printDebug("[SecureServe] Added '" .. isEvent .. "' to the event whitelist in config.lua")
+                    updated = true
+                end
 
             elseif isUnregisteredEvent then
                 if configFile:find('"' .. isUnregisteredEvent .. '"', 1, true) or configFile:find("'" .. isUnregisteredEvent .. "'", 1, true) then
@@ -937,9 +956,12 @@ function module_ban(src, reason, webhook, time)
                     return
                 end
 
-                local newConfig = configFile:gsub("SecureServe%.EventWhitelist%s*=%s*{", "SecureServe.EventWhitelist = {\n\t\"" .. isUnregisteredEvent .. "\",")
-                SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
-                print("[SecureServe] Added '" .. isUnregisteredEvent .. "' to the event whitelist in config.lua")
+                local newConfig, success = appendToTable(configFile, "SecureServe.EventWhitelist", isUnregisteredEvent)
+                if success then
+                    SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
+                    print("[SecureServe] Added '" .. isUnregisteredEvent .. "' to the event whitelist in config.lua")
+                    updated = true
+                end
 
             elseif isSuspiciousEntity then
                 if configFile:find('resource = "' .. isSuspiciousEntity .. '"', 1, true) or configFile:find("resource = '" .. isSuspiciousEntity .. "'", 1, true) then
@@ -948,9 +970,12 @@ function module_ban(src, reason, webhook, time)
                     return
                 end
 
-                local newConfig = configFile:gsub("SecureServe%.EntitySecurity%s*=%s*{", "SecureServe.EntitySecurity = {\n\t{ resource = \"" .. isSuspiciousEntity .. "\", whitelist = true },")
-                SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
-                print("[SecureServe] Added suspicious entity resource '" .. isSuspiciousEntity .. "' to the entity whitelist in config.lua")
+                local newConfig, success = appendToTable(configFile, "SecureServe.EntitySecurity", isSuspiciousEntity)
+                if success then
+                    SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
+                    print("[SecureServe] Added suspicious entity resource '" .. isSuspiciousEntity .. "' to the entity whitelist in config.lua")
+                    updated = true
+                end
 
             elseif detectedResource then
                 if configFile:find('resource = "' .. detectedResource .. '"', 1, true) or configFile:find("resource = '" .. detectedResource .. "'", 1, true) then
@@ -959,9 +984,16 @@ function module_ban(src, reason, webhook, time)
                     return
                 end
 
-                local newConfig = configFile:gsub("SecureServe%.EntitySecurity%s*=%s*{", "SecureServe.EntitySecurity = {\n\t{ resource = \"" .. detectedResource .. "\", whitelist = true },")
-                SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
-                print("[SecureServe] Added '" .. detectedResource .. "' to the entity whitelist in config.lua")
+                local newConfig, success = appendToTable(configFile, "SecureServe.EntitySecurity", detectedResource)
+                if success then
+                    SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
+                    print("[SecureServe] Added '" .. detectedResource .. "' to the entity whitelist in config.lua")
+                    updated = true
+                end
+            end
+
+            if not updated then
+                print("[SecureServe] No changes made to config.lua")
             end
         else
             print("[SecureServe] Error: Unable to load config.lua")
@@ -970,23 +1002,21 @@ function module_ban(src, reason, webhook, time)
         isModifyingConfig = false
     else
         local eventToCheck = isEvent or isUnregisteredEvent
-        print("[DEBUG] eventToCheck value:", eventToCheck)
+        printDebug("[DEBUG] eventToCheck value:", eventToCheck)
         
         if eventToCheck then
             if (not fx_events[eventToCheck] and not SecureServe.EventWhitelist[eventToCheck]) then
-                print("[DEBUG] Event '" .. tostring(eventToCheck) .. "' is not registered and not whitelisted. Punishing player.")
-                punish_player(src, reason, webhook, 2147483647)
+                printDebug("[DEBUG] Event '" .. tostring(eventToCheck) .. "' is not registered and not whitelisted. Punishing player.")
+                local encryptedEvent = encryptDecrypt(eventToCheck)
+                module_ban(src, ("Triggered an event without proper registration: Decrypted: %s, Encrypted: %s for resource: %s"):format(eventToCheck, encryptedEvent, tostring(detectedResource or "unknown")), webhook, 2147483647)
             else
-                print("[DEBUG] Event '" .. tostring(eventToCheck) .. "' is either registered or whitelisted. No action taken.")
+                printDebug("[DEBUG] Event '" .. tostring(eventToCheck) .. "' is either registered or whitelisted. No action taken.")
             end
         else
-            print("[DEBUG] No valid event provided. Punishing player.")
             punish_player(src, reason, webhook, 2147483647)
         end        
     end
 end
-
-
 
 exports("module_ban", module_ban)
 
@@ -1015,7 +1045,6 @@ function decrypt(input)
     return table.concat(output)
 end
 
-
 RegisterNetEvent("add_to_trigger_list", function(trigger, resName)
     local src = source  
     local event = decrypt(trigger)
@@ -1029,6 +1058,7 @@ RegisterNetEvent("add_to_trigger_list", function(trigger, resName)
     end
 
     trigger_list[src][resName][event] = true
+    trigger_list[src][resName][encryptDecrypt(event)] = true
     printDebug("Added trigger for client", src, "resource:", resName, "event:", event)
 end)
 
@@ -1036,10 +1066,12 @@ RegisterNetEvent("check_trigger_list", function(src, trigger, resName)
     resName = resName or GetCurrentResourceName() 
     local event = decrypt(trigger)
 
-    if not trigger_list[src] or not trigger_list[src][resName] or not trigger_list[src][resName][event] then
-        module_ban(src, ("Triggered an event without proper registration: %s for resource: %s"):format(event, resName), webhook, 2147483647)
+    if not trigger_list[src] or not trigger_list[src][resName] or (not trigger_list[src][resName][event] and not trigger_list[src][resName][encryptDecrypt(event)]) then
+        local encryptedEvent = encryptDecrypt(event)
+        module_ban(src, ("Triggered an event without proper registration: Decrypted: %s, Encrypted: %s for resource: %s"):format(event, encryptedEvent, resName), webhook, 2147483647)
     else
         trigger_list[src][resName][event] = nil
+        trigger_list[src][resName][encryptDecrypt(event)] = nil
         printDebug("Cleared trigger registration for client", src, "resource:", resName, "event:", event)
     end
 end)

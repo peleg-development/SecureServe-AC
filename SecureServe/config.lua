@@ -35,7 +35,8 @@ SecureServe.ServerName = ""                                                     
 SecureServe.DiscordLink = ""                                                                  -- The link to your discord server.
 SecureServe.RequireSteam = false                                                              -- Just requires players that want to join your server to have steam open and logged in as well u must have a valid steam api key for this option read more in docs
 SecureServe.IdentifierCheck = true                                                            -- Checks when player connects if his identifiers are valid. if not it won't let him join the server.
-SecureServe.Debug = true 																      -- Enables debug mode, this will print debug messages in the console.
+SecureServe.Debug = false 																      -- Enables debug mode, this will print debug messages in the console.
+-- DEBUG IS MOSTLY FOR ME TO FIND BUGS AND ERRORS DONT ENABLE THIS...
 
 
 
@@ -48,7 +49,7 @@ SecureServe.Debug = true 																      -- Enables debug mode, this will 
 -- This option will auto config the ac for u only in safe events and in explosions and in entityn security
 -- Now after u played for some time in your server disable this option then restart it and then u can let other players play normmaly this option is important to be disabled since it prevents any bans
 -- Meaning no one can be bnnaed while this is active
-SecureServe.AutoConfig = false              
+SecureServe.AutoConfig = false          -- DONT USE UNLESS U HAVE FALSE BANS !!!   
 -- Once u start the server explnation about this option will come up please read everything
 SecureServe.InstructionsPrint = true
 
