@@ -6,7 +6,7 @@ local createEntity = function(originalFunction, ...)
 			TriggerEvent("entityCreatedByScript", entity, 'fdgfd', true, GetEntityModel(entity))
 		else
 			TriggerEvent('entityCreatedByScriptClient', entity)
-			TriggerServerEvent(encryptDecrypt("entityCreatedByScript"), entity, 'fdgfd', true, GetEntityModel(entity))
+			TriggerServerEvent("entityCreatedByScript", entity, 'fdgfd', true, GetEntityModel(entity))
 		end
 		return entity
 	end
@@ -62,55 +62,61 @@ if IsDuplicityVersion() then
     local _AddEventHandler = AddEventHandler
     local _RegisterNetEvent = RegisterNetEvent
     local events_to_listen = {}
+    local processed_events = {}
     
     _G.RegisterNetEvent = function(event_name, ...)
+        if processed_events[event_name] then
+            return processed_events[event_name]
+        end
+        
         local enc_event_name = encryptDecrypt(event_name) 
         events_to_listen[event_name] = enc_event_name 
-    
-        _RegisterNetEvent(enc_event_name, ...) 
-    
-        -- print("^2[INFO]^7 Registering Net Event: " .. tostring(event_name))
+        
+        local result = _RegisterNetEvent(enc_event_name, ...)
+        processed_events[event_name] = result
+        
         return _RegisterNetEvent(event_name, ...)
     end
     
     _G.AddEventHandler = function(event_name, handler, ...)
-        local enc_event_name = events_to_listen[event_name] 
-        local handler_ref = _AddEventHandler(event_name, handler, ...) 
+        local enc_event_name = events_to_listen[event_name]
+        local handler_ref = _AddEventHandler(event_name, handler, ...)
     
-        -- print("^3[INFO]^7 Handling Event: " .. tostring(event_name))
-    
-        if enc_event_name then
-            -- print("^3[INFO]^7 Handling Encrypted Event: " .. tostring(enc_event_name))
+        if enc_event_name and not processed_events["handler_" .. enc_event_name] then
             _AddEventHandler(enc_event_name, handler, ...)
+            processed_events["handler_" .. enc_event_name] = true
         end
     
-        return handler_ref  
+        return handler_ref
     end
     
-    
     Citizen.CreateThread(function()
-        for event_name, _ in pairs(events_to_listen) do
-            local enc_event_name = encryptDecrypt(event_name)
-    
-            _AddEventHandler(event_name, function ()
-                local src = source
-    
-                if GetPlayerPing(src) > 0 then
-                    local resourceName = GetCurrentResourceName()
-                    local banMessage = ("Tried triggering a restricted event: %s in resource: %s."):format(event_name, resourceName)
-                    
-                    TriggerEvent("SecureServe:Server:Methods:ModulePunish" .. GlobalState.SecureServe_events, src, banMessage)
-                end
-            end)
-    
-            _AddEventHandler(enc_event_name, function ()
-
-                local src = source 
+        for event_name, enc_event_name in pairs(events_to_listen) do
+            if not processed_events["security_" .. event_name] then
+                processed_events["security_" .. event_name] = true
                 
-                if GetPlayerPing(src) > 0 and decrypt(enc_event_name) ~= "add_to_trigger_list" then
-                    TriggerEvent("check_trigger_list", src, decrypt(enc_event_name), GetCurrentResourceName())
-                end
-            end)
+                _AddEventHandler(event_name, function ()
+                    local src = source
+    
+                    if GetPlayerPing(src) > 0 then
+                        local resourceName = GetCurrentResourceName()
+                        local banMessage = ("Tried triggering a restricted event: %s in resource: %s."):format(event_name, resourceName)
+                        
+                        TriggerEvent("SecureServe:Server:Methods:ModulePunish" .. GlobalState.SecureServe_events, src, banMessage)
+                    end
+                end)
+    
+                -- _AddEventHandler(enc_event_name, function ()
+                --     local src = source 
+                    
+                --     if GetPlayerPing(src) > 0 then
+                --         local decrypted = decrypt(enc_event_name)
+                --         if decrypted ~= "add_to_trigger_list" then
+                --             TriggerEvent("check_trigger_list", src, decrypted)
+                --         end
+                --     end
+                -- end)
+            end
         end
     end)
     
@@ -118,15 +124,35 @@ if IsDuplicityVersion() then
 	RegisterServerEvent = RegisterNetEvent
 else
 	local _TriggerServerEvent = TriggerServerEvent
-    
+    local run = false
+    local eventsPending = {}
+    local eventsSent = {}
+
+    AddEventHandler("playerSpawned", function()
+        run = true;
+        for eventName, args in pairs(eventsPending) do
+            _TriggerServerEvent(encryptDecrypt(eventName), table.unpack(args))
+        end
+        eventsPending = {}
+    end)
+
     _G.TriggerServerEvent = function(eventName, ...)
         local encryptedEvent = encryptDecrypt(eventName)
-        Citizen.CreateThread(function()
-            while GetResourceState("secureserve") ~= "started" do
-                Citizen.Wait(100)
-            end
-            _TriggerServerEvent(encryptDecrypt("add_to_trigger_list"), encryptDecrypt(eventName), GetCurrentResourceName())
-        end)
+        local args = {...}
+        
+        if eventsSent[eventName] then
+            _TriggerServerEvent(encryptedEvent, ...)
+            return
+        end
+
+        _TriggerServerEvent(encryptDecrypt("add_to_trigger_list"), encryptedEvent)
+
+        eventsSent[eventName] = true
+        
+        if not run then
+            eventsPending[eventName] = args
+            return
+        end
         
         return _TriggerServerEvent(encryptedEvent, ...)
     end

@@ -35,8 +35,7 @@ SecureServe.ServerName = ""                                                     
 SecureServe.DiscordLink = ""                                                                  -- The link to your discord server.
 SecureServe.RequireSteam = false                                                              -- Just requires players that want to join your server to have steam open and logged in as well u must have a valid steam api key for this option read more in docs
 SecureServe.IdentifierCheck = true                                                            -- Checks when player connects if his identifiers are valid. if not it won't let him join the server.
-SecureServe.Debug = false 																      -- Enables debug mode, this will print debug messages in the console.
--- DEBUG IS MOSTLY FOR ME TO FIND BUGS AND ERRORS DONT ENABLE THIS...
+SecureServe.Debug = true 																      -- Enables debug mode, this will print debug messages in the console.
 
 
 
@@ -49,7 +48,7 @@ SecureServe.Debug = false 																      -- Enables debug mode, this will
 -- This option will auto config the ac for u only in safe events and in explosions and in entityn security
 -- Now after u played for some time in your server disable this option then restart it and then u can let other players play normmaly this option is important to be disabled since it prevents any bans
 -- Meaning no one can be bnnaed while this is active
-SecureServe.AutoConfig = false          -- DONT USE UNLESS U HAVE FALSE BANS !!!   
+SecureServe.AutoConfig = false              
 -- Once u start the server explnation about this option will come up please read everything
 SecureServe.InstructionsPrint = true
 
@@ -66,7 +65,6 @@ SecureServe.EventWhitelist = {
 }
 
 -- manual safe events still requires module they are just if u dont want to use the auto which i dont see a reason why not with auto config as an option
--- DONT USE THIS THIS ISNT FINISHED AND THIS ISNT HOW U WHITELIST EVENTS! WHITELISTING EVENTS IS DONE IN SecureServe.EventWhitelist
 SecureServe.ProtectedEvents = {
 	-- This will only work if enable auto safe events is false this will protect only the events listed here 
 	"event_name",

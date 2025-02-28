@@ -1,4 +1,3 @@
-
 _T = TriggerServerEvent
 code = GlobalState.SecureServe_events;
 
@@ -595,47 +594,47 @@ initialize_protections_AI = function()
             while (true) do
                 Citizen.Wait(15000)
                 local weapons = {
-                    `COMPONENT_COMBATPISTOL_CLIP_01`,
-                    `COMPONENT_COMBATPISTOL_CLIP_02`,
-                    `COMPONENT_APPISTOL_CLIP_01`,
-                    `COMPONENT_APPISTOL_CLIP_02`,
-                    `COMPONENT_MICROSMG_CLIP_01`,
-                    `COMPONENT_MICROSMG_CLIP_02`,
-                    `COMPONENT_SMG_CLIP_01`,
-                    `COMPONENT_SMG_CLIP_02`,
-                    `COMPONENT_ASSAULTRIFLE_CLIP_01`,
-                    `COMPONENT_ASSAULTRIFLE_CLIP_02`,
-                    `COMPONENT_CARBINERIFLE_CLIP_01`,
-                    `COMPONENT_CARBINERIFLE_CLIP_02`,
-                    `COMPONENT_ADVANCEDRIFLE_CLIP_01`,
-                    `COMPONENT_ADVANCEDRIFLE_CLIP_02`,
-                    `COMPONENT_MG_CLIP_01`,
-                    `COMPONENT_MG_CLIP_02`,
-                    `COMPONENT_COMBATMG_CLIP_01`,
-                    `COMPONENT_COMBATMG_CLIP_02`,
-                    `COMPONENT_PUMPSHOTGUN_CLIP_01`,
-                    `COMPONENT_SAWNOFFSHOTGUN_CLIP_01`,
-                    `COMPONENT_ASSAULTSHOTGUN_CLIP_01`,
-                    `COMPONENT_ASSAULTSHOTGUN_CLIP_02`,
-                    `COMPONENT_PISTOL50_CLIP_01`,
-                    `COMPONENT_PISTOL50_CLIP_02`,
-                    `COMPONENT_ASSAULTSMG_CLIP_01`,
-                    `COMPONENT_ASSAULTSMG_CLIP_02`,
-                    `COMPONENT_AT_RAILCOVER_01`,
-                    `COMPONENT_AT_AR_AFGRIP`,
-                    `COMPONENT_AT_PI_FLSH`,
-                    `COMPONENT_AT_AR_FLSH`,
-                    `COMPONENT_AT_SCOPE_MACRO`,
-                    `COMPONENT_AT_SCOPE_SMALL`,
-                    `COMPONENT_AT_SCOPE_MEDIUM`,
-                    `COMPONENT_AT_SCOPE_LARGE`,
-                    `COMPONENT_AT_SCOPE_MAX`,
-                    `COMPONENT_AT_PI_SUPP`,
+                    "COMPONENT_COMBATPISTOL_CLIP_01",
+                    "COMPONENT_COMBATPISTOL_CLIP_02",
+                    "COMPONENT_APPISTOL_CLIP_01",
+                    "COMPONENT_APPISTOL_CLIP_02",
+                    "COMPONENT_MICROSMG_CLIP_01",
+                    "COMPONENT_MICROSMG_CLIP_02",
+                    "COMPONENT_SMG_CLIP_01",
+                    "COMPONENT_SMG_CLIP_02",
+                    "COMPONENT_ASSAULTRIFLE_CLIP_01",
+                    "COMPONENT_ASSAULTRIFLE_CLIP_02",
+                    "COMPONENT_CARBINERIFLE_CLIP_01",
+                    "COMPONENT_CARBINERIFLE_CLIP_02",
+                    "COMPONENT_ADVANCEDRIFLE_CLIP_01",
+                    "COMPONENT_ADVANCEDRIFLE_CLIP_02",
+                    "COMPONENT_MG_CLIP_01",
+                    "COMPONENT_MG_CLIP_02",
+                    "COMPONENT_COMBATMG_CLIP_01",
+                    "COMPONENT_COMBATMG_CLIP_02",
+                    "COMPONENT_PUMPSHOTGUN_CLIP_01",
+                    "COMPONENT_SAWNOFFSHOTGUN_CLIP_01",
+                    "COMPONENT_ASSAULTSHOTGUN_CLIP_01",
+                    "COMPONENT_ASSAULTSHOTGUN_CLIP_02",
+                    "COMPONENT_PISTOL50_CLIP_01",
+                    "COMPONENT_PISTOL50_CLIP_02",
+                    "COMPONENT_ASSAULTSMG_CLIP_01",
+                    "COMPONENT_ASSAULTSMG_CLIP_02",
+                    "COMPONENT_AT_RAILCOVER_01",
+                    "COMPONENT_AT_AR_AFGRIP",
+                    "COMPONENT_AT_PI_FLSH",
+                    "COMPONENT_AT_AR_FLSH",
+                    "COMPONENT_AT_SCOPE_MACRO",
+                    "COMPONENT_AT_SCOPE_SMALL",
+                    "COMPONENT_AT_SCOPE_MEDIUM",
+                    "COMPONENT_AT_SCOPE_LARGE",
+                    "COMPONENT_AT_SCOPE_MAX",
+                    "COMPONENT_AT_PI_SUPP"
                 }
                 for i = 1, #weapons do
-                    local dmg_mod = GetWeaponComponentDamageModifier(weapons[i])
-                    local accuracy_mod = GetWeaponComponentAccuracyModifier(weapons[i])
-                    local range_mod = GetWeaponComponentRangeModifier(weapons[i])
+                    local dmg_mod = GetWeaponComponentDamageModifier(GetHashKey(weapons[i]))
+                    local accuracy_mod = GetWeaponComponentAccuracyModifier(GetHashKey(weapons[i]))
+                    local range_mod = GetWeaponComponentRangeModifier(GetHashKey(weapons[i]))
                     if dmg_mod > Anti_AI_default or accuracy_mod > Anti_AI_default or range_mod > Anti_AI_default then
                         TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti AIS", webhook, time)
                     end
@@ -658,10 +657,10 @@ initialize_protections_no_reload = function()
                 local weaponHash = GetSelectedPedWeapon(playerPed)
                 local weaponGroup = GetWeapontypeGroup(weaponHash)
         
-                if weaponHash == `WEAPON_UNARMED` then
+                if weaponHash == GetHashKey("WEAPON_UNARMED") then
                     Citizen.Wait(2500)
                 else
-                    if weaponGroup ~= `WEAPON_GROUP_MELEE` and IsPedWeaponReadyToShoot(playerPed) then
+                    if weaponGroup ~= GetHashKey("WEAPON_GROUP_MELEE") and IsPedWeaponReadyToShoot(playerPed) then
                         if IsPedShooting(playerPed) then
                             local currentAmmoCount = GetAmmoInPedWeapon(playerPed, weaponHash)
                             
@@ -695,11 +694,8 @@ initialize_protections_no_reload = function()
                 end
             end
         end)
-        
     end
 end
-
-
 
 initialize_protections_entity_security = function()
     local SafeGetEntityScript = function (entity)
@@ -855,7 +851,7 @@ initialize_protections_god_mode = function()
                 local attacker = data[2]
                 local victimHealth = GetEntityHealth(victim)
                 if attacker == -1 and (victimHealth == 199 or victimHealth == 0 and not IsPedDeadOrDying(victim)) and victim == PlayerPedId() and not IsWhitelisted(GetPlayerServerId(PlayerId())) then
-                    playerFlags += 1
+                    playerFlags = playerFlags + 1
                     if playerFlags >= 15 then
                         TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Triggered Protection Semi Godmode [Semi goddmode]", webhook, time)
                     end
