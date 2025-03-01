@@ -27,53 +27,6 @@ end
 
 
 --> [Protections] <--
-ProtectionCount = {}
-
-for k,v in pairs(SecureServe.AntiInternal) do
-    if v.webhook == "" then
-        SecureServe.AntiInternal[k].webhook = SecureServe.Webhooks.AntiInternal
-    end
-    if type(v.time) ~= "number" then
-        SecureServe.AntiInternal[k].time = SecureServe.BanTimes[v.time]
-    end
-    
-    name = SecureServe.AntiInternal[k].detection
-    dispatch = SecureServe.AntiInternal[k].dispatch
-    default = SecureServe.AntiInternal[k].default
-    defaultr = SecureServe.AntiInternal[k].defaultr
-    defaults = SecureServe.AntiInternal[k].defaults
-    punish = SecureServe.AntiInternal[k].punishType
-    time = SecureServe.AntiInternal[k].time
-    if type(time) ~= "number" then
-        time = SecureServe.BanTimes[v.time]
-    end
-    limit = SecureServe.AntiInternal[k].limit or 999
-    webhook = SecureServe.AntiInternal[k].webhook
-    if webhook == "" then
-        webhook = SecureServe.Webhooks.AntiInternal
-    end
-    enabled = SecureServe.AntiInternal[k].enabled
-    if name == "Anti RedEngine" then
-        Anti_RedEngine_time = time
-        Anti_RedEngine_limit = limit
-        Anti_RedEngine_webhook = webhook
-        Anti_RedEngine_enabled = enabled
-        Anti_RedEngine_punish = punish
-    elseif name == "Anti Internal" then
-        Anti_AntiIntrenal_time = time
-        Anti_AntiIntrenal_limit = limit
-        Anti_AntiIntrenal_webhook = webhook
-        Anti_AntiIntrenal_enabled = enabled
-        Anti_AntiIntrenal_punish = punish
-    elseif name == "Destroy Input" then
-        Anti_Destory_Input_time = time
-        Anti_Destory_Input_limit = limit
-        Anti_Destory_Input_webhook = webhook
-        Anti_Destory_Input_enabled = enabled
-        Anti_Destory_Input_punish = punish
-    end
-end
-
 
 for k,v in pairs(SecureServe.Protection.Simple) do
     if v.webhook == "" then
