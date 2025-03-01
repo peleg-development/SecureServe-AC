@@ -27,6 +27,7 @@ end
 
 
 --> [Protections] <--
+ProtectionCount = {}
 
 for k,v in pairs(SecureServe.Protection.Simple) do
     if v.webhook == "" then
