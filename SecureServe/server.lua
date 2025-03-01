@@ -462,45 +462,6 @@ local COLORS = {
     ["Fuchsia"] = "^9"
 }
 
---> [EVENTS] <--
-
--- local trigger_list = {}
--- local _AddEventHandler = AddEventHandler
--- exports("listen_to_events", function (events_to_listen)
-
--- end)
-local events_triggered = {}
-
-Citizen.CreateThread(function()
-    for eventName in pairs(SecureServe.ProtectedEvents) do
-        RegisterNetEvent(eventName, function()
-            local src = source
-            
-            if not events_triggered[src] then
-                events_triggered[src] = {} 
-            end
-
-            if not events_triggered[src][eventName] and GetPlayerPing(src) > 0 then
-                printDebug("[SECURITY ALERT] Unauthorized access detected for event: " .. event_name)
-                -- TE(rencrypted_event_namea, src, "[Manual Safe Events] Triggered server event via executor: " .. event_name, webhook, 2147483647)
-                return
-            end
-
-            Citizen.SetTimeout(3000, function()
-                events_triggered[src][eventName] = nil
-            end)
-        end)
-    end
-end)
-
-RegisterNetEvent("SecureServe:server:ManualSafeEventsTrigger", function(event_name)
-    local src = source
-    if GetPlayerPing(src) > 0 then
-        events_triggered[src][event_name] = true
-    end
-end)
-
-
 --> [Utils] <--
 sm_print = function(color, content)
     print(COLORS["Light Blue"] .. "[SecureServe] " .. COLORS["White"] .. ": " .. COLORS[color] .. content .. COLORS["White"])
@@ -540,7 +501,7 @@ IsMenuAdmin = function(pl)
     end
     
     -- check with custom function
-    if SecureServe.Admin.CanOpenAdminPanel(pl) then
+    if SecureServe.AdminMenu.CanOpenAdminPanel(pl) then
         return true
     end
 
@@ -902,7 +863,7 @@ RegisterNetEvent("SecureServe:Server:Methods:ModulePunish" .. GlobalState.Secure
     module_ban(player, reason, webhook, time)
 end)
 
---[Auto Config]--
+--[Events]--
 local isModifyingConfig = false
 
 function module_ban(src, reason, webhook, time)
@@ -1044,414 +1005,29 @@ RegisterNetEvent("check_trigger_list", function(src, trigger)
     printDebug("Removed trigger for client", src, ":", trigger)
 end)
 
+RegisterNetEvent("SecureServe:Server:Methods:CheckEventSettings" .. GlobalState.SecureServe_events, function(player, reason, webhook, time)
+    if not player then player = source end
+
+    if not trigger_list[player] then
+        trigger_list[player] = {} 
+    end
+
+    if SecureServe.EnableAutoSafeEvents then
+        module_ban(player, reason, webhook, time)
+    else
+        local event_name, detected_resource = reason:match("Tried triggering a restricted event: (.+) in resource: (.+)")
+        if event_name and SecureServe.ProtectedEvents[event_name] and not trigger_list[player][event_name] and GetPlayerPing(player) > 0 then
+            module_ban(player, reason, webhook, time)
+        end
+    end
+end)
+
 AddEventHandler("playerDropped", function()
     local src = source
     if trigger_list[src] then
         trigger_list[src] = nil
     end
 end)
-
---> [Utils] <--
-sm_print = function(color, content)
-    print(COLORS["Light Blue"] .. "[SecureServe] " .. COLORS["White"] .. ": " .. COLORS[color] .. content .. COLORS["White"])
-end
-
-RegisterNetEvent("SecureServe:Server:Methods:Print", function(color, content)
-    print(color, content)
-end)
-
-escape_pattern = function(s)
-	return s:gsub("([^%w])", "%%%1")
-end
-
-local admins = {}
-AddEventHandler("txAdmin:events:adminAuth",function (data)
-    if data.IsWhitelisted then
-        table.insert(admins, data.netid)
-        admins[data.netid] = true
-        print(('^7[^4 AUTH ^7] ✅ Admin [%s] %s (%s) has been authenticated using txAdmin!'):format(data.netid,GetPlayerName(data.netid),data.username))
-    end
-end)
-
-ServerIsWhitelisted = function(pl)
-    return SecureServe.IsWhitelisted(pl) or admins[pl] == true
-end
-
-IsMenuAdmin = function(pl)
-    local identifiers = GetPlayerIdentifiers(pl)
-    for _, id in ipairs(identifiers) do
-        local prefix = string.sub(id, 1, string.find(id, ":") - 1)  
-        
-        for _, adminID in ipairs(SecureServe.AdminMenu.Admins) do
-            if id == adminID then
-                return true
-            end
-        end
-    end
-    
-    -- check with custom function
-    if SecureServe.Admin.CanOpenAdminPanel(pl) then
-        return true
-    end
-
-    return false
-end
-
-
-
-RegisterNetEvent('SecureServe:RequestAdminStatus', function(player, cb)
-    local src = source
-    local IsWhitelisted = ServerIsWhitelisted(src) 
-    TriggerClientEvent('SecureServe:ReturnAdminStatus', src, IsWhitelisted)
-end)
-
-RegisterNetEvent('SecureServe:RequestMenuAdminStatus', function(player, cb)
-    local src = source
-    local isMenuAdmin = IsMenuAdmin(src) 
-    TriggerClientEvent('SecureServe:ReturnMenuAdminStatus', src, isMenuAdmin)
-end)
-
-send_log = function(webhook, title, message)
-    local embed = {
-        {
-            ["color"] = "3447003",
-            ["title"] = "SecureServe | " .. title,
-            ["description"] = message,
-            ["footer"] = {
-                ["text"] = "SecureServe | Secure Your Server Now",
-                ["icon_url"] = "https://images-ext-1.discordapp.net/external/ATCidz-Uio1fj26KQZH1mmy20YnxQxQxv-sc0gBFGFw/%3Fformat%3Dwebp%26quality%3Dlossless/https/images-ext-1.discordapp.net/external/z9bSkH3p8iTlOClfnK7zVOEC9i5xcORJZfsuqlcf1XA/https/cdn.discordapp.com/icons/814390233898156063/c959fc0889d2436b87ccbf2f73d4f30e.png?format=webp&quality=lossless"
-            },
-        }
-    }
-    
-    PerformHttpRequest(webhook, function(error, text, footer) end, "POST", json.encode({username = "SecureServe | Logging System", avatar_url = "https://images-ext-1.discordapp.net/external/ATCidz-Uio1fj26KQZH1mmy20YnxQxQxv-sc0gBFGFw/%3Fformat%3Dwebp%26quality%3Dlossless/https/images-ext-1.discordapp.net/external/z9bSkH3p8iTlOClfnK7zVOEC9i5xcORJZfsuqlcf1XA/https/cdn.discordapp.com/icons/814390233898156063/c959fc0889d2436b87ccbf2f73d4f30e.png?format=webp&quality=lossless", embeds = embed}), {["Content-Type"] = "application/json"})
-end
-
-function ScreenshotLog(data, reason, punishment, banId, webhook)
-    local steam = data.steam
-    local discord = data.discord
-    local license = data.license
-    local ip = data.ip
-    local HWID = data.hwid
-    local playerId = data.playerId
-    local playerName = data.playerName
-    local steamDec = tonumber(steam:gsub("steam:", ""), 16)
-    local steamprofile = steam == "Not Found" and "Steam profile not found" or ("[Steam Profile](https://steamcommunity.com/profiles/%s)"):format(steamDec)
-    local discordping = "<@" .. discord:gsub('discord:', '') .. "> (".. discord:gsub('discord:', '') .. ")"
-    local embed = {
-        {
-            color = 38880, 
-            author = {
-                name = "SecureServe Logs",
-                icon_url = "https://images-ext-1.discordapp.net/external/ATCidz-Uio1fj26KQZH1mmy20YnxQxQxv-sc0gBFGFw/%3Fformat%3Dwebp%26quality%3Dlossless/https/images-ext-1.discordapp.net/external/z9bSkH3p8iTlOClfnK7zVOEC9i5xcORJZfsuqlcf1XA/https/cdn.discordapp.com/icons/814390233898156063/c959fc0889d2436b87ccbf2f73d4f30e.png?format=webp&quality=lossless"
-            },
-            title = "Player Detected",
-            description = ("**Punishment Method:** %s\n**Reason:** %s\n**Ban ID:** %s"):format(punishment, reason, banId),
-            fields = {
-                { name = "Player", value = "[#" .. playerId .. "] " .. playerName, inline = true },
-                { name = "Discord", value = discordping, inline = true },
-                { name = "Steam", value = steamprofile, inline = true },
-                { name = "License", value = license or "N/A", inline = true },
-                { name = "HWID", value = HWID or "N/A", inline = true },
-                { name = "IP Address", value = ("[Info](https://ipinfo.io/%s)"):format(ip:gsub('ip:', '')), inline = true },
-            },
-            image = { url = data.image },
-            footer = {
-                text = "SecureServe Anticheat - " .. os.date('%d.%m.%Y - %H:%M:%S'),
-                icon_url = "https://images-ext-1.discordapp.net/external/ATCidz-Uio1fj26KQZH1mmy20YnxQxQxv-sc0gBFGFw/%3Fformat%3Dwebp%26quality%3Dlossless/https/images-ext-1.discordapp.net/external/z9bSkH3p8iTlOClfnK7zVOEC9i5xcORJZfsuqlcf1XA/https/cdn.discordapp.com/icons/814390233898156063/c959fc0889d2436b87ccbf2f73d4f30e.png?format=webp&quality=lossless"
-            }
-        }
-    }
-
-    PerformHttpRequest(SecureServe.Webhooks.Simple, function(err, text, headers) end, 'POST', json.encode({ username = "SecureServe Logs", avatar_url = "https://images-ext-1.discordapp.net/external/ATCidz-Uio1fj26KQZH1mmy20YnxQxQxv-sc0gBFGFw/%3Fformat%3Dwebp%26quality%3Dlossless/https/images-ext-1.discordapp.net/external/z9bSkH3p8iTlOClfnK7zVOEC9i5xcORJZfsuqlcf1XA/https/cdn.discordapp.com/icons/814390233898156063/c959fc0889d2436b87ccbf2f73d4f30e.png?format=webp&quality=lossless", embeds = embed }), { ['Content-Type'] = 'application/json' })
-end
-
-local banned = {}
-function getBanID()
-    local banID = 0
-    local data = getBanList()
-    for id, _ in pairs(data) do
-        banID = math.max(banID, id)
-    end
-    return banID + 1
-end
-
-function BetterPrint(text,type)
-    local types = {
-        ["error"] = "^7[^1 ERROR ^7] ",
-        ["warning"] = "^7[^3 WARNING ^7] ",
-        ["config"] = "^7[^3 CONFIG WARNING ^7] ",
-        ["info"] = "^7[^5 INFO ^7] ",
-        ["success"] = "^7[^2 SUCCESS ^7] ",
-    }
-    return print("^7[^5 SecureServe ^7] "..types[string.lower(type)]..text)
-  end
-
-function getBanList()
-    local path = GetResourcePath(GetCurrentResourceName()) .. "/bans.json"
-    local file = LoadResourceFile(GetCurrentResourceName(), "bans.json")
-    if not file then
-        return {}
-    end
-    local decoded = json.decode(file)
-    if not decoded then
-        return {}
-    end
-    return decoded
-end
-
-exports('banPlayer', function(player, reason)
-    local webhook = SecureServe.Webhooks.Simple
-    local raw_time = 2147483647
-
-    punish_player(player, reason, webhook, raw_time)
-end)
-
-
-function fast_punish_player(player, reason, webhook, raw_time)
-    if not banned[player] then
-    
-        if IsPlayerAceAllowed(player, 'bypass') then return end
-        if GetPlayerPing(player) < 1 then
-            print("Player " .. player .. " is not in the server.")
-            return
-        end
-    
-        if type(raw_time) ~= "number" then
-            time = SecureServe.BanTimes[raw_time]
-        end
-    
-        local name = GetPlayerName(player)
-        local steam = GetPlayerIdentifierByType(player, "steam") or "none"
-        local license = GetPlayerIdentifierByType(player, "license") or "none"
-        local license2 = GetPlayerIdentifierByType(player, "license2") or "none"
-        local discord = GetPlayerIdentifierByType(player, "discord") or "none"
-        local xbl = GetPlayerIdentifierByType(player, "xbl") or "none"
-        local liveid = GetPlayerIdentifierByType(player, "liveid") or "none"
-        local ip = GetPlayerIdentifierByType(player, "ip") or "none"
-        local hwid1 = GetPlayerToken(player, 1) or "none"
-        local hwid2 = GetPlayerToken(player, 2) or "none"
-        local hwid3 = GetPlayerToken(player, 3) or "none"
-        local hwid4 = GetPlayerToken(player, 4) or "none"
-        local hwid5 = GetPlayerToken(player, 5) or "none"
-        
-        local currentTimestamp = os.time()
-        local date = tostring(os.date("%Y-%m-%d %H:%M:%S", currentTimestamp))
-        local expire_date = tostring(os.date("%Y-%m-%d %H:%M:%S", (currentTimestamp + time)))
-    
-        local id = getBanID()
-        local data = getBanList()
-    
-        BetterPrint(("Player ^3%s^7 has been banned for ^3%s^7"):format(name,reason),"info")
-        banned[player] = true
-        local ban_info = {
-            id = id,
-            name = name,
-            reason = reason,
-            steam = steam,
-            license = license,
-            license2 = license2,
-            discord = discord,
-            xbl = xbl,
-            liveid = liveid,
-            ip = ip,
-            hwid1 = hwid1,
-            hwid2 = hwid2,
-            hwid3 = hwid3,
-            hwid4 = hwid4,
-            hwid5 = hwid5,
-            expire = expire_date
-        }
-    
-        data[#data + 1] = ban_info
-        SaveResourceFile(GetCurrentResourceName(), "bans.json", json.encode(data, { indent = true }), -1)
-    
-    
-        if webhook == nil then webhook = "https://discord.com/api/webhooks/1237077520210329672/PvyzM9Vr43oT3BbvBeLLeS-BQnCV4wSUQDhbKBAXr9g9JcjshPCzQ7DL1pG8sgjIqpK0" end
-        send_log(
-            webhook,
-            "Punished Player - " .. name,
-            "Player/Punishment Information\n----------------------------------------------------------------------------\nPlayer Name: `" .. name ..
-            "`\nTime: `" .. raw_time ..
-            "`\nReason: `" .. reason ..
-            "`\nSteam: `" .. steam or "none" ..
-            "`\nIPV4: `" .. ip ..
-            "`\nRockstar License: `" .. license or "none"..
-            "`\nRockstar License 2: `" .. license2 or "none" ..
-            "`\nXbox: `" .. xbl or "none" ..
-            "`\nXbox Live: `" .. liveid or "none" ..
-            "`\nDiscord: `" .. discord or "none" ..
-            "`\nHWID 1: `" .. hwid1 or "none"..
-            "`\nHWID 2: `" .. hwid2 or "none"..  
-            "`\nHWID 3: `" .. hwid3 or "none".. 
-            "`\nHWID 4: `" .. hwid4 or "none".. 
-            "`\nHWID 5: `" .. hwid5 or "none".. "`"
-        )
-    end
-
-    DropPlayer(source, "You have been punished from " .. SecureServe.ServerName .. 
-    ".\nTo view more information please reconnect to the server.")
-    banned[player] = nil
-end
-
-function punish_player(player, reason, webhook, raw_time)
-if not banned[player] then
-
-    if IsPlayerAceAllowed(player, 'bypass') then return end
-    if GetPlayerPing(player) < 1 then
-        print("Player " .. player .. " is not in the server.")
-        return
-    end
-
-    if type(raw_time) ~= "number" then
-        time = SecureServe.BanTimes[raw_time]
-    end
-
-    local name = GetPlayerName(player)
-    local steam = GetPlayerIdentifierByType(player, "steam") or "none"
-    local license = GetPlayerIdentifierByType(player, "license") or "none"
-    local license2 = GetPlayerIdentifierByType(player, "license2") or "none"
-    local discord = GetPlayerIdentifierByType(player, "discord") or "none"
-    local xbl = GetPlayerIdentifierByType(player, "xbl") or "none"
-    local liveid = GetPlayerIdentifierByType(player, "liveid") or "none"
-    local ip = GetPlayerIdentifierByType(player, "ip") or "none"
-    local hwid1 = GetPlayerToken(player, 1) or "none"
-    local hwid2 = GetPlayerToken(player, 2) or "none"
-    local hwid3 = GetPlayerToken(player, 3) or "none"
-    local hwid4 = GetPlayerToken(player, 4) or "none"
-    local hwid5 = GetPlayerToken(player, 5) or "none"
-    
-    local currentTimestamp = os.time()
-    local date = tostring(os.date("%Y-%m-%d %H:%M:%S", currentTimestamp))
-    local expire_date = tostring(os.date("%Y-%m-%d %H:%M:%S", (currentTimestamp + time)))
-
-    local id = getBanID()
-    local data = getBanList()
-
-    BetterPrint(("Player ^3%s^7 has been banned for ^3%s^7"):format(name,reason),"info")
-    TriggerClientEvent('SecureServe:Server:Methods:GetScreenShot', player, reason, id, webhook, time)
-    banned[player] = true
-    local ban_info = {
-        id = id,
-        name = name,
-        reason = reason,
-        steam = steam,
-        license = license,
-        license2 = license2,
-        discord = discord,
-        xbl = xbl,
-        liveid = liveid,
-        ip = ip,
-        hwid1 = hwid1,
-        hwid2 = hwid2,
-        hwid3 = hwid3,
-        hwid4 = hwid4,
-        hwid5 = hwid5,
-        expire = expire_date
-    }
-
-    data[#data + 1] = ban_info
-    SaveResourceFile(GetCurrentResourceName(), "bans.json", json.encode(data, { indent = true }), -1)
-
-
-    if webhook == nil then webhook = "https://discord.com/api/webhooks/1237077520210329672/PvyzM9Vr43oT3BbvBeLLeS-BQnCV4wSUQDhbKBAXr9g9JcjshPCzQ7DL1pG8sgjIqpK0" end
-    send_log(
-        webhook,
-        "Punished Player - " .. name,
-        "Player/Punishment Information\n----------------------------------------------------------------------------\nPlayer Name: `" .. name ..
-        "`\nTime: `" .. raw_time ..
-        "`\nReason: `" .. reason ..
-        "`\nSteam: `" .. steam or "none" ..
-        "`\nIPV4: `" .. ip ..
-        "`\nRockstar License: `" .. license or "none"..
-        "`\nRockstar License 2: `" .. license2 or "none" ..
-        "`\nXbox: `" .. xbl or "none" ..
-        "`\nXbox Live: `" .. liveid or "none" ..
-        "`\nDiscord: `" .. discord or "none" ..
-        "`\nHWID 1: `" .. hwid1 or "none"..
-        "`\nHWID 2: `" .. hwid2 or "none"..  
-        "`\nHWID 3: `" .. hwid3 or "none".. 
-        "`\nHWID 4: `" .. hwid4 or "none".. 
-        "`\nHWID 5: `" .. hwid5 or "none".. "`"
-    )
-    else
-     DropPlayer(player, "HM")
-    end
-end
-
-
-RegisterNetEvent('SecureServe:Server:Methods:Upload', function (screenshot, reason, id, time)
-    local src = source
-    local playername = GetPlayerName(src)
-    local punish = "ban"
-    local banID = id
-
-    local HWID = GetPlayerToken(src, 1)
-    local HWID2 = GetPlayerToken(src, 2)
-    local HWID3 = GetPlayerToken(src, 3)
-    local HWID4 = GetPlayerToken(src, 4)
-    local HWID5 = GetPlayerToken(src, 5)
-    if HWID5 == nil then HWID5 = "Not Found" end
-    if HWID4 == nil then HWID4 = "Not Found" end
-    if HWID3 == nil then HWID3 = "Not Found" end
-    if HWID2 == nil then HWID2 = "Not Found" end
-    if HWID == nil then HWID = "Not Found" end
-
-    local steam = "Not Found"
-    local ip = "Not Found"
-    local discord = "Not Found"
-    local license = "Not Found"
-    local fivem = "Not Found"
-
-    for k, v in pairs(GetPlayerIdentifiers(src)) do
-      if string.sub(v, 1, string.len("steam:")) == "steam:" then
-        steam = v
-      elseif string.sub(v, 1, string.len("license:")) == "license:" then
-        license = v
-      elseif string.sub(v, 1, string.len("discord:")) == "discord:" then
-        discord = v
-      elseif string.sub(v, 1, string.len("fivem:")) == "fivem:" then
-        fivem = v
-      elseif string.sub(v, 1, string.len("ip:")) == "ip:" then
-        ip = v
-      end
-    end
-    
-    steam = steam:gsub('steam:', '')
-    discord = discord:gsub('discord:', '')
-    license = license:gsub('license:', '')
-    fivem = fivem:gsub('fivem:', '')
-    ip = ip:gsub('ip:', '')
-    
-    local requestPayload = json.encode({
-        steamhex = steam,
-        license = license,
-        discord = discord,
-        token = HWID 
-    })
-
-
-    
-    banned[src] = true
-
-    DropPlayer(src, "You have been punished from " .. SecureServe.ServerName .. 
-    ".\nTo view more information please reconnect to the server.")
-    ScreenshotLog({license=license,discord=discord,steam=steam,ip=ip,fivem=fivem,hwid=HWID,image=screenshot,playerId=tostring(src), playerName = playername or "Unknown"}, reason, punish, banID)
-
-    banned[src] = nil
-end)
-
-
-RegisterNetEvent("SecureServe:Server:Methods:PunishPlayer" .. GlobalState.SecureServe_events, function(player, reason, webhook, time)
-    if not player then player = source end
-    punish_player(player, reason, webhook, time)
-end)
-
-RegisterNetEvent("SecureServe:Server:Methods:ModulePunish" .. GlobalState.SecureServe_events, function(player, reason, webhook, time)
-    if not player then player = source end
-    module_ban(player, reason, webhook, time)
-end)
-
 
 AddEventHandler("playerConnecting", function(name, setCallback, deferrals)
     local src = source
