@@ -36,127 +36,181 @@ CreateAutomobile = function(...) return createEntity(_CreateAutomobile, ...) end
 
 local encryption_key = "c4a2ec5dc103a3f730460948f2e3c01df39ea4212bc2c82f"
 
-function encryptDecrypt(input)
-    local output = {}
-    for i = 1, #tostring(input) do
-        local char = tostring(input):byte(i)
-        local keyChar = encryption_key:byte((i - 1) % #encryption_key + 1)
-        local encryptedChar = (char + keyChar) % 256  
-        output[i] = string.char(encryptedChar)
+local xor_encrypt = function(text, key)
+    local res = {}
+    local key_len = #key
+    for i = 1, #text do
+        local xor_byte = string.byte(text, i) ~ string.byte(key, (i - 1) % key_len + 1)
+        res[i] = string.char(xor_byte)
     end
-    return table.concat(output)
+    return table.concat(res)
 end
 
-function decrypt(input)
-    local output = {}
-    for i = 1, #tostring(input) do
-        local char = tostring(input):byte(i)
-        local keyChar = encryption_key:byte((i - 1) % #encryption_key + 1)
-        local decryptedChar = (char - keyChar) % 256  
-        output[i] = string.char(decryptedChar)
+local encryptEventName = function(event_name, key)
+    local encrypted = xor_encrypt(event_name, key)
+    local result = ""
+    for i = 1, #encrypted do
+        result = result .. string.format("%03d", string.byte(encrypted, i))
     end
-    return table.concat(output)
+    return result
 end
+
+local xor_decrypt = function(encrypted_text, key)
+    local res = {}
+    local key_len = #key
+    for i = 1, #encrypted_text do
+        local xor_byte = string.byte(encrypted_text, i) ~ string.byte(key, (i - 1) % key_len + 1)
+        res[i] = string.char(xor_byte)
+    end
+    return table.concat(res)
+end
+
+local decryptEventName = function(encrypted_name, key)
+    local encrypted = {}
+    for i = 1, #encrypted_name, 3 do
+        local byte_str = encrypted_name:sub(i, i + 2)
+        local byte = tonumber(byte_str)
+        if byte and byte >= 0 and byte <= 255 then
+            table.insert(encrypted, string.char(byte))
+        else
+            -- print("Decryption failed: invalid byte detected ->", byte_str)
+            return encrypted_name
+        end
+    end
+    return xor_decrypt(table.concat(encrypted), key)
+end
+
+
+local fxEvents = {
+    ["onResourceStart"] = true,
+    ["onResourceStarting"] = true,
+    ["onResourceStop"] = true,
+    ["onServerResourceStart"] = true,
+    ["onServerResourceStop"] = true,
+    ["gameEventTriggered"] = true,
+    ["populationPedCreating"] = true,
+    ["rconCommand"] = true,
+    ["playerConnecting"] = true,
+    ["playerDropped"] = true,
+    ["onResourceListRefresh"] = true,
+    ["weaponDamageEvent"] = true,
+    ["vehicleComponentControlEvent"] = true,
+    ["respawnPlayerPedEvent"] = true,
+    ["explosionEvent"] = true,
+    ["fireEvent"] = true,
+    ["entityRemoved"] = true,
+    ["playerJoining"] = true,
+    ["startProjectileEvent"] = true,
+    ["playerEnteredScope"] = true,
+    ["playerLeftScope"] = true,
+    ["ptFxEvent"] = true,
+    ["removeAllWeaponsEvent"] = true,
+    ["giveWeaponEvent"] = true,
+    ["removeWeaponEvent"] = true,
+    ["clearPedTasksEvent"] = true,
+}
 
 if IsDuplicityVersion() then
     local _AddEventHandler = AddEventHandler
     local _RegisterNetEvent = RegisterNetEvent
-    local events_to_listen = {}
-    local processed_events = {}
-    
-    _G.RegisterNetEvent = function(event_name, ...)
-        if processed_events[event_name] then
-            return processed_events[event_name]
-        end
-        
-        local enc_event_name = encryptDecrypt(event_name) 
-        events_to_listen[event_name] = enc_event_name 
-        
-        local result = _RegisterNetEvent(enc_event_name, ...)
-        processed_events[event_name] = result
-        
-        return _RegisterNetEvent(event_name, ...)
-    end
-    
-    _G.AddEventHandler = function(event_name, handler, ...)
-        local enc_event_name = events_to_listen[event_name]
-        local handler_ref = _AddEventHandler(event_name, handler, ...)
-    
-        if enc_event_name and not processed_events["handler_" .. enc_event_name] then
-            _AddEventHandler(enc_event_name, handler, ...)
-            processed_events["handler_" .. enc_event_name] = true
-        end
-    
-        return handler_ref
-    end
-    
-    Citizen.CreateThread(function()
-        for event_name, enc_event_name in pairs(events_to_listen) do
-            if not processed_events["security_" .. event_name] then
-                processed_events["security_" .. event_name] = true
-                
-                _AddEventHandler(event_name, function ()
-                    local src = source
-    
-                    if GetPlayerPing(src) > 0 then
-                        local resourceName = GetCurrentResourceName()
-                        local banMessage = ("Tried triggering a restricted event: %s in resource: %s."):format(event_name, resourceName)
-                        
-                        TriggerEvent("SecureServe:Server:Methods:ModulePunish" .. GlobalState.SecureServe_events, src, banMessage)
-                    end
-                end)
-    
-                -- _AddEventHandler(enc_event_name, function ()
-                --     local src = source 
-                    
-                --     if GetPlayerPing(src) > 0 then
-                --         local decrypted = decrypt(enc_event_name)
-                --         if decrypted ~= "add_to_trigger_list" then
-                --             TriggerEvent("check_trigger_list", src, decrypted)
-                --         end
-                --     end
-                -- end)
-            end
-        end
-    end)
-    
 
+	local eventsToRegister = {}
+	local eventQueue = {}
+	
+	RegisterNetEvent = function(event_name, ...)
+		local encrypted_event_name = encryptEventName(event_name, encryption_key)
+	
+		if select("#", ...) == 0 then
+			eventsToRegister[encrypted_event_name] = {}
+			CancelEvent()
+			return
+		end
+
+		_RegisterNetEvent(encrypted_event_name, ...)
+		_RegisterNetEvent(event_name, ...)
+
+		eventQueue[event_name] = {encrypted_event_name, {...}}
+	end
+	
+	AddEventHandler = function(event_name, handler)
+        local encrypted_event_name = encryptEventName(event_name, encryption_key)
+		if not fxEvents[event_name] and not event_name:find("__cfx_") then
+			if tonumber(event_name) == nil then
+				if handler and type(handler) == 'function' and eventsToRegister[encrypted_event_name] then
+					_AddEventHandler(event_name, handler)
+					eventsToRegister[encrypted_event_name][#eventsToRegister[encrypted_event_name] + 1] = handler
+				else
+					_AddEventHandler(event_name, handler)
+				end
+			else
+				_AddEventHandler(event_name, handler)
+			end
+		else
+			_AddEventHandler(event_name, handler)
+		end
+	end
+
+    Citizen.CreateThread(function ()
+        for event_name, handlers in pairs(eventsToRegister) do
+			_RegisterNetEvent(event_name, table.unpack(handlers))
+            local decrypted_name = decryptEventName(event_name, encryption_key)
+			exports["SecureServe"]:add_event_handler(event_name, decrypted_name, handler)
+		end
+
+		eventsToRegister = {}
+    end)
+
+	Citizen.CreateThread(function()
+		for event_name, data in pairs(eventQueue) do
+			local encrypted_event_name, handlers = table.unpack(data)
+			exports["SecureServe"]:register_net_event(event_name, encrypted_event_name, handlers)
+		end
+	
+		eventQueue = {}
+	end)
+	
 	RegisterServerEvent = RegisterNetEvent
 else
-	local _TriggerServerEvent = TriggerServerEvent
-    local run = false
-    local eventsPending = {}
-    local eventsSent = {}
+	local whitelistedEvents = {}
 
-    AddEventHandler("playerSpawned", function()
-        run = true;
-        for eventName, args in pairs(eventsPending) do
-            _TriggerServerEvent(encryptDecrypt(eventName), table.unpack(args))
-        end
-        eventsPending = {}
-    end)
-
-    _G.TriggerServerEvent = function(eventName, ...)
-        local encryptedEvent = encryptDecrypt(eventName)
-        local args = {...}
-        
-        if eventsSent[eventName] then
-            _TriggerServerEvent(encryptedEvent, ...)
-            return
-        end
-
-        _TriggerServerEvent(encryptDecrypt("add_to_trigger_list"), encryptedEvent)
-
-        eventsSent[eventName] = true
-        
-        if not run then
-            eventsPending[eventName] = args
-            return
-        end
-        
-        return _TriggerServerEvent(encryptedEvent, ...)
-    end
+	Citizen.CreateThread(function()
+		if GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe" then
+			whitelistedEvents = {}
+		else
+			local success, events = pcall(function()
+				return exports["SecureServe"]:get_event_whitelist()
+			end)
 	
+			if success and events then
+				whitelistedEvents = {}
+	
+				for _, eventName in ipairs(events) do
+					local encryptedEventName = encryptEventName(eventName, encryption_key)
+					whitelistedEvents[eventName] = true
+					whitelistedEvents[encryptedEventName] = true
+				end
+			else
+				whitelistedEvents = {}
+			end
+		end
+	end)
+	
+	local _TriggerServerEvent = TriggerServerEvent
+	TriggerServerEvent = function(event_name, ...)
+		local value = false
+	
+		if GetCurrentResourceName() ~= "monitor" and GetCurrentResourceName() ~= "SecureServe" then
+			value = whitelistedEvents[event_name] or fxEvents[event_name]
+		end
+
+		-- print("[DEBUG] Triggered Server Event ".. event_name)
+		
+		if value then
+			_TriggerServerEvent(event_name, ...)
+		else
+			_TriggerServerEvent(encryptEventName(event_name, encryption_key), ...)
+		end
+	end		
 
 	local function isValidResource(resourceName)
 		local invalidResources = {
