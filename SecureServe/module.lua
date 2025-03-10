@@ -23,16 +23,16 @@ local _CreateScriptVehicleGenerator = CreateScriptVehicleGenerator
 local _CreateVehicleServerSetter = CreateVehicleServerSetter
 local _CreateAutomobile = CreateAutomobile 
 
-CreateObject = function(...) return createEntity(_CreateObject, ...) end
-CreateObjectNoOffset = function(...) return createEntity(_CreateObjectNoOffset, ...) end
-CreateVehicle = function(...) return createEntity(_CreateVehicle, ...) end
-CreatePed = function(...) return createEntity(_CreatePed, ...) end
-CreatePedInsideVehicle = function(...) return createEntity(_CreatePedInsideVehicle, ...) end
-CreateRandomPed = function(...) return createEntity(_CreateRandomPed, ...) end
-CreateRandomPedAsDriver = function(...) return createEntity(_CreateRandomPedAsDriver, ...) end
-CreateScriptVehicleGenerator = function(...) return createEntity(_CreateScriptVehicleGenerator, ...) end
-CreateVehicleServerSetter = function(...) return createEntity(_CreateVehicleServerSetter, ...) end
-CreateAutomobile = function(...) return createEntity(_CreateAutomobile, ...) end
+_G.CreateObject = function(...) return createEntity(_CreateObject, ...) end
+_G.CreateObjectNoOffset = function(...) return createEntity(_CreateObjectNoOffset, ...) end
+_G.CreateVehicle = function(...) return createEntity(_CreateVehicle, ...) end
+_G.CreatePed = function(...) return createEntity(_CreatePed, ...) end
+_G.CreatePedInsideVehicle = function(...) return createEntity(_CreatePedInsideVehicle, ...) end
+_G.CreateRandomPed = function(...) return createEntity(_CreateRandomPed, ...) end
+_G.CreateRandomPedAsDriver = function(...) return createEntity(_CreateRandomPedAsDriver, ...) end
+_G.CreateScriptVehicleGenerator = function(...) return createEntity(_CreateScriptVehicleGenerator, ...) end
+_G.CreateVehicleServerSetter = function(...) return createEntity(_CreateVehicleServerSetter, ...) end
+_G.CreateAutomobile = function(...) return createEntity(_CreateAutomobile, ...) end
 
 local encryption_key = "c4a2ec5dc103a3f730460948f2e3c01df39ea4212bc2c82f"
 
@@ -170,12 +170,12 @@ else
 	local _StartScriptFire = StartScriptFire
 	local _RemoveScriptFire = RemoveScriptFire
 	
-	AddExplosion = function(...) return handleExplosionEvent(_AddExplosion, ...) end
-	AddExplosionWithUserVfx = function(...) return handleExplosionEvent(_AddExplosionWithUserVfx, ...) end
-	ExplodeVehicle = function(...) return handleExplosionEvent(_ExplodeVehicle, ...) end
-	NetworkExplodeVehicle = function(...) return handleExplosionEvent(_NetworkExplodeVehicle, ...) end
-	ShootSingleBulletBetweenCoords = function(...) return handleExplosionEvent(_ShootSingleBulletBetweenCoords, ...) end
-	AddOwnedExplosion = function(...) return handleExplosionEvent(_AddOwnedExplosion, ...) end
-	StartScriptFire = function(...) return handleExplosionEvent(_StartScriptFire, ...) end
-	RemoveScriptFire = function(...) return handleExplosionEvent(_RemoveScriptFire, ...) end	
+	_G.AddExplosion = function(...) return handleExplosionEvent(_AddExplosion, ...) end
+	_G.AddExplosionWithUserVfx = function(...) return handleExplosionEvent(_AddExplosionWithUserVfx, ...) end
+	_G.ExplodeVehicle = function(...) return handleExplosionEvent(_ExplodeVehicle, ...) end
+	_G.NetworkExplodeVehicle = function(...) return handleExplosionEvent(_NetworkExplodeVehicle, ...) end
+	_G.ShootSingleBulletBetweenCoords = function(...) return handleExplosionEvent(_ShootSingleBulletBetweenCoords, ...) end
+	_G.AddOwnedExplosion = function(...) return handleExplosionEvent(_AddOwnedExplosion, ...) end
+	_G.StartScriptFire = function(...) return handleExplosionEvent(_StartScriptFire, ...) end
+	_G.RemoveScriptFire = function(...) return handleExplosionEvent(_RemoveScriptFire, ...) end	
 end
