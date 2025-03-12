@@ -36,8 +36,6 @@ RegisterNetEvent('requestConfig', function()
     TriggerClientEvent('receiveConfig', src, SecureServe)
 end)
 
-GlobalState.SecureServe_events = math.random(1, 99999);
-
 local function setTimeState()
     GlobalState.SecureServe = os.time()
 end
@@ -501,6 +499,9 @@ RegisterNetEvent("SecureServe:server:ManualSafeEventsTrigger", function(event_na
 end)
 
 
+
+
+
 --> [Utils] <--
 sm_print = function(color, content)
     print(COLORS["Light Blue"] .. "[SecureServe] " .. COLORS["White"] .. ": " .. COLORS[color] .. content .. COLORS["White"])
@@ -892,12 +893,12 @@ RegisterNetEvent('SecureServe:Server:Methods:Upload', function (screenshot, reas
 end)
 
 
-RegisterNetEvent("SecureServe:Server:Methods:PunishPlayer" .. GlobalState.SecureServe_events, function(player, reason, webhook, time)
+RegisterNetEvent("SecureServe:Server:Methods:PunishPlayer", function(player, reason, webhook, time)
     if not player then player = source end
     punish_player(player, reason, webhook, time)
 end)
 
-RegisterNetEvent("SecureServe:Server:Methods:ModulePunish" .. GlobalState.SecureServe_events, function(player, reason, webhook, time)
+RegisterNetEvent("SecureServe:Server:Methods:ModulePunish", function(player, reason, webhook, time)
     if not player then player = source end
     module_ban(player, reason, webhook, time)
 end)

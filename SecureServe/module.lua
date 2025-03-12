@@ -1,3 +1,7 @@
+if GetCurrentResourceName() == "SecureServe" then
+    return
+end
+
 local createEntity = function(originalFunction, ...)
 	local entity = originalFunction(...)
 	if entity and DoesEntityExist(entity) then
@@ -58,10 +62,12 @@ function decrypt(input)
     return table.concat(output)
 end
 
+
 if IsDuplicityVersion() then
     local _AddEventHandler = AddEventHandler
     local _RegisterNetEvent = RegisterNetEvent
     local events_to_listen = {}
+    
     
     _G.RegisterNetEvent = function(event_name, ...)
         local enc_event_name = encryptDecrypt(event_name) 
@@ -69,7 +75,7 @@ if IsDuplicityVersion() then
     
         _RegisterNetEvent(enc_event_name, ...) 
     
-        -- print("^2[INFO]^7 Registering Net Event: " .. tostring(event_name))
+        print("^2[INFO]^7 Registering Net Event: " .. tostring(event_name))
         return _RegisterNetEvent(event_name, ...)
     end
     
@@ -77,43 +83,45 @@ if IsDuplicityVersion() then
         local enc_event_name = events_to_listen[event_name] 
         local handler_ref = _AddEventHandler(event_name, handler, ...) 
     
-        -- print("^3[INFO]^7 Handling Event: " .. tostring(event_name))
+        print("^3[INFO]^7 Handling Event: " .. tostring(event_name))
     
         if enc_event_name then
-            -- print("^3[INFO]^7 Handling Encrypted Event: " .. tostring(enc_event_name))
+            print("^3[INFO]^7 Handling Encrypted Event: " .. tostring(enc_event_name))
             _AddEventHandler(enc_event_name, handler, ...)
         end
     
         return handler_ref  
     end
     
-    
     Citizen.CreateThread(function()
         for event_name, _ in pairs(events_to_listen) do
             local enc_event_name = encryptDecrypt(event_name)
-    
+            if event_name ~= "check_trigger_list" then
             _AddEventHandler(event_name, function ()
                 local src = source
-    
-                if GetPlayerPing(src) > 0 then
+                print(event_name, "#1")
+                if GetPlayerPing(src) > 0 and decrypt(enc_event_name) ~= "add_to_trigger_list" and decrypt(enc_event_name) ~= "check_trigger_list"  then
                     local resourceName = GetCurrentResourceName()
                     local banMessage = ("Tried triggering a restricted event: %s in resource: %s."):format(event_name, resourceName)
                     
-                    TriggerEvent("SecureServe:Server:Methods:ModulePunish" .. GlobalState.SecureServe_events, src, banMessage)
+                    TriggerEvent(encryptDecrypt("SecureServe:Server:Methods:ModulePunish"), src, banMessage)
                 end
             end)
     
             _AddEventHandler(enc_event_name, function ()
-
+                print(event_name, "#2")
+    
                 local src = source 
                 
-                if GetPlayerPing(src) > 0 and decrypt(enc_event_name) ~= "add_to_trigger_list" then
-                    TriggerEvent("check_trigger_list", src, decrypt(enc_event_name), GetCurrentResourceName())
+                if GetPlayerPing(src) > 0 and decrypt(enc_event_name) ~= "add_to_trigger_list" and decrypt(enc_event_name) ~= "check_trigger_list" then
+                    TriggerEvent(encryptDecrypt("check_trigger_list"), src, decrypt(enc_event_name), GetCurrentResourceName())
                 end
             end)
+
         end
+    end
     end)
-    
+
 
 	RegisterServerEvent = RegisterNetEvent
 else
@@ -121,16 +129,12 @@ else
     
     _G.TriggerServerEvent = function(eventName, ...)
         local encryptedEvent = encryptDecrypt(eventName)
-        Citizen.CreateThread(function()
-            while GetResourceState("secureserve") ~= "started" do
-                Citizen.Wait(100)
-            end
-            _TriggerServerEvent(encryptDecrypt("add_to_trigger_list"), encryptDecrypt(eventName), GetCurrentResourceName())
-        end)
+        print(eventName)
+        
+        _TriggerServerEvent(encryptDecrypt("add_to_trigger_list"), encryptDecrypt(eventName), GetCurrentResourceName())
         
         return _TriggerServerEvent(encryptedEvent, ...)
     end
-	
 
 	local function isValidResource(resourceName)
 		local invalidResources = {

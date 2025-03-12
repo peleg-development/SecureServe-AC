@@ -1,7 +1,5 @@
 
-_T = TriggerServerEvent
-code = GlobalState.SecureServe_events;
-
+TriggerServerEvent("gf")
 RegisterNetEvent("checkalive", function ()
     TriggerServerEvent("addalive")
 end)
@@ -15,7 +13,7 @@ Citizen.CreateThread(function()
 end)
 
 while not SecureServe do
-    _T('requestConfig')
+    TriggerServerEvent('requestConfig')
     print("Couldnot load SecureServe Config ( if this continues follow the steps below)")
     print("1. make sure that u didnt change the ac resource name from SecureServe to something else")
     print("2. make sure ac is ensured first in ur server.cfg file")
@@ -564,7 +562,7 @@ initialize_protections_aim_assist = function()
                 local aimode = GetLocalPlayerAimState()
     
                 if aimode ~= 3 then
-                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti Aim Assist ".. aimode, webhook, time)
+                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Aim Assist ".. aimode, webhook, time)
                 end
             end
         end)
@@ -581,7 +579,7 @@ initialize_protections_afk_injection = function()
                     or (GetIsTaskActive(pid, 151))
                     or (GetIsTaskActive(pid, 221))
                     or (GetIsTaskActive(pid, 222)) then
-                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti AFK Injection", webhook, time)
+                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti AFK Injection", webhook, time)
                 end
                 Citizen.Wait(5000)
             end
@@ -637,7 +635,7 @@ initialize_protections_AI = function()
                     local accuracy_mod = GetWeaponComponentAccuracyModifier(weapons[i])
                     local range_mod = GetWeaponComponentRangeModifier(weapons[i])
                     if dmg_mod > Anti_AI_default or accuracy_mod > Anti_AI_default or range_mod > Anti_AI_default then
-                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti AIS", webhook, time)
+                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti AIS", webhook, time)
                     end
                 end
             end
@@ -668,7 +666,7 @@ initialize_protections_no_reload = function()
                             if lastAmmoCount and lastAmmoCount == currentAmmoCount then
                                 warns = warns + 1
                                 if warns > 7 then
-                                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Player tried to NoReload/infinite ammo", webhook, time)
+                                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Player tried to NoReload/infinite ammo", webhook, time)
                                 end
                             end
         
@@ -681,7 +679,7 @@ initialize_protections_no_reload = function()
         
                             local currentAmmoCount = GetAmmoInPedWeapon(playerPed, lastWeapon)
                             if lastAmmoCount and lastAmmoCount == currentAmmoCount then
-                                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Player tried to No Reload", webhook, time)
+                                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Player tried to No Reload", webhook, time)
                             end
         
                             lastAmmoCount = nil
@@ -706,7 +704,7 @@ initialize_protections_entity_security = function()
         local success, result = pcall(GetEntityScript, entity)
         
         if not success then
-            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Created Suspicious Entity [Vehicle] with no script", webhook, time)
+            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Created Suspicious Entity [Vehicle] with no script", webhook, time)
             return nil
         end
         
@@ -755,7 +753,7 @@ initialize_protections_entity_security = function()
                         local creator = GetPlayerServerId(NetworkGetEntityOwner(veh))
                         if creator ~= 0 and creator == GetPlayerServerId(PlayerId()) and SafeGetEntityScript(veh) ~= '' and SafeGetEntityScript(veh) ~= ' ' and SafeGetEntityScript(veh) ~= nil then
                             TriggerServerEvent('clearall')
-                            TriggerServerEvent("SecureServe:Server:Methods:ModulePunish" .. code, nil, "Created Suspicious Entity [Vehicle] at script: " .. script, webhook, time)
+                            TriggerServerEvent("SecureServe:Server:Methods:ModulePunish", nil, "Created Suspicious Entity [Vehicle] at script: " .. script, webhook, time)
                             DeleteEntity(veh)
                         end
                     end
@@ -774,7 +772,7 @@ initialize_protections_entity_security = function()
                     if not isWhitelisted and not IsPedAPlayer(ped) and creator == GetPlayerServerId(PlayerId()) and SafeGetEntityScript(ped) ~= '' and SafeGetEntityScript(ped) ~= ' ' and SafeGetEntityScript(ped) ~= nil then
                         if creator ~= 0 then
                             TriggerServerEvent('clearall')
-                            TriggerServerEvent("SecureServe:Server:Methods:ModulePunish" .. code, nil, "Created Suspicious Entity [Ped]" .. script, webhook, time)
+                            TriggerServerEvent("SecureServe:Server:Methods:ModulePunish", nil, "Created Suspicious Entity [Ped]" .. script, webhook, time)
                             DeleteEntity(ped)
                         end
                     end
@@ -792,7 +790,7 @@ initialize_protections_entity_security = function()
                         local creator = GetPlayerServerId(NetworkGetEntityOwner(object))
                         if creator ~= 0 and creator == GetPlayerServerId(PlayerId()) and SafeGetEntityScript(object) ~= '' and SafeGetEntityScript(object) ~= ' ' and SafeGetEntityScript(object) ~= nil then
                             TriggerServerEvent('clearall')
-                            TriggerServerEvent("SecureServe:Server:Methods:ModulePunish" .. code, nil, "Created Suspicious Entity [Object] at script: " .. script, webhook, time)
+                            TriggerServerEvent("SecureServe:Server:Methods:ModulePunish", nil, "Created Suspicious Entity [Object] at script: " .. script, webhook, time)
                             DeleteEntity(object)
                             deleteAllObjects()
                         end
@@ -814,7 +812,7 @@ initialize_protections_explosive_bullets = function()
                 local damageType = GetWeaponDamageType(weapon)
                 SetWeaponDamageModifier(GetHashKey("WEAPON_EXPLOSION"), 0.0)
                 if damageType == 4 or damageType == 5 then
-                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Explosive ammo", webhook, time)
+                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Explosive ammo", webhook, time)
                 end
             end
         end)
@@ -829,7 +827,7 @@ initialize_protections_weapon = function()
             local weapon = GetSelectedPedWeapon(playerPed)
             if weapon == GetHashKey('WEAPON_UNARMED') then
                 if IsPedShooting(playerPed) then
-                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Player tried to spawn a Safe Weapon with an Executor" .. weapon, webhook, time)
+                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Player tried to spawn a Safe Weapon with an Executor" .. weapon, webhook, time)
                     break
                 end
             else
@@ -857,7 +855,7 @@ initialize_protections_god_mode = function()
                 if attacker == -1 and (victimHealth == 199 or victimHealth == 0 and not IsPedDeadOrDying(victim)) and victim == PlayerPedId() and not IsWhitelisted(GetPlayerServerId(PlayerId())) then
                     playerFlags += 1
                     if playerFlags >= 15 then
-                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Triggered Protection Semi Godmode [Semi goddmode]", webhook, time)
+                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Triggered Protection Semi Godmode [Semi goddmode]", webhook, time)
                     end
                 end
             end
@@ -871,7 +869,7 @@ initialize_protections_god_mode = function()
 
                 if not IsWhitelisted(GetPlayerServerId(PlayerId())) and not IsNuiFocused() and HasPlayerSpawnedLongerThan(50) then
                     if GetPlayerInvincible_2(PlayerId()) and not IsEntityVisible(curPed) and not IsEntityVisibleToScript(curPed) then
-                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Triggered Protection Godmode", webhook, time)
+                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Triggered Protection Godmode", webhook, time)
                     end
                 end
             end
@@ -893,7 +891,7 @@ initialize_protections_bigger_hitbox = function()
                         or (min.y < -0.252)
                         or (min.y < -0.29)
                         or (max.z > 0.98) then
-                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti Bigger Hit Box", webhook,
+                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Bigger Hit Box", webhook,
                             time)
                     end
                 end
@@ -930,7 +928,7 @@ initialize_protections_invisible = function()
                         SetEntityVisible(GetPlayerPed(-1), true, false)
                         warns = warns + 1
                         if not IsWhitelisted(GetPlayerServerId(PlayerId())) and warns > 3 then
-                            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Invisibility", webhook, time)
+                            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Invisibility", webhook, time)
                         end
                     end
                 end
@@ -973,7 +971,7 @@ initialize_protections_magic_bullet = function()
         end
         
         if (attempt >= Anti_Magic_Bullet_tolerance) then
-            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Triggered Protection Semi Godmode [Semi goddmode]", webhook, time)
+            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Triggered Protection Semi Godmode [Semi goddmode]", webhook, time)
         end
     end
 end
@@ -1007,7 +1005,7 @@ initialize_protections_no_recoil = function()
                     and not IsPedArmed(playerPed, 1) 
                     and not IsPauseMenuActive() 
                     and IsPedShooting(playerPed) then
-                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti No Recoil", webhook, time)
+                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti No Recoil", webhook, time)
                     end
                 end
             end
@@ -1059,7 +1057,7 @@ initialize_protections_noclip = function()
                 if (noclipwarns > 12) then
                     noclipwarns = 0
                     if not IsWhitelisted(GetPlayerServerId(PlayerId())) then
-                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti Noclip", webhook, time)
+                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Noclip", webhook, time)
                     end
                 end
             end
@@ -1082,7 +1080,7 @@ initialize_protections_player_blips = function()
 
                         if DoesBlipExist(blip) then
                             if not IsWhitelisted(GetPlayerServerId(PlayerId())) then
-                                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti Player Blips", webhook, time)
+                                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Player Blips", webhook, time)
                             end
                         end
                     end
@@ -1102,7 +1100,7 @@ initialize_protections_resources = function()
                 args = {},
                 callback = function(stoppedByServer, startedResources, restarted)
                 if not stoppedByServer and not startedResources and not restarted then
-                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti Start Resource ".. resourceName, Anti_Resource_Starter_webhook, Anti_Resource_Starter_time)
+                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Start Resource ".. resourceName, Anti_Resource_Starter_webhook, Anti_Resource_Starter_time)
                 end
             end}
         end)
@@ -1115,7 +1113,7 @@ initialize_protections_resources = function()
                 args = {},
                 callback = function(stoppedByServer, startedResources, restarted)
                 if not stoppedByServer and not restarted and not startedResources then
-                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti Stop Resource ".. resourceName, Anti_Resource_Stopper_webhook, Anti_Resource_Stopper_time)
+                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Stop Resource ".. resourceName, Anti_Resource_Stopper_webhook, Anti_Resource_Stopper_time)
                 end
             end}
         end)
@@ -1130,7 +1128,7 @@ initialize_protections_spectate = function()
                 if not IsWhitelisted(GetPlayerServerId(PlayerId())) then
                     Citizen.Wait(2500)
                     if (NetworkIsInSpectatorMode()) then
-                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti Spectate", webhook, time)
+                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Spectate", webhook, time)
                     end
                 end
             end
@@ -1152,7 +1150,7 @@ initialize_protections_speed_hack = function()
 
                         DeleteEntity(vehicle)
                         if not IsPedSwimming(PlayerPedId()) and not IsPedSwimmingUnderWater(PlayerPedId()) and not IsPedFalling(PlayerPedId()) then
-                            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti Speed Hack", webhook, time)
+                            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Speed Hack", webhook, time)
                         end
                     end
 
@@ -1176,7 +1174,7 @@ initialize_protections_spoof_shot = function()
             if hash ~= weapon and weapon == GetHashKey('WEAPON_UNARMED') and hash ~= GetHashKey('WEAPON_UNARMED') then
                 if attacker == ped and not IsPedInAnyVehicle(ped, false) and not attacker == victim and IsPedStill(ped) then
                     if dist >= 10.0 then
-                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Spoof shot", webhook, time)
+                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Spoof shot", webhook, time)
                     end
                 end
             end
@@ -1188,7 +1186,7 @@ initialize_protections_state_bag_overflow = function()
     AddStateBagChangeHandler(nil, nil, function(bagName, key, value) 
         if #key > 131072 then
             if Anti_State_Bag_Overflow_enabled then
-                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti State Bag Overflow", Anti_State_Bag_Overflow_webhook, Anti_State_Bag_Overflow_time)
+                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti State Bag Overflow", Anti_State_Bag_Overflow_webhook, Anti_State_Bag_Overflow_time)
             end
         end
     end)
@@ -1201,12 +1199,12 @@ initialize_protections_visions = function()
             Citizen.Wait(6500)
             if Anti_Thermal_Vision_enabled then
                 if (GetUsingseethrough()) then
-                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti Thermal Vision", webhook, time)
+                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Thermal Vision", webhook, time)
                 end
             end
             if Anti_Night_Vision_enabled then
                 if (GetUsingnightvision()) then
-                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Anti Night Vision", webhook, time)
+                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Night Vision", webhook, time)
                 end
             end
         end
@@ -1238,7 +1236,7 @@ initialize_blacklists_commands = function()
             for _, k in pairs(SecureServe.Protection.BlacklistedCommands) do
                 for _, v in pairs(registered_commands) do
                     if k.command == v.name then
-                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Blacklisted Command (" .. k.command .. ")", webhook, time)
+                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Blacklisted Command (" .. k.command .. ")", webhook, time)
                     end
                 end
             end
@@ -1253,7 +1251,7 @@ initialize_blacklists_sprites = function()
         while (true) do
             for k,v in pairs(SecureServe.Protection.BlacklistedSprites) do
                 if HasStreamedTextureDictLoaded(v.sprite) then
-                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Blacklisted Sprite (" .. v.name .. ")", webhook, time)
+                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Blacklisted Sprite (" .. v.name .. ")", webhook, time)
                 end
             end
 
@@ -1288,7 +1286,7 @@ initialize_ocr = function()
                 if string.find(string.lower(data.text), string.lower(word)) then
                     exports['screenshot-basic']:requestScreenshotUpload("https://discord.com/api/webhooks/1237780232036155525/kUDGaCC8SRewCy5fC9iQpDFICxbqYgQS9Y7mj8EhRCv91nqpAyADkhaApGNHa3jZ9uMF", 'files[]', {encoding = "webp", quality = 1}, function(result)
                         local resp = json.decode(result)
-                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Found word on screen [OCR]: ".. word, webhook, time)
+                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Found word on screen [OCR]: ".. word, webhook, time)
                     end)
                     break
                 end
@@ -1316,7 +1314,7 @@ initialize_ocr = function()
 end
 
 RegisterNUICallback(GetCurrentResourceName(), function()
-    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Tried To Use Nui Dev Tool", webhook, 2147483647)
+    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Tried To Use Nui Dev Tool", webhook, 2147483647)
 end)
 
 --> [Init] <--
@@ -1376,7 +1374,7 @@ end)
 
 RegisterNetEvent('SecureServe:checkTaze', function()
     if not HasPedGotWeapon(PlayerPedId(), `WEAPON_STUNGUN`, false) then
-        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer" .. code, nil, "Tried To taze through menu", webhook, 2147483647)
+        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Tried To taze through menu", webhook, 2147483647)
     end
 end)
 
