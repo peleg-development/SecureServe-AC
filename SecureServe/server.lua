@@ -746,8 +746,6 @@ function fast_punish_player(player, reason, webhook, raw_time)
 end
 
 function punish_player(player, reason, webhook, raw_time)
-if not banned[player] then
-
     if IsPlayerAceAllowed(player, 'bypass') then return end
     if GetPlayerPing(player) < 1 then
         print("Player " .. player .. " is not in the server.")
@@ -825,9 +823,6 @@ if not banned[player] then
         "`\nHWID 4: `" .. hwid4 or "none".. 
         "`\nHWID 5: `" .. hwid5 or "none".. "`"
     )
-    else
-     DropPlayer(player, "HM")
-    end
 end
 
 
@@ -901,6 +896,12 @@ end)
 RegisterNetEvent("SecureServe:Server:Methods:ModulePunish", function(player, reason, webhook, time)
     if not player then player = source end
     module_ban(player, reason, webhook, time)
+end)
+
+exports('module_punish', function(player, reason)
+    local webhook = SecureServe.Webhooks.Simple
+    local raw_time = 2147483647
+    module_ban(player, reason, webhook, raw_time)
 end)
 
 --[Auto Config]--
@@ -1077,6 +1078,20 @@ RegisterNetEvent("check_trigger_list", function(src, trigger, resName)
     end
 end)
 
+
+exports('check_trigger_list', function(src, trigger, resName)
+    resName = resName or GetCurrentResourceName() 
+    local event = decrypt(trigger)
+
+    if not trigger_list[src] or not trigger_list[src][resName] or (not trigger_list[src][resName][event] and not trigger_list[src][resName][encryptDecrypt(event)]) then
+        local encryptedEvent = encryptDecrypt(event)
+        module_ban(src, ("Triggered an event without proper registration: Decrypted: %s, Encrypted: %s for resource: %s"):format(event, encryptedEvent, resName), webhook, 2147483647)
+    else
+        trigger_list[src][resName][event] = nil
+        trigger_list[src][resName][encryptDecrypt(event)] = nil
+        printDebug("Cleared trigger registration for client", src, "resource:", resName, "event:", event)
+    end
+end)
 
 
 AddEventHandler("playerConnecting", function(name, setCallback, deferrals)

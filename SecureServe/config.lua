@@ -63,6 +63,8 @@ SecureServe.EventWhitelist = {
 	-- And its a false ban add the event name to here
 	-- [Note] enableautosafe events must be on for this to work
 	"TestEvent",
+	
+	"playerJoining",
 }
 
 -- manual safe events still requires module they are just if u dont want to use the auto which i dont see a reason why not with auto config as an option

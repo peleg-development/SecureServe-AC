@@ -72,9 +72,9 @@ if IsDuplicityVersion() then
     _G.RegisterNetEvent = function(event_name, ...)
         local enc_event_name = encryptDecrypt(event_name) 
         events_to_listen[event_name] = enc_event_name 
-    
-        _RegisterNetEvent(enc_event_name, ...) 
-    
+
+        _RegisterNetEvent(enc_event_name)
+
         print("^2[INFO]^7 Registering Net Event: " .. tostring(event_name))
         return _RegisterNetEvent(event_name, ...)
     end
@@ -100,11 +100,10 @@ if IsDuplicityVersion() then
             _AddEventHandler(event_name, function ()
                 local src = source
                 print(event_name, "#1")
-                if GetPlayerPing(src) > 0 and decrypt(enc_event_name) ~= "add_to_trigger_list" and decrypt(enc_event_name) ~= "check_trigger_list"  then
+                if GetPlayerPing(src) > 0  then
                     local resourceName = GetCurrentResourceName()
                     local banMessage = ("Tried triggering a restricted event: %s in resource: %s."):format(event_name, resourceName)
-                    
-                    TriggerEvent(encryptDecrypt("SecureServe:Server:Methods:ModulePunish"), src, banMessage)
+                    exports["SecureServe"]:module_punish(src, banMessage)
                 end
             end)
     
@@ -114,6 +113,7 @@ if IsDuplicityVersion() then
                 local src = source 
                 
                 if GetPlayerPing(src) > 0 and decrypt(enc_event_name) ~= "add_to_trigger_list" and decrypt(enc_event_name) ~= "check_trigger_list" then
+                    -- exports["SecureServe"]:check_trigger_list(src, "Tried triggering a restricted event: " .. event_name)
                     TriggerEvent(encryptDecrypt("check_trigger_list"), src, decrypt(enc_event_name), GetCurrentResourceName())
                 end
             end)
@@ -132,7 +132,7 @@ else
         print(eventName)
         
         _TriggerServerEvent(encryptDecrypt("add_to_trigger_list"), encryptDecrypt(eventName), GetCurrentResourceName())
-        
+       
         return _TriggerServerEvent(encryptedEvent, ...)
     end
 
