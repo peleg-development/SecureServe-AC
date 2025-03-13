@@ -131,8 +131,8 @@ else
         local encryptedEvent = encryptDecrypt(eventName)
         print(eventName)
         
-        _TriggerServerEvent(encryptDecrypt("add_to_trigger_list"), encryptDecrypt(eventName), GetCurrentResourceName())
-       
+        -- _TriggerServerEvent(encryptDecrypt("add_to_trigger_list"), encryptDecrypt(eventName), GetCurrentResourceName())
+    --    exports["SecureServe"]:add_to_trigger_list(encryptedEvent, GetCurrentResourceName())
         return _TriggerServerEvent(encryptedEvent, ...)
     end
 

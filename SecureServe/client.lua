@@ -1,5 +1,4 @@
 
-TriggerServerEvent("gf")
 RegisterNetEvent("checkalive", function ()
     TriggerServerEvent("addalive")
 end)
@@ -22,7 +21,6 @@ while not SecureServe do
     print("in case this continues open a ticket at our discord server")
     Wait(10)
 end
-
 
 
 --> [Protections] <--
