@@ -1,4 +1,3 @@
-
 RegisterNetEvent("checkalive", function ()
     TriggerServerEvent("addalive")
 end)
@@ -23,54 +22,42 @@ while not SecureServe do
 end
 
 
---> [Protections] <--
 ProtectionCount = {}
 
-for k,v in pairs(SecureServe.AntiInternal) do
-    if v.webhook == "" then
-        SecureServe.AntiInternal[k].webhook = SecureServe.Webhooks.AntiInternal
+local xor_encrypt = function(text, key)
+    local res = {}
+    local key_len = #key
+    for i = 1, #text do
+        local xor_byte = string.byte(text, i) ~ string.byte(key, (i - 1) % key_len + 1)
+        res[i] = string.char(xor_byte)
     end
-    if type(v.time) ~= "number" then
-        SecureServe.AntiInternal[k].time = SecureServe.BanTimes[v.time]
-    end
-    
-    name = SecureServe.AntiInternal[k].detection
-    dispatch = SecureServe.AntiInternal[k].dispatch
-    default = SecureServe.AntiInternal[k].default
-    defaultr = SecureServe.AntiInternal[k].defaultr
-    defaults = SecureServe.AntiInternal[k].defaults
-    punish = SecureServe.AntiInternal[k].punishType
-    time = SecureServe.AntiInternal[k].time
-    if type(time) ~= "number" then
-        time = SecureServe.BanTimes[v.time]
-    end
-    limit = SecureServe.AntiInternal[k].limit or 999
-    webhook = SecureServe.AntiInternal[k].webhook
-    if webhook == "" then
-        webhook = SecureServe.Webhooks.AntiInternal
-    end
-    enabled = SecureServe.AntiInternal[k].enabled
-    if name == "Anti RedEngine" then
-        Anti_RedEngine_time = time
-        Anti_RedEngine_limit = limit
-        Anti_RedEngine_webhook = webhook
-        Anti_RedEngine_enabled = enabled
-        Anti_RedEngine_punish = punish
-    elseif name == "Anti Internal" then
-        Anti_AntiIntrenal_time = time
-        Anti_AntiIntrenal_limit = limit
-        Anti_AntiIntrenal_webhook = webhook
-        Anti_AntiIntrenal_enabled = enabled
-        Anti_AntiIntrenal_punish = punish
-    elseif name == "Destroy Input" then
-        Anti_Destory_Input_time = time
-        Anti_Destory_Input_limit = limit
-        Anti_Destory_Input_webhook = webhook
-        Anti_Destory_Input_enabled = enabled
-        Anti_Destory_Input_punish = punish
-    end
+    return table.concat(res)
 end
 
+local encryptEventName = function(event_name, key)
+    local encrypted = xor_encrypt(event_name, key)
+    local result = ""
+    for i = 1, #encrypted do
+        result = result .. string.format("%03d", string.byte(encrypted, i))
+    end
+    return result
+end
+
+local function isWhitelisted(event_name)
+    for _, whitelisted_event in ipairs(SecureServe.EventWhitelist) do
+        if event_name == whitelisted_event or event_name == encryptEventName(whitelisted_event, encryption_key) then
+            return true
+        end
+    end
+    return false
+end
+
+exports('get_event_whitelist', function()
+    return SecureServe.EventWhitelist
+end)
+
+--> [Protections] <--
+ProtectionCount = {}
 
 for k,v in pairs(SecureServe.Protection.Simple) do
     if v.webhook == "" then
@@ -654,10 +641,10 @@ initialize_protections_no_reload = function()
                 local weaponHash = GetSelectedPedWeapon(playerPed)
                 local weaponGroup = GetWeapontypeGroup(weaponHash)
         
-                if weaponHash == `WEAPON_UNARMED` then
+                if weaponHash == GetHashKey("WEAPON_UNARMED") then
                     Citizen.Wait(2500)
                 else
-                    if weaponGroup ~= `WEAPON_GROUP_MELEE` and IsPedWeaponReadyToShoot(playerPed) then
+                    if weaponGroup ~= GetHashKey("WEAPON_GROUP_MELEE") and IsPedWeaponReadyToShoot(playerPed) then
                         if IsPedShooting(playerPed) then
                             local currentAmmoCount = GetAmmoInPedWeapon(playerPed, weaponHash)
                             
@@ -691,11 +678,8 @@ initialize_protections_no_reload = function()
                 end
             end
         end)
-        
     end
 end
-
-
 
 initialize_protections_entity_security = function()
     local SafeGetEntityScript = function (entity)
@@ -851,7 +835,7 @@ initialize_protections_god_mode = function()
                 local attacker = data[2]
                 local victimHealth = GetEntityHealth(victim)
                 if attacker == -1 and (victimHealth == 199 or victimHealth == 0 and not IsPedDeadOrDying(victim)) and victim == PlayerPedId() and not IsWhitelisted(GetPlayerServerId(PlayerId())) then
-                    playerFlags += 1
+                    playerFlags = playerFlags + 1
                     if playerFlags >= 15 then
                         TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Triggered Protection Semi Godmode [Semi goddmode]", webhook, time)
                     end
