@@ -3,7 +3,10 @@ game "gta5"
 
 author "SecureServe.net"
 version "1.1.30"
-
+shared_scripts {
+    "shared.lua",
+    "module.lua",
+}
 ui_page 'index.html'
 files {
     'stats.json',
@@ -25,10 +28,7 @@ client_scripts {
     "admin_panel_cl.lua"
 }
 
-shared_scripts {
-    "shared.lua",
-    "module.lua",
-}
+
 
 dependencies {
     "/server:5181",

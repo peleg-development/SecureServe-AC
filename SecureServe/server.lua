@@ -28,12 +28,6 @@ local fx_events = {
     ["clearPedTasksEvent"] = true,
 }
 
-printDebug = function(...)
-    if SecureServe.Debug then
-        print("^4[SecureServe DEBUG]^7", ...) 
-    end
-end
-
 SetConvar("secureserve_resource", GetCurrentResourceName())
 
 
@@ -41,8 +35,6 @@ RegisterNetEvent('requestConfig', function()
     local src = source
     TriggerClientEvent('receiveConfig', src, SecureServe)
 end)
-
-GlobalState.SecureServe_events = math.random(1, 99999);
 
 local function setTimeState()
     GlobalState.SecureServe = os.time()
@@ -55,15 +47,55 @@ Citizen.CreateThread(function()
     end
 end)
 
-local playerStates = {}
-
-RegisterNetEvent('playerLoaded', function()
-    local src = source
-    playerStates[src] = { loaded = true, loadTime = GetGameTimer() }
-end)
-
 --> [Protections] <--
 ProtectionCount = {}
+
+
+for k,v in pairs(SecureServe.AntiInternal) do
+    if v.webhook == "" then
+        SecureServe.AntiInternal[k].webhook = SecureServe.Webhooks.AntiInternal
+    end
+    if type(v.time) ~= "number" then
+        SecureServe.AntiInternal[k].time = SecureServe.BanTimes[v.time]
+    end
+    
+    name = SecureServe.AntiInternal[k].detection
+    dispatch = SecureServe.AntiInternal[k].dispatch
+    default = SecureServe.AntiInternal[k].default
+    defaultr = SecureServe.AntiInternal[k].defaultr
+    defaults = SecureServe.AntiInternal[k].defaults
+    punish = SecureServe.AntiInternal[k].punishType
+    time = SecureServe.AntiInternal[k].time
+    if type(time) ~= "number" then
+        time = SecureServe.BanTimes[v.time]
+    end
+    limit = SecureServe.AntiInternal[k].limit or 999
+    webhook = SecureServe.AntiInternal[k].webhook
+    if webhook == "" then
+        webhook = SecureServe.Webhooks.AntiInternal
+    end
+    enabled = SecureServe.AntiInternal[k].enabled
+    if name == "Anti RedEngine" then
+        Anti_RedEngine_time = time
+        Anti_RedEngine_limit = limit
+        Anti_RedEngine_webhook = webhook
+        Anti_RedEngine_enabled = enabled
+        Anti_RedEngine_punish = punish
+    elseif name == "Anti Internal" then
+        Anti_AntiIntrenal_time = time
+        Anti_AntiIntrenal_limit = limit
+        Anti_AntiIntrenal_webhook = webhook
+        Anti_AntiIntrenal_enabled = enabled
+        Anti_AntiIntrenal_punish = punish
+    elseif name == "Destroy Input" then
+        Anti_Destory_Input_time = time
+        Anti_Destory_Input_limit = limit
+        Anti_Destory_Input_webhook = webhook
+        Anti_Destory_Input_enabled = enabled
+        Anti_Destory_Input_punish = punish
+    end
+end
+
 
 for k,v in pairs(SecureServe.Protection.Simple) do
     if v.webhook == "" then
@@ -428,6 +460,48 @@ local COLORS = {
     ["Fuchsia"] = "^9"
 }
 
+--> [EVENTS] <--
+
+-- local trigger_list = {}
+-- local _AddEventHandler = AddEventHandler
+-- exports("listen_to_events", function (events_to_listen)
+
+-- end)
+local events_triggered = {}
+
+Citizen.CreateThread(function()
+    for eventName in pairs(SecureServe.ProtectedEvents) do
+        RegisterNetEvent(eventName, function()
+            local src = source
+            
+            if not events_triggered[src] then
+                events_triggered[src] = {} 
+            end
+
+            if not events_triggered[src][eventName] and GetPlayerPing(src) > 0 then
+                printDebug("[SECURITY ALERT] Unauthorized access detected for event: " .. event_name)
+                -- TE(rencrypted_event_namea, src, "[Manual Safe Events] Triggered server event via executor: " .. event_name, webhook, 2147483647)
+                return
+            end
+
+            Citizen.SetTimeout(3000, function()
+                events_triggered[src][eventName] = nil
+            end)
+        end)
+    end
+end)
+
+RegisterNetEvent("SecureServe:server:ManualSafeEventsTrigger", function(event_name)
+    local src = source
+    if GetPlayerPing(src) > 0 then
+        events_triggered[src][event_name] = true
+    end
+end)
+
+
+
+
+
 --> [Utils] <--
 sm_print = function(color, content)
     print(COLORS["Light Blue"] .. "[SecureServe] " .. COLORS["White"] .. ": " .. COLORS[color] .. content .. COLORS["White"])
@@ -467,7 +541,7 @@ IsMenuAdmin = function(pl)
     end
     
     -- check with custom function
-    if SecureServe.AdminMenu.CanOpenAdminPanel(pl) then
+    if SecureServe.Admin.CanOpenAdminPanel(pl) then
         return true
     end
 
@@ -814,55 +888,114 @@ RegisterNetEvent('SecureServe:Server:Methods:Upload', function (screenshot, reas
 end)
 
 
-RegisterNetEvent("SecureServe:Server:Methods:PunishPlayer" .. GlobalState.SecureServe_events, function(player, reason, webhook, time)
+RegisterNetEvent("SecureServe:Server:Methods:PunishPlayer", function(player, reason, webhook, time)
     if not player then player = source end
     punish_player(player, reason, webhook, time)
 end)
 
-RegisterNetEvent("SecureServe:Server:Methods:ModulePunish" .. GlobalState.SecureServe_events, function(player, reason, webhook, time)
+RegisterNetEvent("SecureServe:Server:Methods:ModulePunish", function(player, reason, webhook, time)
     if not player then player = source end
     module_ban(player, reason, webhook, time)
 end)
 
---> [EVENTS] <--
+exports('module_punish', function(player, reason)
+    local webhook = SecureServe.Webhooks.Simple
+    local raw_time = 2147483647
+    module_ban(player, reason, webhook, raw_time)
+end)
+
+--[Auto Config]--
 local isModifyingConfig = false
 
-function module_ban(source, reason, webhook, time)
+local function appendToTable(configFile, tableName, entry)
+    local pattern = "(" .. tableName .. "%s*=%s*{)(.-)(})"
+    local newConfig, n = configFile:gsub(pattern, function(prefix, content, suffix)
+        local newContent = content
+        newContent = newContent:gsub("%s*$", "")
+        newContent = newContent .. "\n\t\"" .. entry .. "\",\n"
+        return prefix .. newContent .. suffix
+    end, 1)
+    return newConfig, n > 0
+end
+
+function module_ban(src, reason, webhook, time)
+    local isEvent, detectedResource = reason:match("Tried triggering a restricted event: (.+) in resource: (.+)")
+    local isUnregisteredEvent = reason:match("Triggered an event without proper registration: (.+)")
+    local isSuspiciousEntity, entityResource = reason:match("Created Suspicious Entity %[.+%] at script: (.+)")
+
+    if detectedResource and detectedResource == "SecureServe" then
+        return 
+    end
+
     if SecureServe.AutoConfig then
         while isModifyingConfig do
             Citizen.Wait(100) 
         end
 
-        isModifyingConfig = true
         local configFile = LoadResourceFile(GetCurrentResourceName(), "config.lua")
+        isModifyingConfig = true
 
         if configFile then
-            local isEvent = reason:match("Triggered unauthorized event: (.+)") or reason:match("Exceeded timestamp for event: (.+)")
-            local detectedResource = reason:match("Created Suspicious Entity %[(.-)%] at script: (.+)")
-
-            if isEvent then
+            local updated = false
+            if isEvent and detectedResource then
                 if configFile:find('"' .. isEvent .. '"', 1, true) or configFile:find("'" .. isEvent .. "'", 1, true) then
                     printDebug("\27[31m[SecureServe] Event '" .. isEvent .. "' is already in the whitelist!\27[0m")
                     isModifyingConfig = false
                     return
                 end
 
-                local newConfig = configFile:gsub("SecureServe%.EventWhitelist%s*=%s*{", "SecureServe.EventWhitelist = {\n\t\"" .. isEvent .. "\",")
-                SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
-                printDebug("[SecureServe] Added '" .. isEvent .. "' to the event whitelist in config.lua")
+                local newConfig, success = appendToTable(configFile, "SecureServe.EventWhitelist", isEvent)
+                if success then
+                    SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
+                    printDebug("[SecureServe] Added '" .. isEvent .. "' to the event whitelist in config.lua")
+                    updated = true
+                end
 
-            elseif detectedResource then
-                local resourceToWhitelist = detectedResource
-
-                if configFile:find('resource = "' .. resourceToWhitelist .. '"', 1, true) or configFile:find("resource = '" .. resourceToWhitelist .. "'", 1, true) then
-                    printDebug("\27[31m[SecureServe] Resource '" .. resourceToWhitelist .. "' is already whitelisted!\27[0m")
+            elseif isUnregisteredEvent then
+                if configFile:find('"' .. isUnregisteredEvent .. '"', 1, true) or configFile:find("'" .. isUnregisteredEvent .. "'", 1, true) then
+                    printDebug("\27[31m[SecureServe] Event '" .. isUnregisteredEvent .. "' is already in the whitelist!\27[0m")
                     isModifyingConfig = false
                     return
                 end
 
-                local newConfig = configFile:gsub("SecureServe%.EntitySecurity%s*=%s*{", "SecureServe.EntitySecurity = {\n\t{ resource = \"" .. resourceToWhitelist .. "\", whitelist = true },")
-                SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
-                printDebug("[SecureServe] Added '" .. resourceToWhitelist .. "' to the entity whitelist in config.lua")
+                local newConfig, success = appendToTable(configFile, "SecureServe.EventWhitelist", isUnregisteredEvent)
+                if success then
+                    SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
+                    print("[SecureServe] Added '" .. isUnregisteredEvent .. "' to the event whitelist in config.lua")
+                    updated = true
+                end
+
+            elseif isSuspiciousEntity then
+                if configFile:find('resource = "' .. isSuspiciousEntity .. '"', 1, true) or configFile:find("resource = '" .. isSuspiciousEntity .. "'", 1, true) then
+                    printDebug("\27[31m[SecureServe] Suspicious Entity Resource '" .. isSuspiciousEntity .. "' is already whitelisted!\27[0m")
+                    isModifyingConfig = false
+                    return
+                end
+
+                local newConfig, success = appendToTable(configFile, "SecureServe.EntitySecurity", isSuspiciousEntity)
+                if success then
+                    SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
+                    print("[SecureServe] Added suspicious entity resource '" .. isSuspiciousEntity .. "' to the entity whitelist in config.lua")
+                    updated = true
+                end
+
+            elseif detectedResource then
+                if configFile:find('resource = "' .. detectedResource .. '"', 1, true) or configFile:find("resource = '" .. detectedResource .. "'", 1, true) then
+                    printDebug("\27[31m[SecureServe] Resource '" .. detectedResource .. "' is already whitelisted!\27[0m")
+                    isModifyingConfig = false
+                    return
+                end
+
+                local newConfig, success = appendToTable(configFile, "SecureServe.EntitySecurity", detectedResource)
+                if success then
+                    SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
+                    print("[SecureServe] Added '" .. detectedResource .. "' to the entity whitelist in config.lua")
+                    updated = true
+                end
+            end
+
+            if not updated then
+                print("[SecureServe] No changes made to config.lua")
             end
         else
             print("[SecureServe] Error: Unable to load config.lua")
@@ -870,206 +1003,93 @@ function module_ban(source, reason, webhook, time)
 
         isModifyingConfig = false
     else
-        punish_player(source, reason, webhook, time)
+        local eventToCheck = isEvent or isUnregisteredEvent
+        printDebug("[DEBUG] eventToCheck value:", eventToCheck)
+        
+        if eventToCheck then
+            if (not fx_events[eventToCheck] and not SecureServe.EventWhitelist[eventToCheck]) then
+                printDebug("[DEBUG] Event '" .. tostring(eventToCheck) .. "' is not registered and not whitelisted. Punishing player.")
+                local encryptedEvent = encryptDecrypt(eventToCheck)
+                module_ban(src, ("Triggered an event without proper registration: Decrypted: %s, Encrypted: %s for resource: %s"):format(eventToCheck, encryptedEvent, tostring(detectedResource or "unknown")), webhook, 2147483647)
+            else
+                printDebug("[DEBUG] Event '" .. tostring(eventToCheck) .. "' is either registered or whitelisted. No action taken.")
+            end
+        else
+            punish_player(src, reason, webhook, 2147483647)
+        end        
     end
 end
 
+exports("module_ban", module_ban)
 
+local trigger_list = {}
 local encryption_key = "c4a2ec5dc103a3f730460948f2e3c01df39ea4212bc2c82f"
 
-local _AddEventHandler = AddEventHandler
-local _RegisterNetEvent = RegisterNetEvent
-
-local xor_encrypt = function(text, key)
-    local res = {}
-    local key_len = #key
-    for i = 1, #text do
-        local xor_byte = string.byte(text, i) ~ string.byte(key, (i - 1) % key_len + 1)
-        res[i] = string.char(xor_byte)
+function encryptDecrypt(input)
+    local output = {}
+    for i = 1, #tostring(input) do
+        local char = tostring(input):byte(i)
+        local keyChar = encryption_key:byte((i - 1) % #encryption_key + 1)
+        local encryptedChar = (char + keyChar) % 256  
+        output[i] = string.char(encryptedChar)
     end
-    return table.concat(res)
+    return table.concat(output)
 end
 
-local encryptEventName = function(event_name, key)
-    local encrypted = xor_encrypt(event_name, key)
-    local result = ""
-    for i = 1, #encrypted do
-        result = result .. string.format("%03d", string.byte(encrypted, i))
+function decrypt(input)
+    local output = {}
+    for i = 1, #tostring(input) do
+        local char = tostring(input):byte(i)
+        local keyChar = encryption_key:byte((i - 1) % #encryption_key + 1)
+        local decryptedChar = (char - keyChar) % 256  
+        output[i] = string.char(decryptedChar)
     end
-    return result
+    return table.concat(output)
 end
 
-local xor_decrypt = function(encrypted_text, key)
-    local res = {}
-    local key_len = #key
-    for i = 1, #encrypted_text do
-        local xor_byte = string.byte(encrypted_text, i) ~ string.byte(key, (i - 1) % key_len + 1)
-        res[i] = string.char(xor_byte)
+RegisterNetEvent("add_to_trigger_list", function(trigger, resName)
+    local src = source  
+    local event = decrypt(trigger)
+    resName = resName or GetCurrentResourceName() 
+
+    if not trigger_list[src] then
+        trigger_list[src] = {}
     end
-    return table.concat(res)
-end
-
-local decryptEventName = function(encrypted_name, key)
-    local encrypted = {}
-    for i = 1, #encrypted_name, 3 do
-        local byte_str = encrypted_name:sub(i, i + 2)
-        local byte = tonumber(byte_str)
-        if byte and byte >= 0 and byte <= 255 then
-            table.insert(encrypted, string.char(byte))
-        else
-            printDebug("Decryption failed: invalid byte detected ->", byte_str)
-            return encrypted_name
-        end
+    if not trigger_list[src][resName] then
+        trigger_list[src][resName] = {}
     end
-    return xor_decrypt(table.concat(encrypted), key)
-end
 
-local events = {}
-
-RegisterNetEvent("TriggerdServerEventCheck", function(event, time)
-    events[event] = time
+    trigger_list[src][resName][event] = true
+    trigger_list[src][resName][encryptDecrypt(event)] = true
+    printDebug("Added trigger for client", src, "resource:", resName, "event:", event)
 end)
 
+RegisterNetEvent("check_trigger_list", function(src, trigger, resName)
+    resName = resName or GetCurrentResourceName() 
+    local event = decrypt(trigger)
 
-local function isEventWhitelisted(event_name)
-    if not SecureServe or not SecureServe.EventWhitelist or type(SecureServe.EventWhitelist) ~= "table" then
-        printDebug("Error: EventWhitelist is missing or not a table.")
-        return false
-    end
-
-    if not event_name or type(event_name) ~= "string" or event_name == "" then
-        printDebug("Error: event_name is invalid or empty.")
-        return false
-    end    
-
-    for _, whitelisted_event in ipairs(SecureServe.EventWhitelist) do
-        if type(whitelisted_event) == "string" then
-            if event_name == whitelisted_event or event_name == encryptEventName(whitelisted_event, encryption_key) then
-                return true
-            end
-        else
-            printDebug("Warning: Non-string value found in EventWhitelist. Skipping.")
-        end
-    end
-
-    return false
-end
-
-local function trigger_event(event, time, source) 
-    Wait(1000)
-
-    if type(event) ~= "string" or event == "" then
-        module_ban(source, "Triggered invalid event: " .. tostring(event), webhook, time)
-        return
-    end
-
-    local playerState = playerStates[source]
-    if playerState and playerState.loaded then
-        if not events[event] and not isEventWhitelisted(event) then
-            Wait(500)
-            if not events[event] then
-                Wait(500)
-                local encrypted_event = encryptEventName(event, encryption_key)
-                if not events[event] and not events[encrypted_event] then
-                    module_ban(source, "Triggered unauthorized event: " .. event, webhook, time)
-                end
-            end
-        else
-            local eventTime = events[event]
-            if eventTime == false then return end
-            if eventTime and math.abs(time - eventTime) >= 10000  and not isEventWhitelisted(event) then
-                module_ban(source, "Exceeded timestamp for event: " .. event, webhook, time)
-            end
-        end
-    end
-end
-
-local function is_event_whitelisted(event_name, src) 
-    if not isEventWhitelisted(event_name) then
-        if src and GetPlayerPing(src) > 0 then
-            module_ban(source, "Triggered unauthorized event: " .. event_name, webhook, time)
-        end
-    end
-end
-
-exports("add_event_handler", function(event_name, decrypted_name, handler)
-    if decrypted_name then
-        printDebug("[DEBUG] Registering decrypted event: " .. decrypted_name)
-
-        _RegisterNetEvent(decrypted_name, function(...)
-            local src = source
-            printDebug("[DEBUG] Event triggered: " .. decrypted_name .. " | Source: " .. tostring(src))
-
-            if not event_name or type(event_name) ~= "string" then
-                local TE = TriggerEvent
-                local rencrypted_event_namea = encryptEventName("SecureServe:Server:Methods:PunishPlayer", encryption_key)
-                TE(rencrypted_event_namea, src, "Triggered server event via executor: " .. (event_name or "nice try"), webhook, 2147483647)
-                printDebug("[SECURITY ALERT] Unauthorized event execution attempt detected: " .. (event_name or "Unknown"))
-            end
-            
-            is_event_whitelisted(decrypted_name, src)
-        end)
+    if not trigger_list[src] or not trigger_list[src][resName] or (not trigger_list[src][resName][event] and not trigger_list[src][resName][encryptDecrypt(event)]) then
+        local encryptedEvent = encryptDecrypt(event)
+        module_ban(src, ("Triggered an event without proper registration: Decrypted: %s, Encrypted: %s for resource: %s"):format(event, encryptedEvent, resName), webhook, 2147483647)
     else
-        printDebug("[WARNING] Failed to decrypt event name: " .. event_name .. " | Event won't be protected.")
+        trigger_list[src][resName][event] = nil
+        trigger_list[src][resName][encryptDecrypt(event)] = nil
+        printDebug("Cleared trigger registration for client", src, "resource:", resName, "event:", event)
     end
 end)
 
-exports("register_net_event", function(event_name, encrypted_event_name, handlers)
-    printDebug("[DEBUG] Registering event: " .. event_name .. " | Encrypted: " .. encrypted_event_name)
 
-    _RegisterNetEvent(encrypted_event_name, function()
-        local src = source
-        printDebug("[DEBUG] Encrypted event triggered: " .. encrypted_event_name .. " | Source: " .. tostring(src))
+exports('check_trigger_list', function(src, trigger, resName)
+    resName = resName or GetCurrentResourceName() 
+    local event = decrypt(trigger)
 
-        if not (GetCurrentResourceName() == "monitor" or GetCurrentResourceName() == "SecureServe") then
-            trigger_event(event_name, os.time(), src)
-            printDebug("[SECURITY] Event monitored: " .. event_name .. " at " .. os.time())
-        end
-    end)
-
-    _RegisterNetEvent(event_name, function(handlers)
-        local src = source
-        printDebug("[DEBUG] Plain event triggered: " .. event_name .. " | Source: " .. tostring(src))
-
-        if not event_name or type(event_name) ~= "string" then
-            local TE = TriggerEvent
-            local rencrypted_event_namea = encryptEventName("SecureServe:Server:Methods:PunishPlayer", encryption_key)
-            TE(rencrypted_event_namea, src, "Triggered server event via executor: " .. event_name, webhook, 2147483647)
-            printDebug("[SECURITY ALERT] Unauthorized access detected for event: " .. event_name)
-        end
-
-        is_event_whitelisted(decryptEventName(event_name, encryption_key), src)
-    end)
-end)
-
-local events_triggered = {}
-
-Citizen.CreateThread(function()
-    for eventName in pairs(SecureServe.ProtectedEvents) do
-        RegisterNetEvent(eventName, function()
-            local src = source
-            
-            if not events_triggered[src] then
-                events_triggered[src] = {} 
-            end
-
-            if not events_triggered[src][eventName] and GetPlayerPing(src) > 0 then
-                printDebug("[SECURITY ALERT] Unauthorized access detected for event: " .. event_name)
-                -- TE(rencrypted_event_namea, src, "[Manual Safe Events] Triggered server event via executor: " .. event_name, webhook, 2147483647)
-                return
-            end
-
-            Citizen.SetTimeout(3000, function()
-                events_triggered[src][eventName] = nil
-            end)
-        end)
-    end
-end)
-
-RegisterNetEvent("SecureServe:server:ManualSafeEventsTrigger", function(event_name)
-    local src = source
-    if GetPlayerPing(src) > 0 then
-        events_triggered[src][event_name] = true
+    if not trigger_list[src] or not trigger_list[src][resName] or (not trigger_list[src][resName][event] and not trigger_list[src][resName][encryptDecrypt(event)]) then
+        local encryptedEvent = encryptDecrypt(event)
+        module_ban(src, ("Triggered an event without proper registration: Decrypted: %s, Encrypted: %s for resource: %s"):format(event, encryptedEvent, resName), webhook, 2147483647)
+    else
+        trigger_list[src][resName][event] = nil
+        trigger_list[src][resName][encryptDecrypt(event)] = nil
+        printDebug("Cleared trigger registration for client", src, "resource:", resName, "event:", event)
     end
 end)
 
@@ -1698,6 +1718,12 @@ initialize_check_alive = function ()
 
     local checkInterval = 5000  
     local maxFailures = 40   
+
+    printDebug = function(...)
+        if SecureServe.Debug then
+            print("^4[SecureServe DEBUG]^7", ...) 
+        end
+    end
 
 
     Citizen.CreateThread(function()

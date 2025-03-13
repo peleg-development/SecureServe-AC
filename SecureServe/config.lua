@@ -61,7 +61,9 @@ SecureServe.EventWhitelist = {
     -- "A player has been banned for Trigger Event with an executor (name of the event)"
 	-- And its a false ban add the event name to here
 	-- [Note] enableautosafe events must be on for this to work
-	"requestConfig",
+	"TestEvent",
+	
+	"playerJoining",
 }
 
 -- manual safe events still requires module they are just if u dont want to use the auto which i dont see a reason why not with auto config as an option
