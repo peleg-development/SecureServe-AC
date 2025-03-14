@@ -21,41 +21,6 @@ while not SecureServe do
     Wait(10)
 end
 
-
-ProtectionCount = {}
-
-local xor_encrypt = function(text, key)
-    local res = {}
-    local key_len = #key
-    for i = 1, #text do
-        local xor_byte = string.byte(text, i) ~ string.byte(key, (i - 1) % key_len + 1)
-        res[i] = string.char(xor_byte)
-    end
-    return table.concat(res)
-end
-
-local encryptEventName = function(event_name, key)
-    local encrypted = xor_encrypt(event_name, key)
-    local result = ""
-    for i = 1, #encrypted do
-        result = result .. string.format("%03d", string.byte(encrypted, i))
-    end
-    return result
-end
-
-local function isWhitelisted(event_name)
-    for _, whitelisted_event in ipairs(SecureServe.EventWhitelist) do
-        if event_name == whitelisted_event or event_name == encryptEventName(whitelisted_event, encryption_key) then
-            return true
-        end
-    end
-    return false
-end
-
-exports('get_event_whitelist', function()
-    return SecureServe.EventWhitelist
-end)
-
 --> [Protections] <--
 ProtectionCount = {}
 
