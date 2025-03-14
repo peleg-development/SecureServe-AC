@@ -75,7 +75,7 @@ if IsDuplicityVersion() then
 
         _RegisterNetEvent(enc_event_name)
 
-        print("^2[INFO]^7 Registering Net Event: " .. tostring(event_name))
+        -- print("^2[INFO]^7 Registering Net Event: " .. tostring(event_name))
         return _RegisterNetEvent(event_name, ...)
     end
     
@@ -83,10 +83,10 @@ if IsDuplicityVersion() then
         local enc_event_name = events_to_listen[event_name] 
         local handler_ref = _AddEventHandler(event_name, handler, ...) 
     
-        print("^3[INFO]^7 Handling Event: " .. tostring(event_name))
+        -- print("^3[INFO]^7 Handling Event: " .. tostring(event_name))
     
         if enc_event_name then
-            print("^3[INFO]^7 Handling Encrypted Event: " .. tostring(enc_event_name))
+            -- print("^3[INFO]^7 Handling Encrypted Event: " .. tostring(enc_event_name))
             _AddEventHandler(enc_event_name, handler, ...)
         end
     
