@@ -62,6 +62,7 @@ function decrypt(input)
     return table.concat(output)
 end
 
+---@todo create anti trigger client events
 
 if IsDuplicityVersion() then
     local _AddEventHandler = AddEventHandler
@@ -129,7 +130,6 @@ else
     
     _G.TriggerServerEvent = function(eventName, ...)
         local encryptedEvent = encryptDecrypt(eventName)
-        print(eventName)
         
         -- _TriggerServerEvent(encryptDecrypt("add_to_trigger_list"), encryptDecrypt(eventName), GetCurrentResourceName())
     --    exports["SecureServe"]:add_to_trigger_list(encryptedEvent, GetCurrentResourceName())

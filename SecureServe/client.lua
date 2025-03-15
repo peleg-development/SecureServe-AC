@@ -1260,6 +1260,10 @@ initialize_ocr = function()
     end)   
 end
 
+initialize_protections_anti_teleport_players = function()
+    ---@todo Add Anti Teleport Players
+end
+
 RegisterNUICallback(GetCurrentResourceName(), function()
     TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Tried To Use Nui Dev Tool", webhook, 2147483647)
 end)
