@@ -185,6 +185,7 @@ SecureServe.AdminMenu = {
 		"license:licensehere",
 		"discord:discordidhere",
 	},
+	UseTxAuth = false, -- if true who ever can open txadmin will be able to open the anticheat menu
 	CanOpenAdminPanel = function(Player) 
 		-- [NOTE] this step is optinal and i recommend to usse steam/discord ids
 		-- example use case optional in case u prefer to use ace perms or other methods

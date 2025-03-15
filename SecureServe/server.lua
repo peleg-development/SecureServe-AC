@@ -540,6 +540,12 @@ IsMenuAdmin = function(pl)
         end
     end
     
+    if SecureServe.AdminMenu.UseTxAuth then
+        if admins[pl] then
+            return true
+        end
+    end
+
     -- check with custom function
     if SecureServe.Admin.CanOpenAdminPanel(pl) then
         return true
