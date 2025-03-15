@@ -99,7 +99,7 @@ if IsDuplicityVersion() then
             if event_name ~= "check_trigger_list" then
             _AddEventHandler(event_name, function ()
                 local src = source
-                print(event_name, "#1")
+                -- print(event_name, "#1")
                 if GetPlayerPing(src) > 0  then
                     local resourceName = GetCurrentResourceName()
                     local banMessage = ("Tried triggering a restricted event: %s in resource: %s."):format(event_name, resourceName)
@@ -108,7 +108,7 @@ if IsDuplicityVersion() then
             end)
     
             _AddEventHandler(enc_event_name, function ()
-                print(event_name, "#2")
+                -- print(event_name, "#2")
     
                 local src = source 
                 
