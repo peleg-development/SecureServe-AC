@@ -546,7 +546,6 @@ IsMenuAdmin = function(pl)
         end
     end
 
-    -- check with custom function
     if SecureServe.Admin.CanOpenAdminPanel(pl) then
         return true
     end
@@ -1775,6 +1774,11 @@ initialize_check_alive = function ()
 end
 
 initialize_auto_perms = function ()
+    if SecureServe.AdminFramework == "custom" then
+        print("^3[SecureServe] Using Custom Framework function (SecureServe.IsWhitelisted).^7")
+        then return end
+    end
+
     if GetResourceState("qb-core") == "started" then
         SecureServe.AdminFramework = "qb-core"
         SecureServe.IsWhitelisted = function(Player)

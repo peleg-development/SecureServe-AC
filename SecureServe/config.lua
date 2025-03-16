@@ -51,62 +51,51 @@ SecureServe.Debug = false 																      -- Enables debug mode, this will
 SecureServe.AutoConfig = false              
 -- Once u start the server explnation about this option will come up please read everything
 SecureServe.InstructionsPrint = true
+SecureServe.Module = {
 
--- _______ _    _ _______ __   _ _______ _______
--- |______  \  /  |______ | \  |    |    |______
--- |______   \/   |______ |  \_|    |    ______|                                                  
-SecureServe.EnableAutoSafeEvents = true  -- Enables auto safe events meaning it will by defualt install the module for you
-SecureServe.EventWhitelist = {
-	-- If u get the fowlling ban: 
-    -- "A player has been banned for Trigger Event with an executor (name of the event)"
-	-- And its a false ban add the event name to here
-	-- [Note] enableautosafe events must be on for this to work
-	"TestEvent",
-	
-	"playerJoining",
-}
+	Events = {
+		AutoSafeEvents = true, -- Automatically identifies and configures events to prevent false-positive bans.
 
--- manual safe events still requires module they are just if u dont want to use the auto which i dont see a reason why not with auto config as an option
-SecureServe.ProtectedEvents = {
-	-- This will only work if enable auto safe events is false this will protect only the events listed here 
-	"event_name",
-}
+		Whitelist = { -- Events explicitly allowed even if detected as potential threats (prevents false bans).
+			-- Add event names here that trigger false bans (check console for exact event names).
+			"TestEvent",
+			"playerJoining",
+		},
 
+		Protected = { -- Events manually marked as safe; effective only if AutoSafeEvents is disabled.
+			"event_name",
+		},
+	},
 
+	Entity = {
+		LockdownMode = "inactive", -- Controls entity creation security levels:
+									 -- 'relaxed': Blocks client-side created entities not linked to scripts.
+									 -- 'strict': Only allows server-side scripts to create entities.
+									 -- 'inactive': Entity security disabled.
 
--- _______ __   _ _______ _____ _______ __   __
--- |______ | \  |    |      |      |      \_/  
--- |______ |  \_|    |    __|__    |       |   
-SecureServe.EntityLockdownMode = "inactive" -- relaxed: Only script-owned entities created by clients are blocked., strict: Only Server-Side Scripts can create entites. | inactive 
-SecureServe.EntitySecurity = { -- Resources that are causing false bans add to here make sure to use lowercases and put the name corretely
-	{ resource = "bob74_ipl",  whitelist = true},
-	{ resource = "6x_houserobbery",  whitelist = true},
-}
+		SecurityWhitelist = { -- Resource exceptions allowing entity creation without triggering security measures.
+			{ resource = "bob74_ipl", whitelist = true },
+			{ resource = "6x_houserobbery", whitelist = true },
+		},
 
-SecureServe.Webhooks.SpamEntities = ""  
-SecureServe.maxVehicle = 5 -- How many vehicles can player spawn before getting banned
-SecureServe.maxPed = 5 -- How many peds can player spawn before getting banned
-SecureServe.maxObject = 10 -- How many objects can player spawn before getting banned
+		SpamWebhook = "", -- Discord webhook URL for receiving alerts about excessive entity spawning.
 
+		Limits = { -- Defines maximum number of entities each player can spawn before triggering bans.
+			Vehicles = 5,
+			Peds = 5,
+			Objects = 10,
+		},
+	},
 
--- _______ _     _  _____          _____  _______ _____  _____  __   _ _______
--- |______  \___/  |_____] |      |     | |______   |   |     | | \  | |______
--- |______ _/   \_ |       |_____ |_____| ______| __|__ |_____| |  \_| ______|
--- the whitelist option should be enabled in case of repeted bans with the reason: 
--- Explosion Details: Type: %s, Position: %s, Damage Scale: %s
--- u will need to find the script causing the ban with a few steps ( TODO: this is only for now i will make it better in the future )
--- 	1. first find when the players are getting banned what explosions causes the ban
---  2. look for the resource that creates the explosion by finding its id or by the resource it self ( explosions ids can be found here: https://wiki.rage.mp/wiki/Explosions)
---  3. add the name of the resource u found to SecureServe.ExplosionsWhitelist with the following format:
-SecureServe.ExplosionsWhitelist = {
-    -- Add resource names here to whitelist them for explosion events
-    ["resource_name_1"] = true,
-    ["resource_name_2"] = true,
-    -- Example: ["my_custom_resource"] = true,
-}
--- in case u still are having issues disable the option by setting the option below to false:
-SecureServe.ExplosionsModule = true
+	Explosions = {
+		ModuleEnabled = true, -- Activates protection against unauthorized explosion events.
 
+		Whitelist = { -- Allows specific resources to legitimately trigger explosion events without penalties.
+			["resource_name_1"] = true,
+			["resource_name_2"] = true,
+		},
+	},
+},
 
 
 -- |       ______ _______ _______
@@ -121,88 +110,95 @@ SecureServe.OtherLogs = {
     ResourceWebhook = "YOUR_WEBHOOK_URL" -- Logs resource-related events such as when a resource starts or stops on the server. Useful for monitoring the health and status of server resources.
 }
 
+--  ______ ______   _______ _____ __   _ _______
+-- |_____||     \  |  |  |    |   | \  | |______
+--|     | |_____/ |  |  |  __|__ |  \_| ______|
+SecureServe.Permissions = {
+	--[[
+		IMPORTANT:
+		- DO NOT uncomment or modify anything ABOVE this function.
+		- Ensure the resource checking permissions is set as a dependency in your fxmanifest.
+		- Built-in support: ESX, QB-Core, vRP, QBox, Taze, and ACE perms.
+		- This callback function runs client-side to prevent admin bans from protections.
+		- Admin bypasses include:
+			• Anti Player Blips
+			• Anti Car Fly
+			• Anti Noclip
+			• Anti God Mode
+			• Anti Spectate
+			• Anti Freecam
+			• Anti Night Vision
+			• Anti Thermal Vision
+			• Anti Infinite Stamina
+	]]
 
--- _______ ______  _______ _____ __   _ _______
--- |_____| |     \ |  |  |   |   | \  | |______
--- |     | |_____/ |  |  | __|__ |  \_| ______|
--- DO NOT UNCOMMENT ANYTHING ABOVE THE FUNCTION!
--- Make Sure to add the resource that checks the perms as a dependency in the fxmanifest so it will work this option is only for custom cores there is already built in support for ESX QBCORE VRP QBOX TAZE and ACE PERMS 
--- Important use a callback this will run in the client in order to prevent errors
--- This make sures admins dosent get banned for nocliping godmode blips and such (it will be soon removed since im working on new better detections!)
--- Detections this admin can bypass: {
---  "Anti Player Blips",
---  "Anti Car Fly",
---  "Anti Noclip",
---  "Anti God Mode",
---  "Anti Spectate",
---  "Anti Freecam",
---  "Anti Night Vision",
---  "Anti Thermal Vision",
---  "Anti Infinite Stamina"
---  }
-SecureServe.AdminFramework = "" -- set this to custom if u want to use the function below to set whitelist
-SecureServe.IsWhitelisted = function(Player)
-    --> [QB-Core] <--
-    local QBCore = exports['qb-core']:GetCoreObject()
-    if QBCore.Functions.HasPermission(Player, "admin") then
-        return true
-    end
+	AdminFramework = "", -- Set "custom" to enable custom whitelist logic.
 
-    --> [ESX] <--
-	-- local ESX = exports['es_extended']:getSharedObject()
-    -- if ESX then
-    --     local xPlayer = ESX.GetPlayerFromId(Player)
-    --     if xPlayer then
-    --         local group = xPlayer.getGroup()
-    --         if group == 'admin' or group == 'mod' or group == 'superadmin' or group == 'god' then
-    --             return true
-	-- 		else
-	-- 			return false
-    --         end
-    --     end
-    -- end
+	IsWhitelisted = function(Player)
 
-    --> [vRP] <--
-	-- local Tunnel = module("vrp", "lib/Tunnel")
-	-- local Proxy = module("vrp", "lib/Proxy")
-    -- local vRP = Proxy.getInterface("vRP")
-    -- local user_id = vRP.getUserId({Player})
-    -- if user_id and vRP.hasPermission({user_id, "admin"}) then
-    --     return true
-    -- else
-    -- 	   return false
-	-- end
-end
+		-- QB-Core Example
+		local QBCore = exports['qb-core']:GetCoreObject()
+		if QBCore and QBCore.Functions.HasPermission(Player, "admin") then
+			return true
+		end
 
--- Note Putting your steam or any id inside Admins { } will not give u whitelist meaning u will be banned the on that gives whitelist is SecureServe.IsWhitelisted
--- SecureServe.IsWhitelisted gives whitelist for specific and unchangeable detections meaning u cant give whitelist to a person for a specific detection
--- use /ssm to open admin panel (this admins are for admin panel only and not for protections)
-SecureServe.AdminMenu = {
-	Webhook = "", -- Webhook for the admin menu images
-	Admins = { 
-		-- Who can open the admin panel has nothing to do whit who gets banned or not! 
-		-- You can use other staff and not just steam hex u can do more staff
-		"license:licensehere",
-		"discord:discordidhere",
+		--[[
+		-- ESX Example
+		local ESX = exports['es_extended']:getSharedObject()
+		local xPlayer = ESX and ESX.GetPlayerFromId(Player)
+		if xPlayer then
+			local group = xPlayer.getGroup()
+			local allowedGroups = {admin=true, mod=true, superadmin=true, god=true}
+			return allowedGroups[group] or false
+		end
+		]]
+
+		--[[
+		-- vRP Example
+		local Tunnel = module("vrp", "lib/Tunnel")
+		local Proxy = module("vrp", "lib/Proxy")
+		local vRP = Proxy.getInterface("vRP")
+		local user_id = vRP.getUserId({Player})
+		return user_id and vRP.hasPermission({user_id, "admin"}) or false
+		]]
+
+		return false -- Default deny
+	end,
+},
+
+
+AdminMenu = {
+
+	-- Webhook URL for admin menu images/logging
+	Webhook = "",
+
+	-- Admin identifiers for accessing admin panel (unrelated to protection whitelist)
+	Admins = {
+		"license:your_license_here",
+		"discord:your_discord_id_here",
 	},
-	UseTxAuth = false, -- if true who ever can open txadmin will be able to open the anticheat menu
-	CanOpenAdminPanel = function(Player) 
-		-- [NOTE] this step is optinal and i recommend to usse steam/discord ids
-		-- example use case optional in case u prefer to use ace perms or other methods
-		-- add this to server.cfg 
-		-- add_ace group.admin "adminpanel.access" allow
 
-		-- local playerIdentifier = GetPlayerIdentifier(Player, 0)
+	-- Enable if you want TxAdmin access users to open anti-cheat admin panel
+	UseTxAuth = false,
 
-		-- if IsPlayerAceAllowed(Player, "adminpanel.access") then
-		-- 	return true
-		-- else
-		-- 	return false
-		-- end
-	end
+	-- Optional method for additional panel permissions (e.g., ACE perms)
+	CanOpenAdminPanel = function(Player)
+		--[[
+		Example using ACE permissions:
+
+		Add to server.cfg:
+		add_ace group.admin "adminpanel.access" allow
+
+		if IsPlayerAceAllowed(Player, "adminpanel.access") then
+			return true
+		end
+		]]
+
+		return false -- Default deny
+	end,
+
+	-- Use command "/ssm" to open admin panel
 }
-
-
 
 
 -- _____   ______   _____  _______ _______ _______ _______ _____  _____  __   _
