@@ -666,7 +666,7 @@ initialize_protections_entity_security = function()
     local entitySpawnedHashes = {}
     local whitelistedResources = {}
 
-    for _, entry in ipairs(SecureServe.EntitySecurity) do
+    for _, entry in ipairs(SecureServe.Module.Entity.SecurityWhitelist) do
         whitelistedResources[entry.resource] = entry.whitelist
     end
 

@@ -12,7 +12,7 @@ function isAutoSafeEventsEnabled() {
   }
 
   const configContent = fs.readFileSync(configPath, "utf8");
-  return configContent.includes("SecureServe.EnableAutoSafeEvents = true");
+  return configContent.includes("SecureServe.Module.Events.AutoSafeEvents = true");
 }
 
 

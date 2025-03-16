@@ -61,10 +61,6 @@ SecureServe.Module = {
 			"TestEvent",
 			"playerJoining",
 		},
-
-		Protected = { -- Events manually marked as safe; effective only if AutoSafeEvents is disabled.
-			"event_name",
-		},
 	},
 
 	Entity = {
@@ -77,8 +73,6 @@ SecureServe.Module = {
 			{ resource = "bob74_ipl", whitelist = true },
 			{ resource = "6x_houserobbery", whitelist = true },
 		},
-
-		SpamWebhook = "", -- Discord webhook URL for receiving alerts about excessive entity spawning.
 
 		Limits = { -- Defines maximum number of entities each player can spawn before triggering bans.
 			Vehicles = 5,

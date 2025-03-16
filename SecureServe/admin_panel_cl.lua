@@ -509,7 +509,7 @@ RegisterNUICallback('screenshotPlayer', function(data, cb)
     local playerId = data.playerId
 
     TriggerServerEvent('SecureServe:screenshotPlayer', playerId)
-    exports['screenshot-basic']:requestScreenshotUpload(SecureServe.AdminMenu.Webhook, 'files[]', function(data)
+    exports['screenshot-basic']:requestScreenshotUpload(SecureServe.Permissions.AdminMenu.Webhook, 'files[]', function(data)
         local dataa = {}
         local resp = json.decode(data)
         if resp ~= nil and resp.attachments ~= nil and resp.attachments[1] ~= nil and resp.attachments[1].proxy_url ~= nil then

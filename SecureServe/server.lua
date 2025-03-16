@@ -50,53 +50,6 @@ end)
 --> [Protections] <--
 ProtectionCount = {}
 
-
-for k,v in pairs(SecureServe.AntiInternal) do
-    if v.webhook == "" then
-        SecureServe.AntiInternal[k].webhook = SecureServe.Webhooks.AntiInternal
-    end
-    if type(v.time) ~= "number" then
-        SecureServe.AntiInternal[k].time = SecureServe.BanTimes[v.time]
-    end
-    
-    name = SecureServe.AntiInternal[k].detection
-    dispatch = SecureServe.AntiInternal[k].dispatch
-    default = SecureServe.AntiInternal[k].default
-    defaultr = SecureServe.AntiInternal[k].defaultr
-    defaults = SecureServe.AntiInternal[k].defaults
-    punish = SecureServe.AntiInternal[k].punishType
-    time = SecureServe.AntiInternal[k].time
-    if type(time) ~= "number" then
-        time = SecureServe.BanTimes[v.time]
-    end
-    limit = SecureServe.AntiInternal[k].limit or 999
-    webhook = SecureServe.AntiInternal[k].webhook
-    if webhook == "" then
-        webhook = SecureServe.Webhooks.AntiInternal
-    end
-    enabled = SecureServe.AntiInternal[k].enabled
-    if name == "Anti RedEngine" then
-        Anti_RedEngine_time = time
-        Anti_RedEngine_limit = limit
-        Anti_RedEngine_webhook = webhook
-        Anti_RedEngine_enabled = enabled
-        Anti_RedEngine_punish = punish
-    elseif name == "Anti Internal" then
-        Anti_AntiIntrenal_time = time
-        Anti_AntiIntrenal_limit = limit
-        Anti_AntiIntrenal_webhook = webhook
-        Anti_AntiIntrenal_enabled = enabled
-        Anti_AntiIntrenal_punish = punish
-    elseif name == "Destroy Input" then
-        Anti_Destory_Input_time = time
-        Anti_Destory_Input_limit = limit
-        Anti_Destory_Input_webhook = webhook
-        Anti_Destory_Input_enabled = enabled
-        Anti_Destory_Input_punish = punish
-    end
-end
-
-
 for k,v in pairs(SecureServe.Protection.Simple) do
     if v.webhook == "" then
         SecureServe.Protection.Simple[k].webhook = SecureServe.Webhooks.Simple
@@ -460,48 +413,6 @@ local COLORS = {
     ["Fuchsia"] = "^9"
 }
 
---> [EVENTS] <--
-
--- local trigger_list = {}
--- local _AddEventHandler = AddEventHandler
--- exports("listen_to_events", function (events_to_listen)
-
--- end)
-local events_triggered = {}
-
-Citizen.CreateThread(function()
-    for eventName in pairs(SecureServe.ProtectedEvents) do
-        RegisterNetEvent(eventName, function()
-            local src = source
-            
-            if not events_triggered[src] then
-                events_triggered[src] = {} 
-            end
-
-            if not events_triggered[src][eventName] and GetPlayerPing(src) > 0 then
-                printDebug("[SECURITY ALERT] Unauthorized access detected for event: " .. event_name)
-                -- TE(rencrypted_event_namea, src, "[Manual Safe Events] Triggered server event via executor: " .. event_name, webhook, 2147483647)
-                return
-            end
-
-            Citizen.SetTimeout(3000, function()
-                events_triggered[src][eventName] = nil
-            end)
-        end)
-    end
-end)
-
-RegisterNetEvent("SecureServe:server:ManualSafeEventsTrigger", function(event_name)
-    local src = source
-    if GetPlayerPing(src) > 0 then
-        events_triggered[src][event_name] = true
-    end
-end)
-
-
-
-
-
 --> [Utils] <--
 sm_print = function(color, content)
     print(COLORS["Light Blue"] .. "[SecureServe] " .. COLORS["White"] .. ": " .. COLORS[color] .. content .. COLORS["White"])
@@ -525,7 +436,7 @@ AddEventHandler("txAdmin:events:adminAuth",function (data)
 end)
 
 ServerIsWhitelisted = function(pl)
-    return SecureServe.IsWhitelisted(pl) or admins[pl] == true
+    return SecureServe.Permissions.IsWhitelisted(pl) or admins[pl] == true
 end
 
 IsMenuAdmin = function(pl)
@@ -533,14 +444,14 @@ IsMenuAdmin = function(pl)
     for _, id in ipairs(identifiers) do
         local prefix = string.sub(id, 1, string.find(id, ":") - 1)  
         
-        for _, adminID in ipairs(SecureServe.AdminMenu.Admins) do
+        for _, adminID in ipairs(SecureServe.Permissions.AdminMenu.Admins) do
             if id == adminID then
                 return true
             end
         end
     end
     
-    if SecureServe.AdminMenu.UseTxAuth then
+    if SecureServe.Permissions.AdminMenu.UseTxAuth then
         if admins[pl] then
             return true
         end
@@ -949,7 +860,7 @@ function module_ban(src, reason, webhook, time)
                     return
                 end
 
-                local newConfig, success = appendToTable(configFile, "SecureServe.EventWhitelist", isEvent)
+                local newConfig, success = appendToTable(configFile, "SecureServe.Module.Events.Whitelist", isEvent)
                 if success then
                     SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
                     printDebug("[SecureServe] Added '" .. isEvent .. "' to the event whitelist in config.lua")
@@ -963,7 +874,7 @@ function module_ban(src, reason, webhook, time)
                     return
                 end
 
-                local newConfig, success = appendToTable(configFile, "SecureServe.EventWhitelist", isUnregisteredEvent)
+                local newConfig, success = appendToTable(configFile, "SecureServe.Module.Events.Whitelist", isUnregisteredEvent)
                 if success then
                     SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
                     print("[SecureServe] Added '" .. isUnregisteredEvent .. "' to the event whitelist in config.lua")
@@ -977,7 +888,7 @@ function module_ban(src, reason, webhook, time)
                     return
                 end
 
-                local newConfig, success = appendToTable(configFile, "SecureServe.EntitySecurity", isSuspiciousEntity)
+                local newConfig, success = appendToTable(configFile, "SecureServe.Module.Entity.SecurityWhitelist", isSuspiciousEntity)
                 if success then
                     SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
                     print("[SecureServe] Added suspicious entity resource '" .. isSuspiciousEntity .. "' to the entity whitelist in config.lua")
@@ -991,7 +902,7 @@ function module_ban(src, reason, webhook, time)
                     return
                 end
 
-                local newConfig, success = appendToTable(configFile, "SecureServe.EntitySecurity", detectedResource)
+                local newConfig, success = appendToTable(configFile, "SecureServe.Module.Entity.SecurityWhitelist", detectedResource)
                 if success then
                     SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
                     print("[SecureServe] Added '" .. detectedResource .. "' to the entity whitelist in config.lua")
@@ -1012,7 +923,7 @@ function module_ban(src, reason, webhook, time)
         printDebug("[DEBUG] eventToCheck value:", eventToCheck)
         
         if eventToCheck then
-            if (not fx_events[eventToCheck] and not SecureServe.EventWhitelist[eventToCheck]) then
+            if (not fx_events[eventToCheck] and not SecureServe.Module.Events.Whitelist[eventToCheck]) then
                 printDebug("[DEBUG] Event '" .. tostring(eventToCheck) .. "' is not registered and not whitelisted. Punishing player.")
                 local encryptedEvent = encryptDecrypt(eventToCheck)
                 module_ban(src, ("Triggered an event without proper registration: Decrypted: %s, Encrypted: %s for resource: %s"):format(eventToCheck, encryptedEvent, tostring(detectedResource or "unknown")), webhook, 2147483647)
@@ -1341,7 +1252,7 @@ end
 initialize_protections_entity_lockdown = function()
     Citizen.CreateThread(function ()
         SetConvar("sv_filterRequestControl", "4")
-        SetConvar("sv_entityLockdown", SecureServe.EntityLockdownMode)
+        SetConvar("sv_entityLockdown", SecureServe.Module.Entity.EntityLockdownMode)
         SetConvar("onesync_distanceCullVehicles", "true")
     end)
 end
@@ -1398,7 +1309,7 @@ initialize_protections_entity_spam = function()
                     if os.time() - SV_VEHICLES[HWID].TIME >= 10 then
                         SV_VEHICLES[HWID] = nil
                     else
-                        if SV_VEHICLES[HWID].COUNT >= SecureServe.maxVehicle then
+                        if SV_VEHICLES[HWID].COUNT >= SecureServe.Module.Entity.Limits.Vehicles then
                             for _, vehilce in ipairs(GetAllVehicles()) do
                                 local ENO = NetworkGetFirstEntityOwner(vehilce)
                                 if ENO == OWNER then
@@ -1435,7 +1346,7 @@ initialize_protections_entity_spam = function()
                                 end
                             end
                         end
-                        if SV_PEDS[HWID].COUNT >= SecureServe.maxPed then
+                        if SV_PEDS[HWID].COUNT >= SecureServe.Module.Entity.Limits.Peds then
                             if not SV_Userver[HWID] then
                             clear()
                             punish_player(OWNER, "Attempted to spam peds with count of: ".. SV_PEDS[HWID].COUNT, webhook, time)
@@ -1465,7 +1376,7 @@ initialize_protections_entity_spam = function()
             if os.time() - SV_OBJECT[HWID].TIME >= COOLDOWN_TIME then
                 SV_OBJECT[HWID] = nil
             else
-                if SV_OBJECT[HWID].COUNT >= SecureServe.maxObject then
+                if SV_OBJECT[HWID].COUNT >= SecureServe.Module.Entity.Limits.Objects then
                     for _, objects in ipairs(GetAllObjects()) do
                         local ENO = NetworkGetFirstEntityOwner(objects)
                         if ENO == OWNER and DoesEntityExist(objects) then
@@ -1524,8 +1435,8 @@ initialize_protections_explosions = function()
             explosionType, explosionPos, explosionDamage, explosionOwner))
 
         local resourceName = GetInvokingResource()
-        if GetPlayerPing(sender) > 0 and SecureServe.ExplosionsModule then
-            if whitelist[sender] or SecureServe.ExplosionsWhitelist[resourceName] then
+        if GetPlayerPing(sender) > 0 and SecureServe.Module.Explosions.ModuleEnabled then
+            if whitelist[sender] or SecureServe.Module.Explosions.Whitelist[resourceName] then
                 whitelist[sender] = false
             else
                 fast_punish_player(sender, string.format("Explosion Details: Type: %s, Position: %s, Damage Scale: %s", 
@@ -1774,22 +1685,22 @@ initialize_check_alive = function ()
 end
 
 initialize_auto_perms = function ()
-    if SecureServe.AdminFramework == "custom" then
-        print("^3[SecureServe] Using Custom Framework function (SecureServe.IsWhitelisted).^7")
+    if SecureServe.Permissions.AdminFramework == "custom" then
+        print("^3[SecureServe] Using Custom Framework function (SecureServe.Permissions.IsWhitelisted).^7")
         then return end
     end
 
     if GetResourceState("qb-core") == "started" then
-        SecureServe.AdminFramework = "qb-core"
-        SecureServe.IsWhitelisted = function(Player)
+        SecureServe.Permissions.AdminFramework = "qb-core"
+        SecureServe.Permissions.IsWhitelisted = function(Player)
             local QBCore = exports['qb-core']:GetCoreObject()
             return QBCore.Functions.HasPermission(Player, "admin")
         end
         print("^2[SecureServe] Detected QB-Core - Using QB Admin Permissions.^7")
 
     elseif GetResourceState("es_extended") == "started" then
-        SecureServe.AdminFramework = "es_extended"
-        SecureServe.IsWhitelisted = function(Player)
+        SecureServe.Permissions.AdminFramework = "es_extended"
+        SecureServe.Permissions.IsWhitelisted = function(Player)
             local ESX = exports['es_extended']:getSharedObject()
             if ESX then
                 local xPlayer = ESX.GetPlayerFromId(Player)
@@ -1803,8 +1714,8 @@ initialize_auto_perms = function ()
         print("^2[SecureServe] Detected ESX - Using ESX Admin Permissions.^7")
 
     elseif GetResourceState("vrp") == "started" then
-        SecureServe.AdminFramework = "vrp"
-        SecureServe.IsWhitelisted = function(Player)
+        SecureServe.Permissions.AdminFramework = "vrp"
+        SecureServe.Permissions.IsWhitelisted = function(Player)
             local Tunnel = module("vrp", "lib/Tunnel")
             local Proxy = module("vrp", "lib/Proxy")
             local vRP = Proxy.getInterface("vRP")
@@ -1814,23 +1725,23 @@ initialize_auto_perms = function ()
         print("^2[SecureServe] Detected vRP - Using vRP Admin Permissions.^7")
 
     elseif GetResourceState("qbox") == "started" then
-        SecureServe.AdminFramework = "qbox"
-        SecureServe.IsWhitelisted = function(Player)
+        SecureServe.Permissions.AdminFramework = "qbox"
+        SecureServe.Permissions.IsWhitelisted = function(Player)
             local QBOX = exports['qbox-core']:GetCoreObject()
             return QBOX.Functions.HasPermission(Player, "admin")
         end
         print("^2[SecureServe] Detected QBOX - Using QBOX Admin Permissions.^7")
 
     elseif GetResourceState("taze") == "started" then
-        SecureServe.AdminFramework = "taze"
-        SecureServe.IsWhitelisted = function(Player)
+        SecureServe.Permissions.AdminFramework = "taze"
+        SecureServe.Permissions.IsWhitelisted = function(Player)
             return exports["taze"]:CheckAdmin(Player)
         end
         print("^2[SecureServe] Detected TAZE - Using TAZE Admin Permissions.^7")
 
     else
-        SecureServe.AdminFramework = "custom"
-        print("^3[SecureServe] No supported core detected - Please edit SecureServe.IsWhitelisted in config.lua in SecureServe resource.^7")
+        SecureServe.Permissions.AdminFramework = "custom"
+        print("^3[SecureServe] No supported core detected - Please edit SecureServe.Permissions.IsWhitelisted in config.lua in SecureServe resource.^7")
     end
 end
 
@@ -1921,9 +1832,9 @@ MYMMMM9   YMMMM9   YMMMM9   YMMM9MM__MM_     YMMMM9  MYMMMM9   YMMMM9 _MM_      
     print("\27[34m================================================================================\27[0m")
 
     --> [Safe Events Perints] <--
-    if (not (SecureServe.EnableAutoSafeEvents == GlobalState.EnableAutoSafeEvents)) then
-        GlobalState.EnableAutoSafeEvents = SecureServe.EnableAutoSafeEvents
-        print("^1[SecureServe] Changed Auto Safe Events to: " .. tostring(SecureServe.EnableAutoSafeEvents) .. "^7")
+    if (not (SecureServe.Module.Events.AutoSafeEvents == GlobalState.EnableAutoSafeEvents)) then
+        GlobalState.EnableAutoSafeEvents = SecureServe.Module.Events.AutoSafeEvents
+        print("^1[SecureServe] Changed Auto Safe Events to: " .. tostring(SecureServe.Module.Events.AutoSafeEvents) .. "^7")
     end
 
     --> [Auto Config Prints] <--
@@ -1963,7 +1874,7 @@ MYMMMM9   YMMMM9   YMMMM9   YMMM9MM__MM_     YMMMM9  MYMMMM9   YMMMM9 _MM_      
 end)
 
 exports('isResourceWhitelistedServer', function(resourceName)
-    for _, resource in ipairs(SecureServe.EntitySecurity) do
+    for _, resource in ipairs(SecureServe.Module.Entity.SecurityWhitelist) do
         if resource.resource == resourceName and resource.whitelist then
             return true
         end
