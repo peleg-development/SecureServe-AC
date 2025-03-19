@@ -1,7 +1,7 @@
 --[[≺━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━≻--                                                                                                                                                                                                                                                   
                                                                                                   
   ____                                                 ____                                       
- 6MMMMb\                                              6MMMMb\                                     
+6MMMMb\                                              6MMMMb\                                     
 6M'    `                                             6M'    `                                     
 MM         ____     ____  ___   ___ ___  __   ____   MM         ____  ___  __ ____    ___  ____   
 YM.       6MMMMb   6MMMMb.`MM    MM `MM 6MM  6MMMMb  YM.       6MMMMb `MM 6MM `MM(    )M' 6MMMMb  
@@ -75,9 +75,10 @@ SecureServe.Module = {
 		},
 
 		Limits = { -- Defines maximum number of entities each player can spawn before triggering bans.
-			Vehicles = 5,
-			Peds = 5,
-			Objects = 10,
+			Vehicles = 20,
+			Peds = 20,
+			Objects = 20,
+			Entities = 70,
 		},
 	},
 
@@ -89,7 +90,7 @@ SecureServe.Module = {
 			["resource_name_2"] = true,
 		},
 	},
-},
+}
 
 
 -- |       ______ _______ _______
@@ -98,15 +99,12 @@ SecureServe.Module = {
 
 -- SecureServe Logs they are
 SecureServe.OtherLogs = {
-    JoinWebhook = "YOUR_WEBHOOK_URL", -- Logs when a player connects to the server, including their identifiers such as Steam ID, Discord ID, license, and IP address.
-    LeaveWebhook = "YOUR_WEBHOOK_URL", -- Logs when a player disconnects from the server, including their name, Steam ID, Discord ID, and the reason for leaving.
-    KillWebhook = "YOUR_WEBHOOK_URL", -- Logs player kills in the server. It records details about the attacker, victim, and possibly the weapon or method used.
-    ResourceWebhook = "YOUR_WEBHOOK_URL" -- Logs resource-related events such as when a resource starts or stops on the server. Useful for monitoring the health and status of server resources.
+    JoinWebhook = "YOUR_WEBHOOK_URL", -- Logs when a player connects to the server
+    LeaveWebhook = "YOUR_WEBHOOK_URL", -- Logs when a player disconnects from the server
+    KillWebhook = "YOUR_WEBHOOK_URL", -- Logs player kills in the server
+    ResourceWebhook = "YOUR_WEBHOOK_URL" -- Logs resource-related events
 }
 
---  ______ ______   _______ _____ __   _ _______
--- |_____||     \  |  |  |    |   | \  | |______
---|     | |_____/ |  |  |  __|__ |  \_| ______|
 SecureServe.Permissions = {
 	--[[
 		IMPORTANT:
@@ -131,10 +129,10 @@ SecureServe.Permissions = {
 	IsWhitelisted = function(Player)
 
 		-- QB-Core Example
-		local QBCore = exports['qb-core']:GetCoreObject()
-		if QBCore and QBCore.Functions.HasPermission(Player, "admin") then
-			return true
-		end
+		-- local QBCore = exports['qb-core']:GetCoreObject()
+		-- if QBCore and QBCore.Functions.HasPermission(Player, "admin") then
+		-- 	return true
+		-- end
 
 		--[[
 		-- ESX Example
@@ -158,40 +156,38 @@ SecureServe.Permissions = {
 
 		return false -- Default deny
 	end,
-},
+	AdminMenu = {
 
-
-AdminMenu = {
-
-	-- Webhook URL for admin menu images/logging
-	Webhook = "",
-
-	-- Admin identifiers for accessing admin panel (unrelated to protection whitelist)
-	Admins = {
-		"license:your_license_here",
-		"discord:your_discord_id_here",
-	},
-
-	-- Enable if you want TxAdmin access users to open anti-cheat admin panel
-	UseTxAuth = false,
-
-	-- Optional method for additional panel permissions (e.g., ACE perms)
-	CanOpenAdminPanel = function(Player)
-		--[[
-		Example using ACE permissions:
-
-		Add to server.cfg:
-		add_ace group.admin "adminpanel.access" allow
-
-		if IsPlayerAceAllowed(Player, "adminpanel.access") then
-			return true
-		end
-		]]
-
-		return false -- Default deny
-	end,
-
-	-- Use command "/ssm" to open admin panel
+		-- Webhook URL for admin menu images/logging
+		Webhook = "",
+	
+		-- Admin identifiers for accessing admin panel (unrelated to protection whitelist)
+		Admins = {
+			"license:your_license_here",
+			"discord:your_discord_id_here",
+		},
+	
+		-- Enable if you want TxAdmin access users to open anti-cheat admin panel
+		UseTxAuth = false,
+	
+		-- Optional method for additional panel permissions (e.g., ACE perms)
+		CanOpenAdminPanel = function(Player)
+			--[[
+			Example using ACE permissions:
+	
+			Add to server.cfg:
+			add_ace group.admin "adminpanel.access" allow
+	
+			if IsPlayerAceAllowed(Player, "adminpanel.access") then
+				return true
+			end
+			]]
+	
+			return false -- Default deny
+		end,
+	
+		-- Use command "/ssm" to open admin panel
+	}
 }
 
 
@@ -606,6 +602,12 @@ SecureServe.Protection.BlacklistedVehicles = { -- Vehicles List can be found her
 	{ name = "limo2",         time = "Ban", webhook = "" },
 	{ name = "scramjet",      time = "Ban", webhook = "" },
 	{ name = "vigilante",     time = "Ban", webhook = "" },
+}
+
+SecureServe.Protection.BlacklistedPeds = { -- Add blacklisted ped models here
+    { name = "s_m_y_swat_01", hash = GetHashKey("s_m_y_swat_01") },
+    { name = "s_m_y_hwaycop_01", hash = GetHashKey("s_m_y_hwaycop_01") },
+    { name = "s_m_m_movalien_01", hash = GetHashKey("s_m_m_movalien_01") },
 }
 
 SecureServe.Webhooks.BlacklistedObjects = ""
