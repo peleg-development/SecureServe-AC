@@ -4,6 +4,7 @@ local player_manager = require("server/core/player_manager")
 local logger = require("server/core/logger")
 local debug_module = require("server/core/debug_module")
 local auto_config = require("server/core/auto_config")
+local admin_whitelist = require("server/core/admin_whitelist")
 
 local resource_manager = require("server/protections/resource_manager")
 local anti_execution = require("server/protections/anti_execution")
@@ -329,6 +330,10 @@ local function main()
     print("^2│ ^5⏳^7 Auto Config^7")
     auto_config.initialize()
     print("^2│ ^2✓^7 Auto Config^7 initialized")
+    
+    print("^2│ ^5⏳^7 Admin Whitelist^7")
+    admin_whitelist.initialize()
+    print("^2│ ^2✓^7 Admin Whitelist^7 initialized")
     print("^2╰───────────────^7")
     
     print("\n^3╭─── Protection Modules ^7")
@@ -447,8 +452,16 @@ exports("get_auto_config", function()
     return auto_config
 end)
 
+exports("get_admin_whitelist", function()
+    return admin_whitelist
+end)
+
 exports("is_player_banned", function(identifier)
     return ban_manager.is_banned(identifier)
+end)
+
+exports("is_player_whitelisted", function(source)
+    return admin_whitelist.isWhitelisted(source)
 end)
 
 exports("whitelist_resource", function(resource_name)
@@ -644,17 +657,17 @@ RegisterNetEvent("SecureServe:DisconnectMe", function()
     end
 end)
 
-RegisterNetEvent("SecureServe:Server:Methods:PunishPlayer", function(target_id, reason, webhook, time)
-    local src = source
-    
-    target_id = target_id or src
-    
-    if not target_id or target_id <= 0 then
-        logger.error("Invalid target ID in PunishPlayer event: " .. tostring(target_id))
+RegisterNetEvent("SecureServe:Server:Methods:PunishPlayer", function(id, reason, webhook, time)
+    local source = source
+    if admin_whitelist.isWhitelisted(source) then
         return
     end
     
-    ban_manager.ban_player(target_id, reason, webhook, time)
+    ban_manager.ban_player(source, reason, {
+        admin = "Anti-Cheat System",
+        time = time or 0,
+        detection = reason
+    })
 end)
 
 RegisterNetEvent("check_trigger_list", function(source, event_name, resource_name)

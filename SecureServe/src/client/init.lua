@@ -16,6 +16,11 @@ function ClientInit.initialize()
     Cache.initialize()
     print("^5[SUCCESS] ^3Cache^7 initialized")
     
+    Citizen.CreateThread(function()
+        Wait(2000) 
+        TriggerServerEvent("SecureServe:CheckWhitelist")
+    end)
+    
     local ProtectionManager = require("client/protections/protection_manager")
     print("^5[LOADING] ^3Protection Manager^7")
     ProtectionManager.initialize()

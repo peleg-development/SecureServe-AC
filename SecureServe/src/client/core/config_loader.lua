@@ -396,15 +396,29 @@ end
 
 ---@param player number The player ID to check
 ---@return boolean is_whitelisted Whether the player is whitelisted
-function ConfigLoader.is_whitelisted(player)
+function ConfigLoader.is_whitelisted(player_id)
+    if not ConfigLoader.loaded or not ConfigLoader.config then
+        return false
+    end
+    
+    if ConfigLoader.config.Whitelisted then
+        for _, id in ipairs(ConfigLoader.config.Whitelisted) do
+            if tonumber(id) == tonumber(player_id) then
+                return true
+            end
+        end
+    end
+    
     local promise = promise.new()
     
-    TriggerServerEvent('SecureServe:RequestAdminStatus', player)
-    RegisterNetEvent('SecureServe:ReturnAdminStatus', function(result)
+    TriggerServerEvent("SecureServe:CheckWhitelist")
+    
+    RegisterNetEvent("SecureServe:WhitelistResponse", function(result)
         promise:resolve(result)
     end)
-
-    return Citizen.Await(promise)
+    
+    local result = Citizen.Await(promise)
+    return result == true
 end
 
 ---@param player number The player ID to check
@@ -452,27 +466,6 @@ function ConfigLoader.is_model_blacklisted(model_hash)
             if tostring(blacklisted.hash) == model_hash then
                 return true
             end
-        end
-    end
-    
-    return false
-end
-
----@description Check if a player is whitelisted
----@param player_id number The player server ID to check
----@return boolean is_whitelisted Whether the player is whitelisted
-function ConfigLoader.is_whitelisted(player_id)
-    if not ConfigLoader.loaded or not ConfigLoader.config then
-        return false
-    end
-    
-    if not ConfigLoader.config.Whitelisted then
-        return false
-    end
-    
-    for _, id in ipairs(ConfigLoader.config.Whitelisted) do
-        if tonumber(id) == tonumber(player_id) then
-            return true
         end
     end
     

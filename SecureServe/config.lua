@@ -124,7 +124,7 @@ SecureServe.Permissions = {
 			• Anti Infinite Stamina
 	]]
 
-	AdminFramework = "", -- Set "custom" to enable custom whitelist logic.
+	AdminFramework = "custom", -- Set "custom" to enable custom whitelist logic.
 
 	IsWhitelisted = function(Player)
 
