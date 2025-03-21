@@ -1,6 +1,8 @@
 ---@class ConfigManagerModule
 local ConfigManager = {}
 
+local logger = require("server/core/logger")
+
 local function safe_get(table, key, default)
     if table and table[key] ~= nil then
         return table[key]
@@ -22,6 +24,8 @@ function ConfigManager.initialize()
     end
     
     config = _G.SecureServe
+    
+    ConfigManager.initialize_blacklist_lookups()
     
     RegisterNetEvent("requestConfig", function()
         local src = source
@@ -123,18 +127,71 @@ function ConfigManager.get_max_entities_per_second()
     return safe_get(SecureServe.Module.Entity.Limits, "Entities", 10)
 end
 
----@param model number The model hash to check
----@return boolean is_blacklisted Whether the model is blacklisted
-function ConfigManager.is_blacklisted_model(model)
-    if not config.BlacklistedModels then return false end
-    
-    for _, blacklisted_model in pairs(config.BlacklistedModels) do
-        if model == blacklisted_model or model == GetHashKey(blacklisted_model) then
-            return true
+-- Generic blacklist checker - checks if a model hash is in any blacklist
+---@param modelHash number The model hash to check
+---@return boolean isBlacklisted Whether the model is blacklisted in any category
+function ConfigManager.is_blacklisted_model(modelHash)
+    return ConfigManager.is_vehicle_blacklisted(modelHash) or
+           ConfigManager.is_ped_blacklisted(modelHash) or
+           ConfigManager.is_object_blacklisted(modelHash)
+end
+
+local vehicle_hash_lookup = {}
+local ped_hash_lookup = {}
+local object_hash_lookup = {}
+
+function ConfigManager.initialize_blacklist_lookups()
+    if config.Protection and config.Protection.BlacklistedVehicles then
+        for _, vehicle in ipairs(config.Protection.BlacklistedVehicles) do
+            if vehicle.name then
+                local hash = type(vehicle.name) == "number" and vehicle.name or GetHashKey(vehicle.name)
+                vehicle_hash_lookup[hash] = true
+            end
         end
     end
     
-    return false
+    if config.Protection and config.Protection.BlacklistedPeds then
+        for _, ped in ipairs(config.Protection.BlacklistedPeds) do
+            if ped.hash then
+                ped_hash_lookup[ped.hash] = true
+            elseif ped.name then
+                ped_hash_lookup[GetHashKey(ped.name)] = true
+            end
+        end
+    end
+    
+    if config.Protection and config.Protection.BlacklistedObjects then
+        for _, object in ipairs(config.Protection.BlacklistedObjects) do
+            if object.name then
+                local hash = type(object.name) == "number" and object.name or GetHashKey(object.name)
+                object_hash_lookup[hash] = true
+            end
+        end
+    end
+    
+    logger.info("^5[SUCCESS] ^3Blacklist lookups^7 initialized")
+end
+
+-- Type-specific blacklist checkers
+---@param modelHash number The vehicle model hash to check
+---@return boolean isBlacklisted Whether the vehicle model is blacklisted
+function ConfigManager.is_vehicle_blacklisted(modelHash)
+    if not modelHash then return false end
+    return vehicle_hash_lookup[modelHash] == true
+end
+
+---@param modelHash number The ped model hash to check
+---@return boolean isBlacklisted Whether the ped model is blacklisted
+function ConfigManager.is_ped_blacklisted(modelHash)
+    if not modelHash then return false end
+    return ped_hash_lookup[modelHash] == true
+end
+
+---@param modelHash number The object model hash to check
+---@return boolean isBlacklisted Whether the object model is blacklisted
+function ConfigManager.is_object_blacklisted(modelHash)
+    if not modelHash then return false end
+    return object_hash_lookup[modelHash] == true
 end
 
 ---@return boolean is_enabled Whether blacklisted vehicle protection is enabled
@@ -227,6 +284,22 @@ function ConfigManager.is_blacklisted_particle(effect_hash)
         end
     end
     
+    return false
+end
+
+---@return boolean is_enabled Whether the debug mode is enabled in config
+function ConfigManager.is_debug_mode_enabled()
+    return safe_get(config, "Debug", false)
+end
+
+---@description Set the debug mode and update all connected clients
+---@param enabled boolean Whether debug mode should be enabled
+function ConfigManager.set_debug_mode(enabled)
+    if config.Debug ~= enabled then
+        config.Debug = enabled
+        TriggerClientEvent("SecureServe:UpdateDebugMode", -1, enabled)
+        return true
+    end
     return false
 end
 

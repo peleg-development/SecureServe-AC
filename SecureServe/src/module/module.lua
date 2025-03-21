@@ -1,6 +1,6 @@
-if GetCurrentResourceName() == "SecureServe" then
-    return
-end
+-- if GetCurrentResourceName() == "SecureServe" then
+--     return
+-- end
 
 local encryption_key = ""
 
@@ -48,17 +48,25 @@ end
 ---@return function The wrapped entity creation function
 local function createEntity(originalFunction, ...)
     local entity = originalFunction(...)
-    if entity and DoesEntityExist(entity) then
-        if IsDuplicityVersion() then
-            TriggerClientEvent('entity2', -1, GetEntityModel(entity))
-            TriggerEvent("entityCreatedByScript", entity, 'fdgfd', true, GetEntityModel(entity))
-        else
-            TriggerEvent('entityCreatedByScriptClient', entity)
-            TriggerServerEvent(encryptDecrypt("entityCreatedByScript"), entity, 'fdgfd', true, GetEntityModel(entity))
+   
+    if not IsDuplicityVersion() then
+        while not DoesEntityExist(entity) do
+            Wait(1) 
         end
-        return entity
+        TriggerServerEvent("SecureServe:Server:Methods:Entity:Create", entity, GetCurrentResourceName(), GetEntityModel(entity))
+    else
+        Citizen.CreateThread(function()
+            while not DoesEntityExist(entity) do
+                Wait(1) 
+            end
+
+            TriggerServerEvent("SecureServe:Server:Methods:Entity:Create", entity, GetCurrentResourceName(), GetEntityModel(entity))
+        end)
     end
+ 
+    return entity
 end
+
 
 local _CreateObject = CreateObject
 local _CreateObjectNoOffset = CreateObjectNoOffset
@@ -112,7 +120,10 @@ if IsDuplicityVersion() then
             if event_name ~= "check_trigger_list" then
                 _AddEventHandler(event_name, function ()
                     local src = source
+                    
                     if GetPlayerPing(src) > 0  then
+                        print(event_name, enc_event_name, GetCurrentResourceName(), src)
+
                         local resourceName = GetCurrentResourceName()
                         local banMessage = ("Tried triggering a restricted event: %s in resource: %s."):format(event_name, resourceName)
                         exports["SecureServe"]:module_punish(src, banMessage)
@@ -123,7 +134,7 @@ if IsDuplicityVersion() then
                     local src = source 
                     
                     if GetPlayerPing(src) > 0 and decrypt(enc_event_name) ~= "add_to_trigger_list" and decrypt(enc_event_name) ~= "check_trigger_list" then
-                        TriggerEvent(encryptDecrypt("check_trigger_list"), src, decrypt(enc_event_name), GetCurrentResourceName())
+                        -- TriggerEvent(encryptDecrypt("check_trigger_list"), src, decrypt(enc_event_name), GetCurrentResourceName())
                     end
                 end)
             end

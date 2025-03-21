@@ -20,7 +20,6 @@ function AntiNoclip.initialize()
             local current_pos = Cache.Get("coords")
             if not Cache.Get("isInVehicle") then
                 local distance = #(current_pos - lastPos)
-                print(distance > teleport_threshold, distance, teleport_threshold)
                 if distance > teleport_threshold and 
                    not Cache.Get("isFalling") and 
                    not IsPedRagdoll(Cache.Get("ped")) and
@@ -28,8 +27,8 @@ function AntiNoclip.initialize()
                    not Cache.Get("isSwimmingUnderWater") then
         
                     clip_flags = clip_flags + 1
-                    
-                    if clip_flags >= 3 and not ConfigLoader.is_whitelisted(GetPlayerServerId(PlayerId())) then
+                    print(ConfigLoader.is_whitelisted(GetPlayerServerId(PlayerId())))
+                    if clip_flags >= 12 and not ConfigLoader.is_whitelisted(GetPlayerServerId(PlayerId())) then
                         TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Noclip", Anti_Noclip_webhook, Anti_Noclip_time)
                         clip_flags = 0
                     end

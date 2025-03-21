@@ -8,7 +8,7 @@ local BlacklistedWeapons = {}
 function BlacklistedWeapons.initialize()
     Citizen.CreateThread(function()
         while true do
-            Citizen.Wait(9000)
+            Citizen.Wait(4000)
 
             local player = Cache.Get("ped")
             local weapon = Cache.Get("selectedWeapon")

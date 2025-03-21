@@ -31,87 +31,131 @@ end
 
 ---@description Initialize Entity Security protection
 function AntiEntitySecurity.initialize()
-    print("ghpfipdjmholjgfoljmlgmhkljmlkgmljkmhlkgmjlkmlgkflmjmklklfmgjmklklmfgjklmgklfmjlkmfg")
 
-    local entity_spawned = {}
-    local entity_spawned_hashes = {}
-    local whitelisted_resources = {}
+    -- local entity_spawned = {}
+    -- local entity_spawned_hashes = {}
+    -- local whitelisted_resources = {}
 
     for _, entry in ipairs(SecureServe.Module.Entity.SecurityWhitelist) do
         whitelisted_resources[entry.resource] = entry.whitelist
     end
 
-    RegisterNetEvent('entity2', function(hash)
-        entity_spawned_hashes[hash] = true
-        Citizen.Wait(7500)
-        entity_spawned_hashes[hash] = false
-    end)
-
-    RegisterNetEvent('entityCreatedByScriptClient', function(entity, resource)
-        entity_spawned[entity] = true
-    end)
-
-    RegisterNetEvent("check_new_entities", function()
-        Citizen.Wait(450)
+    local function checkEntityResource(entity, entityType, modelHash)
+        local entityScript = GetEntityScript(entity)
+        if not entityScript then entityScript = "unknown" end
         
-        -- Check suspicious vehicles
-        for veh in Utils.enumerate_vehicles() do
-            local pop = GetEntityPopulationType(veh)
-            if not (pop == 0 or pop == 2 or pop == 4 or pop == 5 or pop == 6) then
-                if not entity_spawned[veh] and not entity_spawned_hashes[GetEntityModel(veh)] and DoesEntityExist(veh) then
-                    local script = safe_get_entity_script(veh)
-                    local is_whitelisted = whitelisted_resources[script] or false 
-                    if not is_whitelisted then
-                        NetworkRegisterEntityAsNetworked(veh)
-                        Citizen.Wait(100)
-                        local creator = GetPlayerServerId(NetworkGetEntityOwner(veh))
-                        if creator ~= 0 and creator == GetPlayerServerId(PlayerId()) and safe_get_entity_script(veh) ~= '' and safe_get_entity_script(veh) ~= ' ' and safe_get_entity_script(veh) ~= nil then
-                            TriggerServerEvent('clearall')
-                            TriggerServerEvent("SecureServe:Server:Methods:ModulePunish", nil, "Created Suspicious Entity [Vehicle] at script: " .. script, webhook, time)
-                            DeleteEntity(veh)
-                        end
-                    end
+        local isWhitelisted = false
+        if whitelisted_resources[entityScript] then
+            for _, hash in pairs(whitelisted_resources[entityScript]) do
+                if hash == modelHash then
+                    isWhitelisted = true
+                    break
                 end
             end
         end
+        
+        if not isWhitelisted then
+            if DoesEntityExist(entity) then
+                SetEntityAsMissionEntity(entity, true, true)
+                if IsEntityAVehicle(entity) then
+                    DeleteVehicle(entity)
+                else
+                    DeleteEntity(entity)
+                end
+            end
+            
+            TriggerServerEvent('clearall')
+            
+            local detectionMessage = string.format("Created blacklisted %s (hash: %s) from unauthorized resource: %s", 
+                entityType, modelHash, entityScript)
+                
+            TriggerServerEvent("SecureServe:Server:Methods:ModulePunish", nil, detectionMessage, "entity_security", 0)
+        end
+    end
 
-        -- Check suspicious peds
-        for ped in Utils.enumerate_peds() do
-            local pop = GetEntityPopulationType(ped)
-            if not (pop == 0 or pop == 2 or pop == 4 or pop == 5 or pop == 6) then
-                if not entity_spawned[ped] and not entity_spawned_hashes[GetEntityModel(ped)] and DoesEntityExist(ped) then
-                    local script = safe_get_entity_script(ped)
-                    local is_whitelisted = whitelisted_resources[script] or false 
-                    local creator = GetPlayerServerId(NetworkGetEntityOwner(ped))
-                    if not is_whitelisted and not IsPedAPlayer(ped) and creator == GetPlayerServerId(PlayerId()) and safe_get_entity_script(ped) ~= '' and safe_get_entity_script(ped) ~= ' ' and safe_get_entity_script(ped) ~= nil then
-                        if creator ~= 0 then
-                            TriggerServerEvent('clearall')
-                            TriggerServerEvent("SecureServe:Server:Methods:ModulePunish", nil, "Created Suspicious Entity [Ped]" .. script, webhook, time)
-                            DeleteEntity(ped)
-                        end
+    -- Handler for server requests to check entity resources
+    RegisterNetEvent("SecureServe:CheckEntityResource", function(netId, modelHash)
+        local entity = NetworkGetEntityFromNetworkId(netId)
+        if not entity or not DoesEntityExist(entity) then return end
+        
+        local entityType = "Unknown"
+        if IsEntityAVehicle(entity) then
+            entityType = "Vehicle"
+        elseif IsEntityAPed(entity) then
+            entityType = "Ped"
+        elseif IsEntityAnObject(entity) then
+            entityType = "Object"
+        end
+        
+        local entityScript = GetEntityScript(entity)
+        if not entityScript then entityScript = "unknown" end
+        
+        if entityScript ~= "unknown" then
+            local isWhitelisted = false
+            if whitelisted_resources[entityScript] then
+                for _, hash in pairs(whitelisted_resources[entityScript]) do
+                    if hash == modelHash then
+                        isWhitelisted = true
+                        break
                     end
                 end
+            end
+            
+            if not isWhitelisted then
+                if DoesEntityExist(entity) then
+                    SetEntityAsMissionEntity(entity, true, true)
+                    if IsEntityAVehicle(entity) then
+                        DeleteVehicle(entity)
+                    else
+                        DeleteEntity(entity)
+                    end
+                end
+                
+                TriggerServerEvent('clearall')
+                
+                local detectionMessage = string.format("Created blacklisted %s (hash: %s) from unauthorized resource: %s", 
+                    entityType, modelHash, entityScript)
+                TriggerServerEvent("SecureServe:Server:Methods:ModulePunish", nil, detectionMessage, "entity_security", 0)
             end
         end
+    end)
 
-        -- Check suspicious objects
-        for object in Utils.enumerate_objects() do
-            local pop = GetEntityPopulationType(object)
-            if not (pop == 0 or pop == 2 or pop == 4 or pop == 5 or pop == 6) then
-                if not entity_spawned[object] and not entity_spawned_hashes[GetEntityModel(object)] and DoesEntityExist(object) then
-                    local script = safe_get_entity_script(object)
-                    local is_whitelisted = whitelisted_resources[script] or false 
-                    if not is_whitelisted and safe_get_entity_script(object) ~= 'ox_inventory' and DoesEntityExist(object) then
-                        local creator = GetPlayerServerId(NetworkGetEntityOwner(object))
-                        if creator ~= 0 and creator == GetPlayerServerId(PlayerId()) and safe_get_entity_script(object) ~= '' and safe_get_entity_script(object) ~= ' ' and safe_get_entity_script(object) ~= nil then
-                            TriggerServerEvent('clearall')
-                            TriggerServerEvent("SecureServe:Server:Methods:ModulePunish", nil, "Created Suspicious Entity [Object] at script: " .. script, webhook, time)
-                            DeleteEntity(object)
-                            delete_all_objects()
-                        end
-                    end
-                end
-            end
+    AddStateBagChangeHandler("VehicleCreate", "entity:", function(bagName, key, value, _unused, replicated)
+        if not value then return end
+        local vehicleEntity = GetEntityFromStateBagName(bagName)
+        local vehicleHash = GetEntityModel(vehicleEntity)
+        
+        if blacklisted_vehicles[vehicleHash] then
+            SetEntityAsMissionEntity(vehicleEntity, true, true)
+            DeleteVehicle(vehicleEntity)
+            
+            checkEntityResource(vehicleEntity, "Vehicle", vehicleHash)
+        end
+    end)
+    
+    AddStateBagChangeHandler("PedCreate", "entity:", function(bagName, key, value, _unused, replicated)
+        if not value then return end
+        local pedEntity = GetEntityFromStateBagName(bagName)
+        local pedHash = GetEntityModel(pedEntity)
+        
+        if blacklisted_peds[pedHash] then
+            SetEntityAsMissionEntity(pedEntity, true, true)
+            DeleteEntity(pedEntity)
+            
+            checkEntityResource(pedEntity, "Ped", pedHash)
+        end
+    end)
+    
+    AddStateBagChangeHandler("ObjectCreate", "entity:", function(bagName, key, value, _unused, replicated)
+        if not value then return end
+        local objectEntity = GetEntityFromStateBagName(bagName)
+        local objectHash = GetEntityModel(objectEntity)
+        
+        if blacklisted_objects[objectHash] then
+            SetEntityAsMissionEntity(objectEntity, true, true)
+            DeleteEntity(objectEntity)
+            
+            checkEntityResource(objectEntity, "Object", objectHash)
         end
     end)
 end

@@ -13,7 +13,7 @@ const CURRENT_RESOURCE_NAME = GetCurrentResourceName();
 const RESOURCES_PATH = GetResourcePath(CURRENT_RESOURCE_NAME);
 const PARENT_PATH = path.dirname(RESOURCES_PATH);
 const DEFAULT_KEY_PATTERNS = [
-    "default-key-please-change", 
+    "dont-touch-this-will-auto-update-next-restart", 
     "Please Change this", 
     "default", 
     "please-change"
@@ -800,7 +800,7 @@ function getEncryptionKey() {
         }
         
         if (keyFile === "Please Change this if u wont the ac just wont start until u do this delete this message and instead write a random combination of letters like a random password without any spaces" || 
-            keyFile === "default-key-please-change") {
+            keyFile === "dont-touch-this-will-auto-update-next-restart") {
             
             Logger.critical("Default SecureServe key detected. Running ensureKeyFileExists() to create a new one.");
             checkAndFixDefaultKey();

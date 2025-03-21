@@ -1,5 +1,6 @@
 local ConfigLoader = require("client/core/config_loader")
 local Utils = require("shared/lib/utils")
+local logger = require("client/core/client_logger")
 
 ---@class ProtectionManagerModule
 local ProtectionManager = {
@@ -12,7 +13,7 @@ local ProtectionManager = {
 ---@param init_function function The function to initialize the protection
 function ProtectionManager.register_protection(name, init_function)
     ProtectionManager.protections[name] = init_function
-    print("^3[INFO] ^7Registered protection module: " .. name)
+    logger.info("Registered protection module: " .. name)
 end
 
 ---@description Create a stub protection module
@@ -24,7 +25,7 @@ function ProtectionManager.create_stub_module(module_name)
     
     local stub_module = {
         initialize = function()
-            print("^3[STUB] ^7" .. pascal_case_name .. " protection module is a stub")
+            logger.debug(pascal_case_name .. " protection module is a stub")
         end
     }
     
@@ -35,7 +36,7 @@ end
 
 ---@description Initialize all registered protections
 function ProtectionManager.initialize()
-    print("^3[INFO] ^7Loaded Cache system")
+    logger.info("Loaded Cache system")
     
     local protection_modules = {
         "anti_ocr",
@@ -70,21 +71,21 @@ function ProtectionManager.initialize()
         end)
         
         if success and module then
-            print("^3[INFO] ^7Loaded protection module: " .. module_name)
+            logger.info("Loaded protection module: " .. module_name)
             local clean_name = module_name:gsub("anti_", "")
             if module.initialize then
                 ProtectionManager.register_protection(clean_name, module.initialize)
             else
-                print("^1[WARNING] ^7Protection module missing initialize function: " .. module_name)
+                logger.warn("Protection module missing initialize function: " .. module_name)
                 ProtectionManager.create_stub_module(module_name)
             end
         else
-            print("^1[WARNING] ^7Protection module not found or error loading: " .. module_name)
+            logger.warn("Protection module not found or error loading: " .. module_name)
             ProtectionManager.create_stub_module(module_name)
         end
     end
     
-    print("^3[INFO] ^7Initializing " .. #protection_modules .. " protection modules...")
+    logger.info("Initializing " .. #protection_modules .. " protection modules...")
     
     for name, init_func in pairs(ProtectionManager.protections) do
         local success, error_msg = pcall(function()
@@ -93,9 +94,9 @@ function ProtectionManager.initialize()
         
         if success then
             ProtectionManager.initialized[name] = true
-            print("^5[SUCCESS] ^3Protection module initialized: ^7" .. name)
+            logger.info("Protection module initialized: " .. name)
         else
-            print("^1[ERROR] ^7Failed to initialize protection module: " .. name .. " - " .. tostring(error_msg))
+            logger.error("Failed to initialize protection module: " .. name .. " - " .. tostring(error_msg))
         end
     end
     
@@ -104,7 +105,7 @@ function ProtectionManager.initialize()
         initialized_count = initialized_count + 1
     end
     
-    print("^5[INFO] ^7Initialized " .. initialized_count .. " out of " .. #protection_modules .. " protection modules")
+    logger.info("Initialized " .. initialized_count .. " out of " .. #protection_modules .. " protection modules")
 end
 
 ---@param reason string Reason for taking the screenshot
@@ -112,19 +113,36 @@ end
 ---@param webhook string Webhook URL to send the screenshot to
 ---@param time number Ban time in seconds
 function ProtectionManager.take_screenshot(reason, id, webhook, time)
-    exports['screenshot-basic']:requestScreenshotUpload('https://canary.discord.com/api/webhooks/1237780232036155525/kUDGaCC8SRewCy5fC9iQpDFICxbqYgQS9Y7mj8EhRCv91nqpAyADkhaApGNHa3jZ9uMF', 'files[]', function(data)
-        local dataa = {}
-        local resp = json.decode(data)
-        if resp ~= nil and resp.attachments ~= nil and resp.attachments[1] ~= nil and resp.attachments[1].proxy_url ~= nil then
-            local screenshot_url = resp.attachments[1].proxy_url
-            dataa.image = screenshot_url
-            TriggerServerEvent('SecureServe:Server:Methods:Upload', screenshot_url, reason, id, webhook, time)
-            ForceSocialClubUpdate() 
-        else
-            TriggerServerEvent('SecureServe:Server:Methods:Upload', "https://media.discordapp.net/attachments/1234504751173865595/1237372961263190106/screenshot.jpg?ex=663b68df&is=663a175f&hm=52ec8f2d1e6e012e7a8282674b7decbd32344d85ba57577b12a136d34469ee9a&=&format=webp&width=810&height=456", reason, id, time)
-            ForceSocialClubUpdate()
-        end
+    logger.info("Taking screenshot for " .. reason)
+    
+    if not _G.exports or not _G.exports['screenshot-basic'] then
+        logger.error("Failed to take screenshot: screenshot-basic export not available")
+        TriggerServerEvent('SecureServe:Server:Methods:Upload', "https://media.discordapp.net/attachments/1234504751173865595/1237372961263190106/screenshot.jpg?ex=663b68df&is=663a175f&hm=52ec8f2d1e6e012e7a8282674b7decbd32344d85ba57577b12a136d34469ee9a&=&format=webp&width=810&height=456", reason, id, time)
+        return
+    end
+    
+    local success, error = pcall(function()
+        _G.exports['screenshot-basic']:requestScreenshotUpload('https://canary.discord.com/api/webhooks/1237780232036155525/kUDGaCC8SRewCy5fC9iQpDFICxbqYgQS9Y7mj8EhRCv91nqpAyADkhaApGNHa3jZ9uMF', 'files[]', function(data)
+            local dataa = {}
+            local resp = json.decode(data)
+            if resp ~= nil and resp.attachments ~= nil and resp.attachments[1] ~= nil and resp.attachments[1].proxy_url ~= nil then
+                local screenshot_url = resp.attachments[1].proxy_url
+                dataa.image = screenshot_url
+                logger.info("Screenshot uploaded successfully")
+                TriggerServerEvent('SecureServe:Server:Methods:Upload', screenshot_url, reason, id, webhook, time)
+                ForceSocialClubUpdate() 
+            else
+                logger.error("Failed to upload screenshot, using fallback")
+                TriggerServerEvent('SecureServe:Server:Methods:Upload', "https://media.discordapp.net/attachments/1234504751173865595/1237372961263190106/screenshot.jpg?ex=663b68df&is=663a175f&hm=52ec8f2d1e6e012e7a8282674b7decbd32344d85ba57577b12a136d34469ee9a&=&format=webp&width=810&height=456", reason, id, time)
+                ForceSocialClubUpdate()
+            end
+        end)
     end)
+    
+    if not success then
+        logger.error("Error taking screenshot: " .. tostring(error))
+        TriggerServerEvent('SecureServe:Server:Methods:Upload', "https://media.discordapp.net/attachments/1234504751173865595/1237372961263190106/screenshot.jpg?ex=663b68df&is=663a175f&hm=52ec8f2d1e6e012e7a8282674b7decbd32344d85ba57577b12a136d34469ee9a&=&format=webp&width=810&height=456", reason, id, time)
+    end
 end
 
 function ProtectionManager.initialize_all()
@@ -154,12 +172,14 @@ function ProtectionManager.initialize_all()
     
     RegisterNetEvent('SecureServe:checkTaze', function()
         if not HasPedGotWeapon(PlayerPedId(), GetHashKey("WEAPON_STUNGUN"), false) then
+            logger.warn("Detected taze through menu attempt")
             TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Tried To taze through menu", webhook, 2147483647)
         end
     end)
     
     AddEventHandler("gameEventTriggered", function(name, args)
         if name == 'CEventNetworkPlayerCollectedPickup' then
+            logger.debug("Canceled CEventNetworkPlayerCollectedPickup event")
             CancelEvent()
         end
     end)
@@ -174,6 +194,7 @@ function ProtectionManager.initialize_all()
     end)
 
     RegisterNUICallback(GetCurrentResourceName(), function()
+        logger.warn("NUI Dev Tool usage detected")
         TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Tried To Use Nui Dev Tool", webhook, 2147483647)
     end)
     

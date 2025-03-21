@@ -1,10 +1,10 @@
 ---@class AntiWeaponDamageModifierModule
-local AntiWeaponDamageModifier = {}
+local AntiWeaponDamageModifier = {
+    weapon_damage_history = {},
+    weapon_damage_baseline = {}
+}
 
 local ban_manager = require("server/core/ban_manager")
-
-local weapon_damage_history = {}
-local weapon_damage_baseline = {}
 
 ---@description Initialize anti-weapon damage modifier protection
 function AntiWeaponDamageModifier.initialize()
@@ -17,29 +17,29 @@ function AntiWeaponDamageModifier.initialize()
         local damage = data.weaponDamage
         local is_headshot = data.isHeadshot or false
         
-        if not weapon_damage_history[sender] then
-            weapon_damage_history[sender] = {}
+        if not AntiWeaponDamageModifier.weapon_damage_history[sender] then
+            AntiWeaponDamageModifier.weapon_damage_history[sender] = {}
         end
         
-        if not weapon_damage_history[sender][weapon_hash] then
-            weapon_damage_history[sender][weapon_hash] = {}
+        if not AntiWeaponDamageModifier.weapon_damage_history[sender][weapon_hash] then
+            AntiWeaponDamageModifier.weapon_damage_history[sender][weapon_hash] = {}
         end
         
-        table.insert(weapon_damage_history[sender][weapon_hash], damage)
+        table.insert(AntiWeaponDamageModifier.weapon_damage_history[sender][weapon_hash], damage)
         
-        if #weapon_damage_history[sender][weapon_hash] > 10 then
-            table.remove(weapon_damage_history[sender][weapon_hash], 1)
+        if #AntiWeaponDamageModifier.weapon_damage_history[sender][weapon_hash] > 10 then
+            table.remove(AntiWeaponDamageModifier.weapon_damage_history[sender][weapon_hash], 1)
         end
         
-        if not weapon_damage_baseline[weapon_hash] or damage > weapon_damage_baseline[weapon_hash] then
-            weapon_damage_baseline[weapon_hash] = damage
+        if not AntiWeaponDamageModifier.weapon_damage_baseline[weapon_hash] or damage > AntiWeaponDamageModifier.weapon_damage_baseline[weapon_hash] then
+            AntiWeaponDamageModifier.weapon_damage_baseline[weapon_hash] = damage
         end
         
-        if #weapon_damage_history[sender][weapon_hash] >= 3 then
+        if #AntiWeaponDamageModifier.weapon_damage_history[sender][weapon_hash] >= 3 then
             local min_damage = 999999
             local max_damage = 0
             
-            for _, dmg in ipairs(weapon_damage_history[sender][weapon_hash]) do
+            for _, dmg in ipairs(AntiWeaponDamageModifier.weapon_damage_history[sender][weapon_hash]) do
                 if dmg < min_damage then
                     min_damage = dmg
                 end
@@ -49,7 +49,7 @@ function AntiWeaponDamageModifier.initialize()
                 end
             end
             
-            local max_normal_damage = weapon_damage_baseline[weapon_hash] or max_damage
+            local max_normal_damage = AntiWeaponDamageModifier.weapon_damage_baseline[weapon_hash] or max_damage
             local allowed_overhead = is_headshot and 2.0 or 1.5 
             
             if max_damage > max_normal_damage * allowed_overhead then
@@ -69,7 +69,7 @@ end
 
 ---@param player_id number The player ID to clear history for
 function AntiWeaponDamageModifier.clear_player_history(player_id)
-    weapon_damage_history[player_id] = nil
+    AntiWeaponDamageModifier.weapon_damage_history[player_id] = nil
 end
 
 return AntiWeaponDamageModifier

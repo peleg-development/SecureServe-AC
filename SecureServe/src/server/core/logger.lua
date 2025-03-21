@@ -19,7 +19,8 @@ local Logger = {
     use_webhook = false,
     log_webhook = "",
     history = {},
-    max_history = 100
+    max_history = 100,
+    debug_enabled = false
 }
 
 local config_manager
@@ -34,9 +35,19 @@ function Logger.initialize(config)
         Logger.use_webhook = config.UseWebhook or Logger.use_webhook
         Logger.log_webhook = config.LogWebhook or Logger.log_webhook
         Logger.max_history = config.MaxLogHistory or Logger.max_history
+        Logger.debug_enabled = config.Debug or false
     end
     
-    Logger.info("Logger initialized")
+    Logger.info("Logger initialized with debug mode: " .. tostring(Logger.debug_enabled))
+end
+
+---@description Set debug mode
+---@param enabled boolean Whether debug mode is enabled
+function Logger.set_debug_mode(enabled)
+    Logger.debug_enabled = enabled
+    Logger.info("Debug mode " .. (enabled and "enabled" or "disabled"))
+    
+    TriggerClientEvent("SecureServe:UpdateDebugMode", -1, enabled)
 end
 
 ---@description Format a log message
@@ -124,7 +135,6 @@ function Logger.add_to_history(level, message)
         timestamp = os.time()
     })
     
-    -- Trim history if needed
     while #Logger.history > Logger.max_history do
         table.remove(Logger.history, 1)
     end
@@ -176,8 +186,11 @@ function Logger.debug(message, ...)
     end
     
     local formatted = Logger.format("DEBUG", message, ...)
-    print(formatted)
     Logger.add_to_history("DEBUG", formatted)
+    
+    if Logger.debug_enabled then
+        print(formatted)
+    end
 end
 
 ---@description Log an info message
@@ -189,8 +202,12 @@ function Logger.info(message, ...)
     end
     
     local formatted = Logger.format("INFO", message, ...)
-    print(formatted)
     Logger.add_to_history("INFO", formatted)
+    
+    if Logger.debug_enabled then
+        print(formatted)
+    end
+    
     Logger.send_to_webhook("INFO", message)
 end
 
@@ -203,8 +220,12 @@ function Logger.warn(message, ...)
     end
     
     local formatted = Logger.format("WARN", message, ...)
-    print(formatted)
     Logger.add_to_history("WARN", formatted)
+    
+    if Logger.debug_enabled then
+        print(formatted)
+    end
+    
     Logger.send_to_webhook("WARN", message)
 end
 
@@ -217,8 +238,10 @@ function Logger.error(message, ...)
     end
     
     local formatted = Logger.format("ERROR", message, ...)
-    print(formatted)
     Logger.add_to_history("ERROR", formatted)
+    
+    print(formatted)
+    
     Logger.send_to_webhook("ERROR", message)
 end
 
@@ -231,8 +254,10 @@ function Logger.fatal(message, ...)
     end
     
     local formatted = Logger.format("FATAL", message, ...)
-    print(formatted)
     Logger.add_to_history("FATAL", formatted)
+    
+    print(formatted)
+    
     Logger.send_to_webhook("FATAL", message)
 end
 

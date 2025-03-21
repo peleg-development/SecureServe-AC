@@ -35,7 +35,7 @@ SecureServe.ServerName = ""                                                     
 SecureServe.DiscordLink = ""                                                                  -- The link to your discord server.
 SecureServe.RequireSteam = false                                                              -- Just requires players that want to join your server to have steam open and logged in as well u must have a valid steam api key for this option read more in docs
 SecureServe.IdentifierCheck = true                                                            -- Checks when player connects if his identifiers are valid. if not it won't let him join the server.
-SecureServe.Debug = false 																      -- Enables debug mode, this will print debug messages in the console.
+SecureServe.Debug = true 																      -- Enables debug mode, this will print debug messages in the console.
 
 
 
@@ -98,11 +98,24 @@ SecureServe.Module = {
 -- |_____ |_____| |_____| ______|
 
 -- SecureServe Logs they are
-SecureServe.OtherLogs = {
-    JoinWebhook = "YOUR_WEBHOOK_URL", -- Logs when a player connects to the server
-    LeaveWebhook = "YOUR_WEBHOOK_URL", -- Logs when a player disconnects from the server
-    KillWebhook = "YOUR_WEBHOOK_URL", -- Logs player kills in the server
-    ResourceWebhook = "YOUR_WEBHOOK_URL" -- Logs resource-related events
+SecureServe.Logs = {
+    -- Discord logger settings
+    Enabled = true,         -- Enable or disable all Discord logging features
+    
+    -- Core webhook endpoints
+    system = "https://discord.com/api/webhooks/1350919474106208336/-FtQ7bAf006JzWZy7pwLCbk468nB7G2QdIAbZyKuXu8FQcfe1PKX6AhrL-8fsS2H9CL9",            -- System logs (startup, shutdown, etc.)
+    detection = "https://discord.com/api/webhooks/1350919474106208336/-FtQ7bAf006JzWZy7pwLCbk468nB7G2QdIAbZyKuXu8FQcfe1PKX6AhrL-8fsS2H9CL9",         -- Detection logs (player cheating detections)
+    ban = "https://discord.com/api/webhooks/1350919474106208336/-FtQ7bAf006JzWZy7pwLCbk468nB7G2QdIAbZyKuXu8FQcfe1PKX6AhrL-8fsS2H9CL9",               -- Ban logs
+    kick = "https://discord.com/api/webhooks/1350919474106208336/-FtQ7bAf006JzWZy7pwLCbk468nB7G2QdIAbZyKuXu8FQcfe1PKX6AhrL-8fsS2H9CL9",              -- Kick logs
+    screenshot = "https://discord.com/api/webhooks/1350919474106208336/-FtQ7bAf006JzWZy7pwLCbk468nB7G2QdIAbZyKuXu8FQcfe1PKX6AhrL-8fsS2H9CL9",        -- Screenshot logs
+    admin = "https://discord.com/api/webhooks/1350919474106208336/-FtQ7bAf006JzWZy7pwLCbk468nB7G2QdIAbZyKuXu8FQcfe1PKX6AhrL-8fsS2H9CL9",             -- Admin action logs
+    debug = "https://discord.com/api/webhooks/1350919474106208336/-FtQ7bAf006JzWZy7pwLCbk468nB7G2QdIAbZyKuXu8FQcfe1PKX6AhrL-8fsS2H9CL9",             -- Debug logs for troubleshooting
+    
+    -- New webhook endpoints
+    join = "https://discord.com/api/webhooks/1350919474106208336/-FtQ7bAf006JzWZy7pwLCbk468nB7G2QdIAbZyKuXu8FQcfe1PKX6AhrL-8fsS2H9CL9",              -- Player join logs
+    leave = "https://discord.com/api/webhooks/1350919474106208336/-FtQ7bAf006JzWZy7pwLCbk468nB7G2QdIAbZyKuXu8FQcfe1PKX6AhrL-8fsS2H9CL9",             -- Player leave logs
+    kill = "https://discord.com/api/webhooks/1350919474106208336/-FtQ7bAf006JzWZy7pwLCbk468nB7G2QdIAbZyKuXu8FQcfe1PKX6AhrL-8fsS2H9CL9",              -- Player kill logs
+    resource = "https://discord.com/api/webhooks/1350919474106208336/-FtQ7bAf006JzWZy7pwLCbk468nB7G2QdIAbZyKuXu8FQcfe1PKX6AhrL-8fsS2H9CL9"           -- Resource start/stop logs
 }
 
 SecureServe.Permissions = {
@@ -124,7 +137,7 @@ SecureServe.Permissions = {
 			• Anti Infinite Stamina
 	]]
 
-	AdminFramework = "custom", -- Set "custom" to enable custom whitelist logic.
+	AdminFramework = "", -- Set "custom" to enable custom whitelist logic.
 
 	IsWhitelisted = function(Player)
 
@@ -156,38 +169,6 @@ SecureServe.Permissions = {
 
 		return false -- Default deny
 	end,
-	AdminMenu = {
-
-		-- Webhook URL for admin menu images/logging
-		Webhook = "",
-	
-		-- Admin identifiers for accessing admin panel (unrelated to protection whitelist)
-		Admins = {
-			"license:your_license_here",
-			"discord:your_discord_id_here",
-		},
-	
-		-- Enable if you want TxAdmin access users to open anti-cheat admin panel
-		UseTxAuth = false,
-	
-		-- Optional method for additional panel permissions (e.g., ACE perms)
-		CanOpenAdminPanel = function(Player)
-			--[[
-			Example using ACE permissions:
-	
-			Add to server.cfg:
-			add_ace group.admin "adminpanel.access" allow
-	
-			if IsPlayerAceAllowed(Player, "adminpanel.access") then
-				return true
-			end
-			]]
-	
-			return false -- Default deny
-		end,
-	
-		-- Use command "/ssm" to open admin panel
-	}
 }
 
 

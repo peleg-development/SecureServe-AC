@@ -13,14 +13,14 @@ files {
 ui_page "src/client/protections/index.html"
 
 shared_scripts {
+    "src/module/module.lua",
+    -- "src/module/module.js",
     "src/shared/lib/require.lua",
     "src/shared/lib/encryption.lua",
     "src/shared/lib/utils.lua",
     "src/shared/lib/callbacks.lua",
     "src/shared/init.lua",
     "config.lua",
-    "src/module/module.lua",
-    "src/module/module.js"
 }
 
 client_scripts {
@@ -28,6 +28,7 @@ client_scripts {
     "src/client/core/config_loader.lua",
     "src/client/core/cache.lua",
     "src/client/core/entity_monitor.lua",
+    "src/client/core/client_logger.lua",
     "src/client/protections/protection_manager.lua",
     "src/client/protections/anti_invisible.lua",
     "src/client/protections/anti_no_reload.lua",
@@ -64,6 +65,8 @@ server_scripts {
     "src/server/core/logger.lua",
     "src/server/core/debug_module.lua",
     "src/server/core/auto_config.lua",
+    "src/server/core/discord_logger.lua",
+    "src/server/core/admin_whitelist.lua",
     "src/server/protections/resource_manager.lua", 
     "src/server/protections/anti_execution.lua",
     "src/server/protections/anti_entity_spam.lua",
@@ -76,7 +79,7 @@ server_scripts {
 
 dependencies {
     "/server:5181",
-    "screencapture"
+    "screenshot-basic"
 }
 
 lua54 "yes"
