@@ -103,19 +103,19 @@ SecureServe.Logs = {
     Enabled = true,         -- Enable or disable all Discord logging features
     
     -- Core webhook endpoints
-    system = "https://discord.com/api/webhooks/1350919474106208336/-FtQ7bAf006JzWZy7pwLCbk468nB7G2QdIAbZyKuXu8FQcfe1PKX6AhrL-8fsS2H9CL9",            -- System logs (startup, shutdown, etc.)
-    detection = "https://discord.com/api/webhooks/1350919474106208336/-FtQ7bAf006JzWZy7pwLCbk468nB7G2QdIAbZyKuXu8FQcfe1PKX6AhrL-8fsS2H9CL9",         -- Detection logs (player cheating detections)
-    ban = "https://discord.com/api/webhooks/1350919474106208336/-FtQ7bAf006JzWZy7pwLCbk468nB7G2QdIAbZyKuXu8FQcfe1PKX6AhrL-8fsS2H9CL9",               -- Ban logs
-    kick = "https://discord.com/api/webhooks/1350919474106208336/-FtQ7bAf006JzWZy7pwLCbk468nB7G2QdIAbZyKuXu8FQcfe1PKX6AhrL-8fsS2H9CL9",              -- Kick logs
-    screenshot = "https://discord.com/api/webhooks/1350919474106208336/-FtQ7bAf006JzWZy7pwLCbk468nB7G2QdIAbZyKuXu8FQcfe1PKX6AhrL-8fsS2H9CL9",        -- Screenshot logs
-    admin = "https://discord.com/api/webhooks/1350919474106208336/-FtQ7bAf006JzWZy7pwLCbk468nB7G2QdIAbZyKuXu8FQcfe1PKX6AhrL-8fsS2H9CL9",             -- Admin action logs
-    debug = "https://discord.com/api/webhooks/1350919474106208336/-FtQ7bAf006JzWZy7pwLCbk468nB7G2QdIAbZyKuXu8FQcfe1PKX6AhrL-8fsS2H9CL9",             -- Debug logs for troubleshooting
+    system = "",            -- System logs (startup, shutdown, etc.)
+    detection = "",         -- Detection logs (player cheating detections)
+    ban = "",               -- Ban logs
+    kick = "",              -- Kick logs
+    screenshot = "",        -- Screenshot logs
+    admin = "",             -- Admin action logs
+    debug = "",             -- Debug logs for troubleshooting
     
     -- New webhook endpoints
-    join = "https://discord.com/api/webhooks/1350919474106208336/-FtQ7bAf006JzWZy7pwLCbk468nB7G2QdIAbZyKuXu8FQcfe1PKX6AhrL-8fsS2H9CL9",              -- Player join logs
-    leave = "https://discord.com/api/webhooks/1350919474106208336/-FtQ7bAf006JzWZy7pwLCbk468nB7G2QdIAbZyKuXu8FQcfe1PKX6AhrL-8fsS2H9CL9",             -- Player leave logs
-    kill = "https://discord.com/api/webhooks/1350919474106208336/-FtQ7bAf006JzWZy7pwLCbk468nB7G2QdIAbZyKuXu8FQcfe1PKX6AhrL-8fsS2H9CL9",              -- Player kill logs
-    resource = "https://discord.com/api/webhooks/1350919474106208336/-FtQ7bAf006JzWZy7pwLCbk468nB7G2QdIAbZyKuXu8FQcfe1PKX6AhrL-8fsS2H9CL9"           -- Resource start/stop logs
+    join = "",              -- Player join logs
+    leave = "",             -- Player leave logs
+    kill = "",              -- Player kill logs
+    resource = ""           -- Resource start/stop logs
 }
 
 SecureServe.Permissions = {
