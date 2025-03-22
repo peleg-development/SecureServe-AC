@@ -12,31 +12,57 @@ function AntiNoclip.initialize()
     local lastPos = vector3(0, 0, 0)
     local teleport_threshold = 16.0
     local clip_flags = 0
+    local lastCheckTime = 0
+    local CHECK_INTERVAL = 1500 
     
     Citizen.CreateThread(function()
         while true do
-            Citizen.Wait(1000)
-
+            Citizen.Wait(CHECK_INTERVAL)
+            
+            local currentTime = GetGameTimer()
+            if currentTime - lastCheckTime < CHECK_INTERVAL then
+                Citizen.Wait(CHECK_INTERVAL - (currentTime - lastCheckTime))
+                goto continue
+            end
+            
+            lastCheckTime = currentTime
+            
             local current_pos = Cache.Get("coords")
-            if not Cache.Get("isInVehicle") then
+            local isInVehicle = Cache.Get("isInVehicle")
+            
+            if not isInVehicle then
                 local distance = #(current_pos - lastPos)
-                if distance > teleport_threshold and 
-                   not Cache.Get("isFalling") and 
-                   not IsPedRagdoll(Cache.Get("ped")) and
-                   not Cache.Get("isSwimming") and
-                   not Cache.Get("isSwimmingUnderWater") then
-        
-                    clip_flags = clip_flags + 1
-                    if clip_flags >= 12 and not ConfigLoader.is_whitelisted(GetPlayerServerId(PlayerId())) then
-                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Noclip", Anti_Noclip_webhook, Anti_Noclip_time)
-                        clip_flags = 0
-                    end
+                
+                if distance <= teleport_threshold then
+                    lastPos = current_pos
+                    goto continue
+                end
+                
+                local isFalling = Cache.Get("isFalling")
+                local ped = Cache.Get("ped")
+                
+                if isFalling or 
+                   IsPedRagdoll(ped) or 
+                   Cache.Get("isSwimming") or
+                   Cache.Get("isSwimmingUnderWater") then
+                    clip_flags = 0
+                    lastPos = current_pos
+                    goto continue
+                end
+                
+                clip_flags = clip_flags + 1
+                
+                if clip_flags >= 12 and not ConfigLoader.is_whitelisted(GetPlayerServerId(PlayerId())) then
+                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Noclip", Anti_Noclip_webhook, Anti_Noclip_time)
+                    clip_flags = 0
                 end
             else
                 clip_flags = 0
             end
             
             lastPos = current_pos
+            
+            ::continue::
         end
     end)
 end

@@ -16,14 +16,24 @@ local ClientLogger = {
         RESET = "^7"
     },
     level = 1,
-    max_history = 100,
+    max_history = 20,
     history = {},
-    debug_enabled = false
+    debug_enabled = false,
+    cleanup_thread = nil,
+    last_cleanup = 0
 }
 
 ---@description Initialize the client logger
 ---@param config table Configuration options
 function ClientLogger.initialize(config)
+    if ClientLogger.cleanup_thread then
+        TerminateThread(ClientLogger.cleanup_thread)
+        ClientLogger.cleanup_thread = nil
+    end
+    
+    ClientLogger.history = {}
+    ClientLogger.last_cleanup = GetGameTimer()
+    
     if config then
         ClientLogger.level = config.LogLevel or ClientLogger.level
         ClientLogger.max_history = config.MaxLogHistory or ClientLogger.max_history
@@ -37,6 +47,35 @@ function ClientLogger.initialize(config)
         ClientLogger.debug_enabled = enabled
         ClientLogger.info("Debug mode " .. (enabled and "enabled" or "disabled"))
     end)
+    
+    ClientLogger.cleanup_thread = Citizen.CreateThread(function()
+        while true do
+            Citizen.Wait(60000) 
+            
+            local current_time = GetGameTimer()
+            if (current_time - ClientLogger.last_cleanup) < 60000 then
+                goto continue 
+            end
+            
+            if #ClientLogger.history > (ClientLogger.max_history * 1.5) then
+                local target_size = ClientLogger.max_history
+                local history_copy = {}
+                
+                for i = #ClientLogger.history - target_size + 1, #ClientLogger.history do
+                    if ClientLogger.history[i] then
+                        table.insert(history_copy, ClientLogger.history[i])
+                    end
+                end
+                
+                ClientLogger.history = history_copy
+                ClientLogger.last_cleanup = current_time
+                
+                collectgarbage("step", 50)
+            end
+            
+            ::continue::
+        end
+    end)
 end
 
 ---@description Format a log message
@@ -48,7 +87,7 @@ function ClientLogger.format(level, message, ...)
     local color = ClientLogger.colors[level] or ClientLogger.colors.INFO
     local reset = ClientLogger.colors.RESET
     
-    local final_message = string.format(" %s[CLIENT %s]%s %s", 
+    local final_message = string.format("[%s%s%s] %s", 
         color, 
         level, 
         reset,
@@ -59,7 +98,7 @@ function ClientLogger.format(level, message, ...)
     if #args > 0 then
         for i, v in ipairs(args) do
             if type(v) == "table" then
-                final_message = final_message .. " " .. ClientLogger.table_to_string(v)
+                final_message = final_message .. " " .. ClientLogger.simple_table_format(v)
             else
                 final_message = final_message .. " " .. tostring(v)
             end
@@ -69,60 +108,76 @@ function ClientLogger.format(level, message, ...)
     return final_message
 end
 
----@description Convert a table to a string for logging
----@param t table The table to convert
----@param indent number The indentation level
----@return string result The string representation of the table
-function ClientLogger.table_to_string(t, indent)
-    if not t or type(t) ~= "table" then
-        return tostring(t)
-    end
+function ClientLogger.simple_table_format(t)
+    if type(t) ~= "table" then return tostring(t) end
     
-    indent = indent or 0
-    local result = "{\n"
+    local count = 0
+    local max_entries = 5
+    local result = "{"
     
-    local keys = {}
-    for k in pairs(t) do
-        table.insert(keys, k)
-    end
-    table.sort(keys)
-    
-    for _, k in ipairs(keys) do
-        local v = t[k]
-        local indent_str = string.rep("  ", indent + 1)
-        
-        result = result .. indent_str
-        
-        if type(k) == "number" then
-            result = result .. "[" .. k .. "] = "
-        else
-            result = result .. '["' .. tostring(k) .. '"] = '
+    for k, v in pairs(t) do
+        count = count + 1
+        if count > max_entries then
+            result = result .. ",...}"
+            return result
         end
         
+        local val
         if type(v) == "table" then
-            result = result .. ClientLogger.table_to_string(v, indent + 1) .. ",\n"
-        elseif type(v) == "string" then
-            result = result .. '"' .. v .. '",\n'
+            val = "{...}"
+        elseif type(v) == "string" and #v > 20 then
+            val = string.sub(v, 1, 20) .. "..."
         else
-            result = result .. tostring(v) .. ",\n"
+            val = tostring(v)
+        end
+        
+        result = result .. tostring(k) .. "=" .. val
+        
+        if count < max_entries then
+            result = result .. ","
         end
     end
     
-    result = result .. string.rep("  ", indent) .. "}"
-    return result
+    return result .. "}"
 end
 
 ---@description Add a log entry to the history
 ---@param level string The log level
 ---@param message string The message to log
 function ClientLogger.add_to_history(level, message)
+    if level == "DEBUG" and not ClientLogger.debug_enabled then
+        return
+    end
+    
+    if #message > 200 then -- Further reduced message size
+        message = string.sub(message, 1, 200) .. "..."
+    end
+    
     table.insert(ClientLogger.history, {
         level = level,
         message = message,
+        time = GetGameTimer()
     })
     
-    while #ClientLogger.history > ClientLogger.max_history do
-        table.remove(ClientLogger.history, 1)
+    if #ClientLogger.history > (ClientLogger.max_history * 1.5) then
+        local current_time = GetGameTimer()
+        
+        if (current_time - ClientLogger.last_cleanup) < 30000 then
+            return
+        end
+        
+        local target_size = ClientLogger.max_history
+        local history_copy = {}
+        
+        -- Keep only the most recent logs
+        for i = #ClientLogger.history - target_size + 1, #ClientLogger.history do
+            if ClientLogger.history[i] then
+                table.insert(history_copy, ClientLogger.history[i])
+            end
+        end
+        
+        ClientLogger.history = history_copy
+        ClientLogger.last_cleanup = current_time
     end
 end
 
@@ -131,6 +186,9 @@ end
 ---@param message string The message to log
 function ClientLogger.send_to_server(level, message)
     if level == "ERROR" or level == "FATAL" then
+        if #message > 500 then -- Reduced limit
+            message = string.sub(message, 1, 500) .. "..."
+        end
         TriggerServerEvent("SecureServe:ClientLog", level, message)
     end
 end
@@ -143,12 +201,14 @@ function ClientLogger.debug(message, ...)
         return
     end
     
+    if not ClientLogger.debug_enabled then
+        return
+    end
+    
     local formatted = ClientLogger.format("DEBUG", message, ...)
     ClientLogger.add_to_history("DEBUG", formatted)
     
-    if ClientLogger.debug_enabled then
-        print(formatted)
-    end
+    print(formatted)
 end
 
 ---@description Log an info message
@@ -182,7 +242,9 @@ function ClientLogger.warn(message, ...)
         print(formatted)
     end
     
-    TriggerServerEvent("SecureServe:ForwardLog", "WARN", message)
+    if #message < 100 then 
+        TriggerServerEvent("SecureServe:ForwardLog", "WARN", message)
+    end
 end
 
 ---@description Log an error message
@@ -223,7 +285,8 @@ end
 ---@return table log_entries The log entries
 function ClientLogger.get_history(count, level)
     local result = {}
-    local start_index = count and (#ClientLogger.history - count + 1) or 1
+    local actual_count = math.min(count or #ClientLogger.history, #ClientLogger.history)
+    local start_index = #ClientLogger.history - actual_count + 1
     start_index = math.max(1, start_index)
     
     for i = start_index, #ClientLogger.history do
@@ -235,5 +298,20 @@ function ClientLogger.get_history(count, level)
     
     return result
 end
+
+function ClientLogger.cleanup()
+    if ClientLogger.cleanup_thread then
+        TerminateThread(ClientLogger.cleanup_thread)
+        ClientLogger.cleanup_thread = nil
+    end
+    
+    ClientLogger.history = {}
+    collectgarbage("step", 50)
+end
+
+AddEventHandler('onResourceStop', function(resourceName)
+    if GetCurrentResourceName() ~= resourceName then return end
+    ClientLogger.cleanup()
+end)
 
 return ClientLogger 
