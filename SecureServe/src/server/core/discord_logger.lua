@@ -160,7 +160,7 @@ function DiscordLogger.process_queue()
                     end
                     
                     DiscordLogger.processing = false
-                    Citizen.Wait(1000) -- Wait to avoid rate limits
+                    Citizen.Wait(1000) 
                 end, "POST", payload, { ["Content-Type"] = "application/json" })
             end
         end
@@ -203,7 +203,6 @@ function DiscordLogger.format_identifiers(player_id)
     local identifiers_text = ""
     local identifiers = {}
     
-    -- Basic identifiers
     for _, id_type in ipairs({"steam", "license", "discord", "ip", "xbl", "live", "fivem"}) do
         local id = GetPlayerIdentifierByType(player_id, id_type)
         if id then
@@ -794,7 +793,6 @@ function DiscordLogger.log_screenshot(player_id, reason, screenshot_url, details
     
     table.insert(fields, {name = "Server Info", value = "Players: " .. GetNumPlayerIndices() .. "\nTime: " .. os.date("%H:%M:%S"), inline = true})
     
-    -- Send the webhook
     DiscordLogger.send(
         "screenshot",
         "📸 Player Screenshot",

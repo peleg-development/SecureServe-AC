@@ -36,12 +36,44 @@ function BanManager.initialize()
         end
     end
     
+    RegisterCommand("reloadbans", function(source, args, rawCommand)
+        if source > 0 then 
+            return
+        end
+        
+        logger.info("Manually reloading ban list...")
+        BanManager.load_bans()
+        logger.info("Ban list reloaded. " .. #BanManager.bans .. " bans loaded.")
+    end, true)
+    
+    RegisterCommand("clearbans", function(source, args, rawCommand)
+        if source > 0 then 
+            return
+        end
+        
+        local count = #BanManager.bans
+        logger.warn("CLEARING ALL BANS FROM THE SERVER!")
+        
+        local backupName = BanManager.ban_file .. ".backup.clear." .. os.time()
+        SaveResourceFile(GetCurrentResourceName(), backupName, json.encode(BanManager.bans, { indent = true }), -1)
+        logger.info("Created backup of bans before clearing: " .. backupName)
+        
+        BanManager.bans = {}
+        BanManager.save_bans()
+        
+        logger.info("Cleared " .. count .. " bans from the server")
+    end, true)
+    
+    BanManager.clean_expired_bans()
+    
     AddEventHandler("playerConnecting", function(name, setKickReason, deferrals)
         local src = source
         deferrals.defer()
         
-        BanManager.check_and_reload_bans()
+        BanManager.load_bans()
         
+        logger.debug("Player connecting: " .. name .. " (ID: " .. src .. ")")
+    
         local tokens = {}
         for i = 1, 5 do
             if GetPlayerToken then
@@ -61,243 +93,6 @@ function BanManager.initialize()
             end
         end
         
-        if SecureServe.RequireSteam and not hasSteam then
-            local steamCard = [[
-                {
-                    "type": "AdaptiveCard",
-                    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-                    "version": "1.3",
-                    "backgroundImage": {
-                        "url": "https://www.transparenttextures.com/patterns/black-linen.png"
-                    },
-                    "body": [
-                        {
-                            "type": "Container",
-                            "style": "emphasis",
-                            "bleed": true,
-                            "items": [
-                                {
-                                    "type": "Image",
-                                    "url": "https://img.icons8.com/color/452/error.png",
-                                    "horizontalAlignment": "Center",
-                                    "size": "Large",
-                                    "spacing": "Large"
-                                },
-                                {
-                                    "type": "TextBlock",
-                                    "text": "Steam Account Required",
-                                    "wrap": true,
-                                    "horizontalAlignment": "Center",
-                                    "size": "ExtraLarge",
-                                    "weight": "Bolder",
-                                    "color": "Attention",
-                                    "spacing": "Medium"
-                                },
-                                {
-                                    "type": "TextBlock",
-                                    "text": "You need to have Steam open and linked to your FiveM account to join this server.",
-                                    "wrap": true,
-                                    "horizontalAlignment": "Center",
-                                    "size": "Large",
-                                    "weight": "Bolder",
-                                    "color": "Attention",
-                                    "spacing": "Small"
-                                },
-                                {
-                                    "type": "TextBlock",
-                                    "text": "Make sure Steam is running before launching FiveM, then try again.",
-                                    "wrap": true,
-                                    "horizontalAlignment": "Center",
-                                    "size": "Medium",
-                                    "spacing": "Medium"
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ]]
-            
-            deferrals.presentCard(steamCard, function(data, rawData) end)
-            Citizen.CreateThread(function()
-                while true do
-                    Wait(0)
-                    deferrals.presentCard(steamCard, function(data, rawData) end)
-                    CancelEvent()
-                end
-            end)
-            return
-        end
-        
-        local identifiersTable = {}
-        for _, identifier in ipairs(identifiers) do
-            local idType = string.match(identifier, "^([^:]+):")
-            if idType then
-                identifiersTable[idType] = identifier
-            end
-        end
-        
-        identifiersTable.tokens = tokens
-        
-        if src and tonumber(src) > 0 then
-            BanManager.active_connections[tostring(src)] = identifiersTable
-        end
-        
-        local is_banned, ban_data = BanManager.check_ban(identifiersTable)
-        
-        if is_banned then
-            logger.info("Blocked banned player connection: " .. name .. " (" .. (identifiersTable.license or "unknown") .. ")")
-            
-            local id = ban_data.id or "Unknown"
-            
-            local discord_link = SecureServe.AppealURL or "Contact server administration"
-            if not discord_link:find("http") then
-                discord_link = "https://discord.gg/" .. discord_link:gsub("discord.gg/", "")
-            end
-            
-            local card = [[
-                {
-                    "type": "AdaptiveCard",
-                    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-                    "version": "1.3",
-                    "backgroundImage": {
-                        "url": "https://www.transparenttextures.com/patterns/black-linen.png"
-                    },
-                    "body": [
-                        {
-                            "type": "Container",
-                            "style": "emphasis",
-                            "bleed": true,
-                            "items": [
-                                {
-                                    "type": "Image",
-                                    "url": "https://img.icons8.com/color/452/error.png",
-                                    "horizontalAlignment": "Center",
-                                    "size": "Large",
-                                    "spacing": "Large"
-                                },
-                                {
-                                    "type": "TextBlock",
-                                    "text": "Access Denied",
-                                    "wrap": true,
-                                    "horizontalAlignment": "Center",
-                                    "size": "ExtraLarge",
-                                    "weight": "Bolder",
-                                    "color": "Attention",
-                                    "spacing": "Medium"
-                                },
-                                {
-                                    "type": "TextBlock",
-                                    "text": "You are banned from this server.",
-                                    "wrap": true,
-                                    "horizontalAlignment": "Center",
-                                    "size": "Large",
-                                    "weight": "Bolder",
-                                    "color": "Attention",
-                                    "spacing": "Small"
-                                },
-                                {
-                                    "type": "TextBlock",
-                                    "text": "This ban never expires. If you think this was a mistake or you just want to appeal your ban, please join the support Discord below.",
-                                    "wrap": true,
-                                    "horizontalAlignment": "Center",
-                                    "size": "Medium",
-                                    "spacing": "Medium"
-                                }
-                            ]
-                        }
-                    ],
-                    "actions": [
-                        {
-                            "type": "Action.ShowCard",
-                            "title": "Ban Details",
-                            "card": {
-                                "type": "AdaptiveCard",
-                                "body": [
-                                    {
-                                        "type": "FactSet",
-                                        "facts": [
-                                            {
-                                                "title": "Ban ID:",
-                                                "value": "%s"
-                                            },
-                                            {
-                                                "title": "Expires:",
-                                                "value": "Never"
-                                            }
-                                        ]
-                                    }
-                                ],
-                                "actions": [
-                                    {
-                                        "type": "Action.OpenUrl",
-                                        "title": "Join Discord",
-                                        "url": "%s",
-                                        "style": "positive",
-                                        "iconUrl": "https://img.icons8.com/ios-filled/452/discord-logo.png"
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                }
-            ]]
-            
-            BanManager._formatted_card = string.format(card, id, discord_link)
-            
-            deferrals.presentCard(BanManager._formatted_card, function(data, rawData) end)
-            
-            Citizen.CreateThread(function()
-                while true do
-                    Wait(0)
-                    deferrals.presentCard(BanManager._formatted_card, function(data, rawData) end)
-                    CancelEvent()
-                end
-            end)
-            
-            Citizen.CreateThread(function()
-                while true do
-                    Wait(50)
-                    deferrals.presentCard(BanManager._formatted_card, function(data, rawData) end)
-                    CancelEvent()
-                end
-            end)
-            
-            while true do
-                Wait(100) 
-                deferrals.presentCard(BanManager._formatted_card, function(data, rawData) end)
-                CancelEvent()
-            end
-            
-            return
-        else
-            deferrals.done()
-        end
-    end)
-    AddEventHandler("playerConnecting", function(name, setKickReason, deferrals)
-        local src = source
-        deferrals.defer()
-    
-        BanManager.check_and_reload_bans()
-    
-        local tokens = {}
-        for i = 1, 5 do
-            if GetPlayerToken then
-                table.insert(tokens, GetPlayerToken(src, i))
-            end
-        end
-    
-        Citizen.Wait(0)
-    
-        local identifiers = GetPlayerIdentifiers(src)
-        local hasSteam = false
-    
-        for _, identifier in ipairs(identifiers) do
-            if string.match(identifier, "steam:") then
-                hasSteam = true
-                break
-            end
-        end
-    
         if SecureServe.RequireSteam and not hasSteam then
             local steamCard = [[
                 {
@@ -357,7 +152,7 @@ function BanManager.initialize()
             deferrals.done("You need to have Steam open and linked to your FiveM account to join this server.")
             return
         end
-    
+        
         local identifiersTable = {}
         for _, identifier in ipairs(identifiers) do
             local idType = string.match(identifier, "^([^:]+):")
@@ -365,121 +160,34 @@ function BanManager.initialize()
                 identifiersTable[idType] = identifier
             end
         end
-    
+        
         identifiersTable.tokens = tokens
-    
+        
         if src and tonumber(src) > 0 then
             BanManager.active_connections[tostring(src)] = identifiersTable
         end
-    
+        
         local is_banned, ban_data = BanManager.check_ban(identifiersTable)
-    
+        
         if is_banned then
-            logger.info("Blocked banned player connection: " .. name .. " (" .. (identifiersTable.license or "unknown") .. ")")
+            logger.info("Blocked banned player connection: " .. name .. " (ID: " .. src .. ")")
+            logger.info("Ban ID: " .. (ban_data.id or "Unknown") .. ", License: " .. (identifiersTable.license or "unknown"))
+            logger.info("Ban reason: " .. (ban_data.reason or "Unknown"))
     
             local id = ban_data.id or "Unknown"
             local discord_link = SecureServe.AppealURL or "Contact server administration"
             if not discord_link:find("http") then
                 discord_link = "https://discord.gg/" .. discord_link:gsub("discord.gg/", "")
             end
-    
-            local card = [[
-                {
-                    "type": "AdaptiveCard",
-                    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-                    "version": "1.3",
-                    "backgroundImage": {
-                        "url": "https://www.transparenttextures.com/patterns/black-linen.png"
-                    },
-                    "body": [
-                        {
-                            "type": "Container",
-                            "style": "emphasis",
-                            "bleed": true,
-                            "items": [
-                                {
-                                    "type": "Image",
-                                    "url": "https://img.icons8.com/color/452/error.png",
-                                    "horizontalAlignment": "Center",
-                                    "size": "Large",
-                                    "spacing": "Large"
-                                },
-                                {
-                                    "type": "TextBlock",
-                                    "text": "Access Denied",
-                                    "wrap": true,
-                                    "horizontalAlignment": "Center",
-                                    "size": "ExtraLarge",
-                                    "weight": "Bolder",
-                                    "color": "Attention",
-                                    "spacing": "Medium"
-                                },
-                                {
-                                    "type": "TextBlock",
-                                    "text": "You are banned from this server.",
-                                    "wrap": true,
-                                    "horizontalAlignment": "Center",
-                                    "size": "Large",
-                                    "weight": "Bolder",
-                                    "color": "Attention",
-                                    "spacing": "Small"
-                                },
-                                {
-                                    "type": "TextBlock",
-                                    "text": "This ban never expires. If you think this was a mistake or you just want to appeal your ban, please join the support Discord below.",
-                                    "wrap": true,
-                                    "horizontalAlignment": "Center",
-                                    "size": "Medium",
-                                    "spacing": "Medium"
-                                }
-                            ]
-                        }
-                    ],
-                    "actions": [
-                        {
-                            "type": "Action.ShowCard",
-                            "title": "Ban Details",
-                            "card": {
-                                "type": "AdaptiveCard",
-                                "body": [
-                                    {
-                                        "type": "FactSet",
-                                        "facts": [
-                                            {
-                                                "title": "Ban ID:",
-                                                "value": "%s"
-                                            },
-                                            {
-                                                "title": "Expires:",
-                                                "value": "Never"
-                                            }
-                                        ]
-                                    }
-                                ],
-                                "actions": [
-                                    {
-                                        "type": "Action.OpenUrl",
-                                        "title": "Join Discord",
-                                        "url": "%s",
-                                        "style": "positive",
-                                        "iconUrl": "https://img.icons8.com/ios-filled/452/discord-logo.png"
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                }
-            ]]
-    
-            local formatted_card = string.format(card, id, discord_link)
-            deferrals.presentCard(formatted_card)
-            deferrals.done("You are banned from this server. Ban ID: " .. id)
+            
+            deferrals.done("You have been banned from this server.\nBan ID: " .. id .. "\nAppeal: " .. discord_link)
             return
         else
-            deferrals.done()
+            logger.debug("Player " .. name .. " (ID: " .. src .. ") is not banned, allowing connection")
         end
+        deferrals.done()
     end)
-
+    
     AddEventHandler("playerDropped", function(reason)
         local source = source
         
@@ -490,203 +198,16 @@ function BanManager.initialize()
         BanManager.active_connections[tostring(source)] = nil
     end)
     
-    AddEventHandler("playerJoining", function(source, oldID)
-        if not source or tonumber(source) <= 0 then
-            return
-        end
-        
-        local player_name = GetPlayerName(source) or "Unknown"
-        local identifiers = BanManager.get_player_identifiers(source)
-        
-        if not identifiers or not next(identifiers) then
-            identifiers = BanManager.active_connections[tostring(source)]
-            
-            if not identifiers or not next(identifiers) then
-                local rawIdentifiers = GetPlayerIdentifiers(source) or {}
-                identifiers = {}
-                
-                for _, identifier in ipairs(rawIdentifiers) do
-                    local idType = string.match(identifier, "^([^:]+):")
-                    if idType then
-                        identifiers[idType] = identifier
-                    end
-                end
-                
-                if GetNumPlayerTokens then
-                    identifiers.tokens = {}
-                    for i = 0, GetNumPlayerTokens(source) - 1 do
-                        table.insert(identifiers.tokens, GetPlayerToken(source, i))
-                    end
-                end
-            end
-            
-            if not identifiers or not next(identifiers) then
-                logger.warn("No identifiers found for joining player: " .. player_name .. " (ID: " .. source .. ")")
-                return
-            end
-        end
-        
-        BanManager.active_connections[tostring(source)] = identifiers
-        
-        local is_banned, ban_data = BanManager.check_ban(identifiers)
-        if is_banned then
-            logger.info("Caught banned player after joining: " .. player_name .. " (" .. (identifiers.license or "unknown") .. ")")
-            
-            local ban_id = ban_data.id or "Unknown"
-            local reason = ban_data.reason or "Violating server rules"
-            local ban_type = "Permanent"
-            local expires_value = "Never"
-            local time_remaining = ""
-            
-            if ban_data.expires and ban_data.expires > 0 then
-                local remaining = ban_data.expires - os.time()
-                if remaining > 0 then
-                    ban_type = "Temporary"
-                    expires_value = os.date("%Y-%m-%d %H:%M:%S", ban_data.expires)
-                    time_remaining = BanManager.format_time_remaining(remaining)
-                end
-            end
-            
-            local discord_link = SecureServe.AppealURL or "Contact server administration"
-            if not discord_link:find("http") then
-                discord_link = "https://discord.gg/" .. discord_link:gsub("discord.gg/", "")
-            end
-            
-            local card = [[
-                {
-                    "type": "AdaptiveCard",
-                    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-                    "version": "1.3",
-                    "backgroundImage": {
-                        "url": "https://www.transparenttextures.com/patterns/black-linen.png"
-                    },
-                    "body": [
-                        {
-                            "type": "Container",
-                            "style": "emphasis",
-                            "bleed": true,
-                            "items": [
-                                {
-                                    "type": "Image",
-                                    "url": "https://img.icons8.com/color/452/error.png",
-                                    "horizontalAlignment": "Center",
-                                    "size": "Large",
-                                    "spacing": "Large"
-                                },
-                                {
-                                    "type": "TextBlock",
-                                    "text": "Access Denied",
-                                    "wrap": true,
-                                    "horizontalAlignment": "Center",
-                                    "size": "ExtraLarge",
-                                    "weight": "Bolder",
-                                    "color": "Attention",
-                                    "spacing": "Medium"
-                                },
-                                {
-                                    "type": "TextBlock",
-                                    "text": "You are banned from this server.",
-                                    "wrap": true,
-                                    "horizontalAlignment": "Center",
-                                    "size": "Large",
-                                    "weight": "Bolder",
-                                    "color": "Attention",
-                                    "spacing": "Small"
-                                },
-                                {
-                                    "type": "TextBlock",
-                                    "text": "If you think this was a mistake or you want to appeal your ban, please join the support Discord below.",
-                                    "wrap": true,
-                                    "horizontalAlignment": "Center",
-                                    "size": "Medium",
-                                    "spacing": "Medium"
-                                }
-                            ]
-                        }
-                    ],
-                    "actions": [
-                        {
-                            "type": "Action.ShowCard",
-                            "title": "Ban Details",
-                            "card": {
-                                "type": "AdaptiveCard",
-                                "body": [
-                                    {
-                                        "type": "FactSet",
-                                        "facts": [
-                                            {
-                                                "title": "Ban ID:",
-                                                "value": "%s"
-                                            },
-                                            {
-                                                "title": "Ban Type:",
-                                                "value": "%s"
-                                            },
-                                            {
-                                                "title": "Issued On:",
-                                                "value": "%s"
-                                            },
-                                            {
-                                                "title": "Expires:",
-                                                "value": "%s"
-                                            },
-                                            {
-                                                "title": "Admin:",
-                                                "value": "%s"
-                                            }
-                                        ]
-                                    }
-                                ],
-                                "actions": [
-                                    {
-                                        "type": "Action.OpenUrl",
-                                        "title": "Join Discord",
-                                        "url": "%s",
-                                        "style": "positive",
-                                        "iconUrl": "https://img.icons8.com/ios-filled/452/discord-logo.png"
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                }
-            ]]
-            
-            local formatted_card = string.format(
-                card,
-                ban_id,
-                reason,
-                ban_type,
-                os.date("%Y-%m-%d %H:%M:%S", ban_data.timestamp or os.time()),
-                (ban_data.expires and ban_data.expires > 0 and expires_value and time_remaining) and (expires_value .. " (" .. time_remaining .. ")") or "Never",
-                ban_data.admin or "System",
-                discord_link
-            )
-            
-            TriggerClientEvent("SecureServe:ShowBanCard", source, formatted_card)
-            
-            Citizen.CreateThread(function()
-                for i = 1, 10 do
-                    TriggerClientEvent("SecureServe:ShowPermaBanCard", source, formatted_card)
-                    TriggerClientEvent("SecureServe:ForceSocialClubUpdate", source)
-                    Wait(100)
-                end
-                
-                Wait(500)
-                DropPlayer(source, BanManager.format_ban_message(ban_data))
-            end)
-        end
-    end)
-    
     CreateThread(function()
         while true do
             Wait(60000)
             BanManager.check_and_reload_bans()
+            BanManager.clean_expired_bans()
             BanManager.save_bans()
         end
     end)
     
-    print("^5[SUCCESS] ^3Ban Manager^7 initialized")
+    logger.info("^5[SUCCESS] ^3Ban Manager^7 initialized")
 end
 
 ---@description Load bans from file
@@ -704,9 +225,17 @@ function BanManager.load_bans()
     end)
     
     if success and result then
-        BanManager.bans = result
-        logger.info("Loaded " .. #BanManager.bans .. " bans from file")
+        BanManager.bans = {}
         
+        for _, ban in ipairs(result) do
+            if ban.id and ban.identifiers then
+                table.insert(BanManager.bans, ban)
+            else
+                logger.warn("Skipping invalid ban entry: " .. json.encode(ban))
+            end
+        end
+        
+        logger.info("Loaded " .. #BanManager.bans .. " bans from file")
         BanManager.last_file_modified = os.time()
     else
         BanManager.load_attempts = BanManager.load_attempts + 1
@@ -729,16 +258,8 @@ end
 
 ---@description Check if bans file was modified and reload if needed
 function BanManager.check_and_reload_bans()
-    local file_info = GetResourceMetadata(GetCurrentResourceName(), "file_last_modified:" .. BanManager.ban_file, 0)
-    local last_modified = tonumber(file_info) or 0
-    
-    if last_modified > BanManager.last_file_modified then
-        logger.info("Bans file was modified, reloading ban list...")
         BanManager.load_bans()
         return true
-    end
-    
-    return false
 end
 
 ---@description Save bans to file with formatting for readability
@@ -918,31 +439,49 @@ end
 ---@return boolean is_banned Whether the player is banned
 ---@return table|nil ban_data The ban data if banned
 function BanManager.check_ban(identifiers)
+    if config_manager.is_debug_mode_enabled() then
+        logger.debug("Checking ban status for identifiers: " .. json.encode(identifiers))
+        logger.debug("Current ban list has " .. #BanManager.bans .. " entries")
+    end
+    
     for _, ban in ipairs(BanManager.bans) do
         if ban.expires and ban.expires > 0 and os.time() > ban.expires then
             goto continue
         end
         
+        if not ban.identifiers then
+            goto continue
+        end
+        
         for id_type, id_value in pairs(identifiers) do
-            if id_type ~= "tokens" and type(id_value) == "string" and ban.identifiers and ban.identifiers[id_type] then
+            if id_type ~= "tokens" and type(id_value) == "string" and ban.identifiers[id_type] then
                 if ban.identifiers[id_type] == id_value then
+                    if config_manager.is_debug_mode_enabled() then
+                        logger.debug("Ban match found on " .. id_type .. ": " .. id_value)
+                    end
                     return true, ban
                 end
             end
         end
         
-        if identifiers.license and ban.identifiers and ban.identifiers.license then
+        if identifiers.license and ban.identifiers.license then
             local clean_id1 = identifiers.license:gsub("license:", "")
             local clean_id2 = ban.identifiers.license:gsub("license:", "")
             if clean_id1 == clean_id2 then
+                if config_manager.is_debug_mode_enabled() then
+                    logger.debug("Ban match found on license (cleaned): " .. clean_id1)
+                end
                 return true, ban
             end
         end
         
-        if identifiers.tokens and ban.identifiers and ban.identifiers.tokens then
+        if identifiers.tokens and ban.identifiers.tokens then
             for _, token in ipairs(identifiers.tokens) do
                 for _, ban_token in ipairs(ban.identifiers.tokens) do
                     if token == ban_token then
+                        if config_manager.is_debug_mode_enabled() then
+                            logger.debug("Ban match found on token: " .. token)
+                        end
                         return true, ban
                     end
                 end
@@ -1023,10 +562,10 @@ function BanManager.ban_player(player_id, reason, details)
     
     if details then
         if type(details) == "table" then
-            details.detection = details.detection or reason
-            
-            if details.time and tonumber(details.time) then
-                expires = os.time() + (tonumber(details.time) * 60)
+        details.detection = details.detection or reason
+        
+        if details.time and tonumber(details.time) then
+            expires = os.time() + (tonumber(details.time) * 60)
             end
         else
             local detection_reason = details
@@ -1042,7 +581,6 @@ function BanManager.ban_player(player_id, reason, details)
     end
     
     local player_name = GetPlayerName(player_id) or "Unknown"
-    print(player_name)
     local ban_data = {
         id = tostring(BanManager.next_ban_id),
         player_name = player_name,
@@ -1060,155 +598,26 @@ function BanManager.ban_player(player_id, reason, details)
     
     BanManager.save_bans()
     
-    logger.info("Banned player " .. player_name .. " (ID: " .. player_id .. ") for: " .. reason)
-    logger.info("Ban ID: " .. ban_data.id)
-    logger.info("Ban type: " .. (expires > 0 and "Temporary (" .. BanManager.format_time_remaining(expires - os.time()) .. ")" or "Permanent"))
+    print("Banned player " .. player_name .. " (ID: " .. player_id .. ") for: " .. reason)
+    print("Ban ID: " .. ban_data.id)
+    print("Ban type: " .. (expires > 0 and "Temporary (" .. BanManager.format_time_remaining(expires - os.time()) .. ")" or "Permanent"))
     
     discord_logger.log_ban(player_id, reason, ban_data, details and details.screenshot)
     
     TriggerEvent("playerBanned", player_id, ban_reason, admin)
-    
-    local ban_type = "Permanent"
-    local expires_value = "Never"
-    local time_remaining = ""
-    
-    if expires > 0 then
-        ban_type = "Temporary"
-        expires_value = os.date("%Y-%m-%d %H:%M:%S", expires)
-        time_remaining = BanManager.format_time_remaining(expires - os.time())
-    end
     
     local discord_link = SecureServe.AppealURL or "Contact server administration"
     if not discord_link:find("http") then
         discord_link = "https://discord.gg/" .. discord_link:gsub("discord.gg/", "")
     end
     
-    local card = [[
-        {
-            "type": "AdaptiveCard",
-            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-            "version": "1.3",
-            "backgroundImage": {
-                "url": "https://www.transparenttextures.com/patterns/black-linen.png"
-            },
-            "body": [
-                {
-                    "type": "Container",
-                    "style": "emphasis",
-                    "bleed": true,
-                    "items": [
-                        {
-                            "type": "Image",
-                            "url": "https://img.icons8.com/color/452/error.png",
-                            "horizontalAlignment": "Center",
-                            "size": "Large",
-                            "spacing": "Large"
-                        },
-                        {
-                            "type": "TextBlock",
-                            "text": "Access Denied",
-                            "wrap": true,
-                            "horizontalAlignment": "Center",
-                            "size": "ExtraLarge",
-                            "weight": "Bolder",
-                            "color": "Attention",
-                            "spacing": "Medium"
-                        },
-                        {
-                            "type": "TextBlock",
-                            "text": "You are banned from this server.",
-                            "wrap": true,
-                            "horizontalAlignment": "Center",
-                            "size": "Large",
-                            "weight": "Bolder",
-                            "color": "Attention",
-                            "spacing": "Small"
-                        },
-                        {
-                            "type": "TextBlock",
-                            "text": "If you think this was a mistake or you want to appeal your ban, please join the support Discord below.",
-                            "wrap": true,
-                            "horizontalAlignment": "Center",
-                            "size": "Medium",
-                            "spacing": "Medium"
-                        }
-                    ]
-                }
-            ],
-            "actions": [
-                {
-                    "type": "Action.ShowCard",
-                    "title": "Ban Details",
-                    "card": {
-                        "type": "AdaptiveCard",
-                        "body": [
-                            {
-                                "type": "FactSet",
-                                "facts": [
-                                    {
-                                        "title": "Ban ID:",
-                                        "value": "%s"
-                                    },
-                                    {
-                                        "title": "Ban Type:",
-                                        "value": "%s"
-                                    },
-                                    {
-                                        "title": "Issued On:",
-                                        "value": "%s"
-                                    },
-                                    {
-                                        "title": "Expires:",
-                                        "value": "%s"
-                                    },
-                                    {
-                                        "title": "Admin:",
-                                        "value": "%s"
-                                    }
-                                ]
-                            }
-                        ],
-                        "actions": [
-                            {
-                                "type": "Action.OpenUrl",
-                                "title": "Join Discord",
-                                "url": "%s",
-                                "style": "positive",
-                                "iconUrl": "https://img.icons8.com/ios-filled/452/discord-logo.png"
-                            }
-                        ]
-                    }
-                }
-            ]
-        }
-    ]]
-    
-    local formatted_card = string.format(
-        card,
-        ban_data.id,
-        ban_data.reason or "Violating server rules",
-        ban_type,
-        os.date("%Y-%m-%d %H:%M:%S", ban_data.timestamp or os.time()),
-        (ban_data.expires and ban_data.expires > 0 and expires_value and time_remaining) and (expires_value .. " (" .. time_remaining .. ")") or "Never",
-        ban_data.admin or "System",
-        discord_link
-    )
-    
     Citizen.CreateThread(function()
-        TriggerClientEvent("SecureServe:ShowBanCard", player_id, formatted_card)
-        Wait(500)
-        
         TriggerClientEvent("SecureServe:ForceSocialClubUpdate", player_id)
         Wait(500)
         
         TriggerClientEvent("SecureServe:ForceUpdate", player_id)
         Wait(500)
-        
-        TriggerClientEvent("SecureServe:ShowPermaBanCard", player_id, formatted_card)
-        Wait(1000)
-        
-        DropPlayer(player_id, "You have been banned from this server.\nBan ID: " .. ban_data.id)
-        
+                
         BanManager.active_connections[tostring(player_id)] = nil
     end)
     
@@ -1373,6 +782,30 @@ function BanManager.get_ban_data(player_id)
     end
     
     return nil
+end
+
+---@description Remove expired bans from the ban list
+function BanManager.clean_expired_bans()
+    local current_time = os.time()
+    local original_count = #BanManager.bans
+    local new_bans = {}
+    local removed = 0
+    
+    for _, ban in ipairs(BanManager.bans) do
+        if ban.expires and ban.expires > 0 and current_time > ban.expires then
+            removed = removed + 1
+        else
+            table.insert(new_bans, ban)
+        end
+    end
+    
+    if removed > 0 then
+        logger.info("Removed " .. removed .. " expired bans from ban list")
+        BanManager.bans = new_bans
+        BanManager.save_bans() 
+    end
+    
+    return removed
 end
 
 return BanManager 

@@ -5,11 +5,12 @@ local ConfigLoader = {
 }
 
 local Utils = require("shared/lib/utils")
+local ClientLogger = require("client/core/client_logger")
 local protection_count = {}
 
 ---@description Initialize the client-side config loader
 function ConfigLoader.initialize()
-    print("^5[LOADING] ^3Client Config^7")
+    ClientLogger.info("^5[LOADING] ^3Client Config^7")
     
     TriggerServerEvent("requestConfig")
     
@@ -17,7 +18,7 @@ function ConfigLoader.initialize()
         ConfigLoader.config = serverConfig
         ConfigLoader.loaded = true
         ConfigLoader.process_config(serverConfig)
-        print("^5[SUCCESS] ^3Client Config^7 received from server")
+        ClientLogger.info("^5[SUCCESS] ^3Client Config^7 received from server")
     end)
     
     local attempts = 0
@@ -26,7 +27,6 @@ function ConfigLoader.initialize()
     while not ConfigLoader.loaded do
         Wait(1000)
         attempts = attempts + 1
-        
         if not ConfigLoader.loaded then
             TriggerServerEvent("requestConfig")
         end
@@ -75,6 +75,7 @@ end
 
 ---@param config table The received config from server
 function ConfigLoader.process_config(config)
+    
     if not config then return end
     _G.SecureServe = config
     
@@ -397,12 +398,11 @@ end
 ---@param player number The player ID to check
 ---@return boolean is_whitelisted Whether the player is whitelisted
 function ConfigLoader.is_whitelisted(player_id)
-    if not ConfigLoader.loaded or not ConfigLoader.config then
+    if not SecureServe then
         return false
     end
-    
-    if ConfigLoader.config.Whitelisted then
-        for _, id in ipairs(ConfigLoader.config.Whitelisted) do
+    if SecureServe.Whitelisted then
+        for _, id in ipairs(SecureServe.Whitelisted) do
             if tonumber(id) == tonumber(player_id) then
                 return true
             end
@@ -439,6 +439,7 @@ end
 ---@param model_hash string|number The model hash to check
 ---@return boolean is_blacklisted Whether the model is blacklisted
 function ConfigLoader.is_model_blacklisted(model_hash)
+
     if not ConfigLoader.loaded or not ConfigLoader.config then
         return false
     end

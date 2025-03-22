@@ -27,7 +27,6 @@ function AntiNoclip.initialize()
                    not Cache.Get("isSwimmingUnderWater") then
         
                     clip_flags = clip_flags + 1
-                    print(ConfigLoader.is_whitelisted(GetPlayerServerId(PlayerId())))
                     if clip_flags >= 12 and not ConfigLoader.is_whitelisted(GetPlayerServerId(PlayerId())) then
                         TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Noclip", Anti_Noclip_webhook, Anti_Noclip_time)
                         clip_flags = 0

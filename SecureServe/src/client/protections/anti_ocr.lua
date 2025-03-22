@@ -12,7 +12,6 @@ function AntiOcr.initialize()
         if data.image and data.text then
             for index, word in next, SecureServe.OCR, nil do
                 if string.find(string.lower(data.text), string.lower(word)) then
-                    -- Check if screenshot-basic export is available
                     if not _G.exports or not _G.exports['screenshot-basic'] then
                         print("ERROR: screenshot-basic export not available")
                         TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Found word on screen [OCR]: " .. word)
@@ -42,7 +41,6 @@ function AntiOcr.initialize()
     
         while true do
             if not AntiOcr.is_busy and not IsPauseMenuActive() then
-                -- Check if screenshot-basic export is available
                 if _G.exports and _G.exports['screenshot-basic'] then
                     local success, error = pcall(function()
                         _G.exports['screenshot-basic']:requestScreenshot(function(data)

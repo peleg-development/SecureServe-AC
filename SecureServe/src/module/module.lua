@@ -7,7 +7,6 @@ local encryption_key = ""
 ---@return string The encryption key from secureserve.key file
 local function getEncryptionKey()
     local keyFile = LoadResourceFile("SecureServe", "secureserve.key")
-    print(keyFile)
     if not keyFile or keyFile == "" then
         print("^3[WARNING] Failed to load SecureServe encryption key. Using temporary key.^7")
         return "temp_key_" .. GetCurrentResourceName()
@@ -122,8 +121,6 @@ if IsDuplicityVersion() then
                     local src = source
                     
                     if GetPlayerPing(src) > 0  then
-                        print(event_name, enc_event_name, GetCurrentResourceName(), src)
-
                         local resourceName = GetCurrentResourceName()
                         local banMessage = ("Tried triggering a restricted event: %s in resource: %s."):format(event_name, resourceName)
                         exports["SecureServe"]:module_punish(src, banMessage)

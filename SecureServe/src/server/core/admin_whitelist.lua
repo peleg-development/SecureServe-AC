@@ -167,6 +167,7 @@ function AdminWhitelist.getQBCoreAdmin(source)
         
         local Player = QBCore.Functions.GetPlayer(source)
         if not Player then return false end
+       
         if QBCore.Functions.HasPermission then
                 return QBCore.Functions.HasPermission(source, "admin") or
                        QBCore.Functions.HasPermission(source, "god") or
@@ -432,7 +433,6 @@ function AdminWhitelist.isAdmin(source)
         return false
     end
 
-    -- Check if player is still connected
     if not GetPlayerName(source) then
         cachedAdmins[source] = nil
         return false
@@ -550,9 +550,10 @@ AddEventHandler("playerDropped", function()
 end)
 
 RegisterNetEvent("SecureServe:CheckWhitelist", function()
-    local source = source
-    local isWhitelisted = AdminWhitelist.isWhitelisted(source)
-    TriggerClientEvent("SecureServe:WhitelistResponse", source, isWhitelisted)
+    local src = source
+    local isWhitelisted = AdminWhitelist.isWhitelisted(src)
+
+    TriggerClientEvent("SecureServe:WhitelistResponse", src, isWhitelisted)
 end)
 
 return AdminWhitelist 

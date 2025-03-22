@@ -22,7 +22,5 @@ RegisterNetEvent("SecureServe:ShowBanCard", function(cardData)
 end)
 
 RegisterNetEvent("SecureServe:ShowPermaBanCard", function(cardData)
-    
     ForceSocialClubUpdate()
-    
 end) 

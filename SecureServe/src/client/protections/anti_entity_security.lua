@@ -1,40 +1,14 @@
 local ProtectionManager = require("client/protections/protection_manager")
 local Utils = require("shared/lib/utils")
+local Cache = require("client/core/cache")
 
 ---@class AntiEntitySecurityModule
 local AntiEntitySecurity = {}
 
----@description Safely get the entity script
----@param entity number Entity handle
----@return string|nil script Name of the script that created the entity
-local function safe_get_entity_script(entity)
-    local success, result = pcall(GetEntityScript, entity)
-    
-    if not success then
-        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Created Suspicious Entity [Vehicle] with no script", webhook, time)
-        return nil
-    end
-    
-    if result then
-        return result
-    else
-        return nil
-    end
-end
-
----@description Delete all objects in the world
-local function delete_all_objects()
-    for object in Utils.enumerate_objects() do
-        DeleteObject(object)
-    end
-end
-
 ---@description Initialize Entity Security protection
 function AntiEntitySecurity.initialize()
 
-    -- local entity_spawned = {}
-    -- local entity_spawned_hashes = {}
-    -- local whitelisted_resources = {}
+    local whitelisted_resources = {}
 
     for _, entry in ipairs(SecureServe.Module.Entity.SecurityWhitelist) do
         whitelisted_resources[entry.resource] = entry.whitelist
@@ -46,12 +20,8 @@ function AntiEntitySecurity.initialize()
         
         local isWhitelisted = false
         if whitelisted_resources[entityScript] then
-            for _, hash in pairs(whitelisted_resources[entityScript]) do
-                if hash == modelHash then
-                    isWhitelisted = true
-                    break
-                end
-            end
+            print(entityScript, whitelisted_resources[entityScript])
+            return 
         end
         
         if not isWhitelisted then
@@ -110,9 +80,7 @@ function AntiEntitySecurity.initialize()
                         DeleteEntity(entity)
                     end
                 end
-                
-                TriggerServerEvent('clearall')
-                
+                                
                 local detectionMessage = string.format("Created blacklisted %s (hash: %s) from unauthorized resource: %s", 
                     entityType, modelHash, entityScript)
                 TriggerServerEvent("SecureServe:Server:Methods:ModulePunish", nil, detectionMessage, "entity_security", 0)

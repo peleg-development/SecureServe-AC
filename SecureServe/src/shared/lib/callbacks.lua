@@ -80,7 +80,6 @@ local function ensure(obj, typeof, opt_typeof, errMessage)
     end
 end
 
--- Server-side callbacks
 if IS_SERVER then
     ---@param args {eventName: string, eventCallback: function} Register a server callback
     ---@return any eventData The event data reference

@@ -2,7 +2,7 @@
 local AntiCreateEntity = {
     entityRegistry = {},
     allowedHashes = {},
-    resourceWhitelist = {} -- Table to store whitelisted resources
+    resourceWhitelist = {} 
 }
 
 local config_manager = require("server/core/config_manager")
@@ -21,17 +21,14 @@ function AntiCreateEntity.allowHash(hash)
     AntiCreateEntity.allowedHashes[hash] = true
 end
 
--- Function to check if a resource is whitelisted for a specific model hash
 ---@param resourceName string Name of the resource
 ---@param modelHash number Hash of the model
 ---@return boolean isWhitelisted Whether the resource is whitelisted for the model
 function AntiCreateEntity.isResourceWhitelisted(resourceName, modelHash)
-    -- Always allow SecureServe's own resources
     if resourceName == GetCurrentResourceName() then
         return true
     end
     
-    -- Check specific resource whitelist
     if AntiCreateEntity.resourceWhitelist[resourceName] then
         for _, hash in pairs(AntiCreateEntity.resourceWhitelist[resourceName]) do
             if hash == modelHash then
@@ -40,7 +37,6 @@ function AntiCreateEntity.isResourceWhitelisted(resourceName, modelHash)
         end
     end
     
-    -- If model hash is globally allowed, permit it
     if AntiCreateEntity.isHashAllowed(modelHash) then
         return true
     end
@@ -56,25 +52,21 @@ function AntiCreateEntity.initialize()
         logger.info("Loaded " .. #SecureServe.Module.Entity.SecurityWhitelist .. " whitelisted resources for entity security")
     end
 
-    -- Handle client-side punishment requests
     RegisterNetEvent("SecureServe:Server:Methods:ModulePunish", function(screenshot, reason, webhook, time)
         local src = source
         if not src or src <= 0 then return end
         
-        -- Log the detection
         logger.warn(string.format("[SecureServe] Entity Security: Player %s (%s) %s", 
             GetPlayerName(src) or "Unknown", 
             GetPlayerIdentifier(src, 0) or "Unknown", 
             reason))
         
-        -- Create details for ban
         local details = {
             detection = reason,
             time = time or 0,
             screenshot = screenshot
         }
         
-        -- Take screenshot before banning (if enabled and not already provided)
         if not screenshot and SecureServe.Module.Entity.TakeScreenshot then
             exports['screenshot-basic']:requestClientScreenshot(src, {
                 fileName = 'entity_' .. src .. '_' .. os.time() .. '.jpg'
@@ -83,11 +75,9 @@ function AntiCreateEntity.initialize()
                 ban_manager.ban_player(src, "Unauthorized entity creation", details)
             end)
         else
-            -- Ban immediately
             ban_manager.ban_player(src, "Unauthorized entity creation", details)
         end
         
-        -- Delete all entities from this player as an extra precaution
         if AntiCreateEntity.entityRegistry[src] then
             for entityId, _ in pairs(AntiCreateEntity.entityRegistry[src]) do
                 if type(entityId) == "number" and DoesEntityExist(entityId) then
@@ -97,7 +87,6 @@ function AntiCreateEntity.initialize()
         end
     end)
 
-    -- Clear all entities event (called from client)
     RegisterNetEvent("clearall", function()
         local src = source
         if not src or src <= 0 then return end
@@ -148,20 +137,15 @@ function AntiCreateEntity.initialize()
                 return
             end
             
-            -- Logger was showing too much info - only log if debug is enabled
             if config_manager.is_debug_mode_enabled() then
                 logger.info(json.encode(AntiCreateEntity.entityRegistry[owner]))
             end
             
-            -- Check if this entity was registered legitimately
             if AntiCreateEntity.entityRegistry[owner] and (AntiCreateEntity.entityRegistry[owner][entity] or AntiCreateEntity.entityRegistry[owner][modelHash]) then 
                 return
             elseif owner and modelHash then
-                -- Let the client verify the resource that created this entity
-                -- This provides additional verification beyond what we can do server-side
                 TriggerClientEvent("SecureServe:CheckEntityResource", owner, NetworkGetNetworkIdFromEntity(entity), modelHash)
                 
-                -- Delete the entity immediately as a precaution
                 if DoesEntityExist(entity) then
                     DeleteEntity(entity)
                 end
