@@ -37,35 +37,6 @@ function ClientInit.initialize()
     EntityMonitor.initialize()
     logger.info("Entity Monitor initialized")
     
-    RegisterNetEvent("checkalive", function()
-        TriggerServerEvent("addalive")
-    end)
-    
-    RegisterNetEvent("SecureServe:ShowBanCard", function(card)
-        local hw = GetDuiHandle(CreateDui("https://i.imgur.com/SIDaGgG.png", 1, 1))
-        
-        -- Display the card for 3 seconds before disconnect
-        Citizen.CreateThread(function()
-            local scaleform = RequestScaleformMovie("mp_big_message_freemode")
-            
-            while not HasScaleformMovieLoaded(scaleform) do
-                Citizen.Wait(0)
-            end
-            
-            BeginScaleformMovieMethod(scaleform, "SHOW_SHARD_WASTED_MP_MESSAGE")
-            PushScaleformMovieMethodParameterString("~r~ACCESS DENIED")
-            PushScaleformMovieMethodParameterString("You have been banned from this server")
-            EndScaleformMovieMethod()
-            
-            local startTime = GetGameTimer()
-            local displayTime = 3000
-            
-            while (GetGameTimer() - startTime) < displayTime do
-                DrawScaleformMovieFullscreen(scaleform, 255, 255, 255, 255, 0)
-                Citizen.Wait(0)
-            end
-        end)
-    end)
     
     RegisterNetEvent("SecureServe:UpdateDebugMode", function(enabled)
         local logger = require("client/core/client_logger")

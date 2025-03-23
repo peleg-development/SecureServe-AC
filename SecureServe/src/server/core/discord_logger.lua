@@ -63,7 +63,7 @@ function DiscordLogger.initialize(config)
     end
     
     if not validWebhooks then
-        logger.warning("No valid Discord webhooks configured, logging will be disabled")
+        logger.error("No valid Discord webhooks configured, logging will be disabled")
         DiscordLogger.enabled = false
     end
     

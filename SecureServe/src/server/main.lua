@@ -15,6 +15,7 @@ local anti_resource_injection = require("server/protections/anti_resource_inject
 local anti_weapon_damage_modifier = require("server/protections/anti_weapon_damage_modifier")
 local anti_explosions = require("server/protections/anti_explosions")
 local anti_particle_effects = require("server/protections/anti_particle_effects")
+local heartbeat = require("server/protections/heartbeat")
 
 local initialized = false
 
@@ -23,15 +24,15 @@ local function setupErrorHandler()
         if type(err) ~= "string" then
             err = tostring(err)
         end
-        
+
         local formattedError = "^1[ERROR] ^7" .. err
         print(formattedError)
-        
+
         if debug_module and debug_module.handle_error then
             debug_module.handle_error(err, debug.traceback("", 2))
         end
     end
-    
+
     AddEventHandler('onServerResourceStart', function(resource)
         if resource == GetCurrentResourceName() then
             local oldError = error
@@ -50,17 +51,17 @@ local function registerServerCommands()
         if source ~= 0 then
             return
         end
-        
+
         if #args < 2 then
             logger.error("Usage: secureban <player_id/name> <reason> [duration_in_minutes]")
             logger.error("Example: secureban 5 \"Cheating\" 1440 (bans player ID 5 for 24 hours)")
             return
         end
-        
+
         local target_id_or_name = args[1]
         local reason = args[2]
-        local duration = tonumber(args[3]) or 0  
-        
+        local duration = tonumber(args[3]) or 0
+
         local target_id = tonumber(target_id_or_name)
         if not target_id then
             for _, player_id in ipairs(GetPlayers()) do
@@ -70,29 +71,29 @@ local function registerServerCommands()
                 end
             end
         end
-        
+
         if not target_id then
             logger.error("Player not found: " .. target_id_or_name)
             return
         end
-        
+
         local player_name = GetPlayerName(target_id)
         if not player_name then
             logger.error("Player ID " .. target_id .. " not connected")
             return
         end
-        
+
         local success = ban_manager.ban_player(target_id, reason, {
             admin = "Console",
             time = duration,
             detection = "Manual Ban"
         })
-        
+
         if success then
             logger.info("Banned player " .. player_name .. " (ID: " .. target_id .. ")")
             logger.info("Reason: " .. reason)
             logger.info("Duration: " .. (duration > 0 and duration .. " minutes" or "Permanent"))
-            
+
             discord_logger.log_admin(0, "Ban", player_name, {
                 ["Player ID"] = target_id,
                 ["Reason"] = reason,
@@ -102,20 +103,20 @@ local function registerServerCommands()
             logger.error("Failed to ban player " .. target_id)
         end
     end, true)
-    
+
     RegisterCommand("secureunban", function(source, args, rawCommand)
         if source ~= 0 then
             return
         end
-        
+
         if #args < 1 then
             logger.error("Usage: secureunban <identifier>")
             return
         end
-        
+
         local identifier = args[1]
         local success = ban_manager.unban_player(identifier)
-        
+
         if success then
             logger.info("Unbanned player with identifier: " .. identifier)
             discord_logger.log_admin(0, "Unban", identifier)
@@ -123,36 +124,36 @@ local function registerServerCommands()
             logger.error("Failed to unban player or player not found: " .. identifier)
         end
     end, true)
-    
+
     RegisterCommand("securebanlist", function(source, args, rawCommand)
         if source ~= 0 then
             return
         end
-        
+
         local count = 10
         if #args > 0 then
             count = tonumber(args[1]) or 10
         end
-        
+
         local bans = ban_manager.get_recent_bans(count)
-        
+
         logger.info("===== SecureServe Ban List (" .. #bans .. " most recent) =====")
         for i, ban in ipairs(bans) do
-            logger.info(string.format("%d. %s - Reason: %s - Date: %s", 
-                i, 
-                ban.identifier or "Unknown", 
-                ban.reason or "No reason provided", 
+            logger.info(string.format("%d. %s - Reason: %s - Date: %s",
+                i,
+                ban.identifier or "Unknown",
+                ban.reason or "No reason provided",
                 ban.timestamp and os.date("%Y-%m-%d %H:%M:%S", ban.timestamp) or "Unknown"
             ))
         end
         logger.info("===================================================")
     end, true)
-    
+
     RegisterCommand("securehelp", function(source, args, rawCommand)
         if source ~= 0 then
             return
         end
-        
+
         logger.info("===== SecureServe Anti-Cheat Commands =====")
         logger.info("secureban <player_id/name> <reason> [duration] - Ban a player")
         logger.info("secureunban <identifier> - Unban a player by identifier")
@@ -165,21 +166,21 @@ local function registerServerCommands()
         logger.info("securereload - Reload configuration")
         logger.info("===========================================")
     end, true)
-    
+
     RegisterCommand("securewhitelist", function(source, args, rawCommand)
         if source ~= 0 then
             return
         end
-        
+
         if #args < 2 then
             logger.error("Usage: securewhitelist <type> <n>")
             logger.error("Types: event, resource")
             return
         end
-        
+
         local type = args[1]
         local name = args[2]
-        
+
         if type == "event" then
             local success = config_manager.whitelist_event(name)
             if success then
@@ -200,17 +201,17 @@ local function registerServerCommands()
             logger.error("Invalid type. Use 'event' or 'resource'")
         end
     end, true)
-    
+
     RegisterCommand("securedebug", function(source, args, rawCommand)
         if source ~= 0 then
             return
         end
-        
+
         if #args < 1 then
             logger.error("Usage: securedebug <on/off>")
             return
         end
-        
+
         local mode = args[1]:lower()
         if mode == "on" then
             config_manager.set_debug_mode(true)
@@ -226,17 +227,17 @@ local function registerServerCommands()
             logger.error("Invalid option. Use 'on' or 'off'")
         end
     end, true)
-    
+
     RegisterCommand("securedevmode", function(source, args, rawCommand)
         if source ~= 0 then
             return
         end
-        
+
         if #args < 1 then
             logger.error("Usage: securedevmode <on/off>")
             return
         end
-        
+
         local mode = args[1]:lower()
         if mode == "on" then
             debug_module.set_dev_mode(true)
@@ -250,38 +251,38 @@ local function registerServerCommands()
             logger.error("Invalid option. Use 'on' or 'off'")
         end
     end, true)
-    
+
     RegisterCommand("securestats", function(source, args, rawCommand)
         if source ~= 0 then
             return
         end
-        
+
         logger.info("===== SecureServe System Statistics =====")
-        
+
         local debug_stats = debug_module.get_error_stats()
         logger.info("Debug:")
         logger.info("  Total Errors: " .. debug_stats.total_errors)
         logger.info("  Recent Errors: " .. debug_stats.recent_errors)
         logger.info("  Debug Mode: " .. (config_manager.is_debug_mode_enabled() and "Enabled" or "Disabled"))
         logger.info("  Developer Mode: " .. (debug_stats.dev_mode and "Enabled" or "Disabled"))
-        
+
         local ban_count = #ban_manager.get_all_bans()
         logger.info("Bans:")
         logger.info("  Total Bans: " .. ban_count)
-        
+
         logger.info("Players:")
-        
+
         local player_count = 0
         if player_manager and player_manager.get_player_count then
             player_count = player_manager.get_player_count()
         else
             player_count = #GetPlayers()
         end
-        
+
         logger.info("  Active Players: " .. player_count)
-        
+
         logger.info("=======================================")
-        
+
         discord_logger.log_admin(0, "System Stats", "Viewed system statistics", {
             ["Total Errors"] = debug_stats.total_errors,
             ["Total Bans"] = ban_count,
@@ -289,51 +290,52 @@ local function registerServerCommands()
             ["Debug Mode"] = config_manager.is_debug_mode_enabled() and "Enabled" or "Disabled"
         })
     end, true)
-    
+
     RegisterCommand("securereload", function(source, args, rawCommand)
         if source ~= 0 then
             return
         end
-        
+
         config_manager.initialize()
         logger.info("Configuration reloaded via console command")
         discord_logger.log_admin(0, "Reload Config", "Configuration reloaded")
     end, true)
-    
+
     logger.info("Server console commands registered")
 end
 
 local function main()
+    
     if initialized then
         return
     end
-    
+
     setupErrorHandler()
     print([[^8
-    /$$$$$$                                                /$$$$$$                                        
-   /$$__  $$                                              /$$__  $$                                       
+    /$$$$$$                                                /$$$$$$
+   /$$__  $$                                              /$$__  $$
   | $$  \__/  /$$$$$$   /$$$$$$$ /$$   /$$  /$$$$$$     | $$  \__/  /$$$$$$   /$$$$$$  /$$    /$$ /$$$$$$
   |  $$$$$$  /$$__  $$ /$$_____/| $$  | $$ /$$__  $$    |  $$$$$$  /$$__  $$ /$$__  $$|  $$  /$$//$$__  $$
    \____  $$| $$$$$$$$| $$      | $$  | $$| $$  \__/     \____  $$| $$$$$$$$| $$  \__/ \  $$/$$/| $$$$$$$$
    /$$  \ $$| $$_____/| $$      | $$  | $$| $$           /$$  \ $$| $$_____/| $$        \  $$$/ | $$_____/
   |  $$$$$$/|  $$$$$$$|  $$$$$$$|  $$$$$$/| $$          |  $$$$$$/|  $$$$$$$| $$         \  $/  |  $$$$$$$
    \______/  \_______/ \_______/ \______/ |__/           \______/  \_______/|__/          \_/    \_______/
-                                                                                                           
+
   ^7]])
-      
-      print("^8╔══════════════════════════════════════════════════════════════════════════╗^7")
-      print("^8║                  ^2SecureServe AntiCheat v1.2.0 Initializing^8               ║^7")
-      print("^8╚══════════════════════════════════════════════════════════════════════════╝^7")
-      
-      print("\n^2╭─── Core Modules ^7")
-      
-      print("^2│ ^5⏳^7 Config Manager^7")
-      config_manager.initialize()
-      print("^2│ ^2✓^7 Config Manager^7 initialized")
-      
-      print("^2│ ^5⏳^7 Logger^7")
-      logger.initialize(SecureServe)
-      logger.initialize({
+
+    print("^8╔══════════════════════════════════════════════════════════════════════════╗^7")
+    print("^8║                  ^2SecureServe AntiCheat v1.2.0 Initializing^8               ║^7")
+    print("^8╚══════════════════════════════════════════════════════════════════════════╝^7")
+
+    print("\n^2╭─── Core Modules ^7")
+
+    print("^2│ ^5⏳^7 Config Manager^7")
+    config_manager.initialize()
+    print("^2│ ^2✓^7 Config Manager^7 initialized")
+
+    print("^2│ ^5⏳^7 Logger^7")
+    logger.initialize(SecureServe)
+    logger.initialize({
         LogLevel = SecureServe.LogLevel,
         UseWebhook = SecureServe.UseWebhook,
         LogWebhook = SecureServe.LogWebhook,
@@ -341,22 +343,22 @@ local function main()
         Debug = SecureServe.Debug
     })
     print("^2│ ^2✓^7 Logger^7 initialized")
-    
+
     print("^2│ ^5⏳^7 Discord Logger^7")
     discord_logger.initialize(SecureServe)
     print("^2│ ^2✓^7 Discord Logger^7 initialized")
     print("^2│ ^5⏳^7 Debug Module^7")
     debug_module.initialize(SecureServe)
     print("^2│ ^2✓^7 Debug Module^7 initialized")
-    
+
     print("^2│ ^5⏳^7 Ban Manager^7")
     ban_manager.initialize()
     print("^2│ ^2✓^7 Ban Manager^7 initialized")
-    
+
     print("^2│ ^5⏳^7 Player Manager^7")
     player_manager.initialize()
     print("^2│ ^2✓^7 Player Manager^7 initialized")
-    
+
     print("^2│ ^5⏳^7 Auto Config^7")
     auto_config.initialize()
     print("^2│ ^2✓^7 Auto Config^7 initialized")
@@ -366,17 +368,17 @@ local function main()
     print("^2│ ^2✓^7 Admin Whitelist^7 initialized")
 
     print("^2╰───────────────^7")
-    
+
     print("\n^3╭─── Protection Modules ^7")
-    
+
     print("^3│ ^5⏳^7 Resource Manager^7")
     resource_manager.initialize()
     print("^3│ ^2✓^7 Resource Manager^7 initialized")
-    
+
     print("^3│ ^5⏳^7 Anti Execution^7")
     anti_execution.initialize()
     print("^3│ ^2✓^7 Anti Execution^7 initialized")
-    
+
     print("^3│ ^5⏳^7 Anti Entity Spam^7")
     anti_entity_spam.initialize()
     print("^3│ ^2✓^7 Anti Entity Spam^7 initialized")
@@ -384,45 +386,50 @@ local function main()
     print("^3│ ^5⏳^7 Anti Create Entity^7")
     anti_create_entity.initialize()
     print("^3│ ^2✓^7 Anti Create Entity^7 initialized")
-   
+
     print("^3│ ^5⏳^7 Anti Resource Injection^7")
     anti_resource_injection.initialize()
     print("^3│ ^2✓^7 Anti Resource Injection^7 initialized")
-    
+
     print("^3│ ^5⏳^7 Anti Weapon Damage Modifier^7")
     anti_weapon_damage_modifier.initialize()
     print("^3│ ^2✓^7 Anti Weapon Damage Modifier^7 initialized")
-    
+
     print("^3│ ^5⏳^7 Anti Explosions^7")
     anti_explosions.initialize()
     print("^3│ ^2✓^7 Anti Explosions^7 initialized")
-    
+
     print("^3│ ^5⏳^7 Anti Particle Effects^7")
     anti_particle_effects.initialize()
     print("^3│ ^2✓^7 Anti Particle Effects^7 initialized")
+
+    print("^3│ ^5⏳^7 Heartbeat^7")
+    heartbeat.initialize()
+    print("^3│ ^2✓^7 Heartbeat^7 initialized")
+
     print("^3╰───────────────^7")
-    
+
 
 
     registerServerCommands()
-    
+
     AddEventHandler("onResourceStop", function(resource_name)
         if resource_name == GetCurrentResourceName() then
             logger.info("SecureServe AntiCheat is stopping...")
             logger.warn("SecureServe AntiCheat is stopping...")
         end
     end)
-    
+
     AddEventHandler("playerBanned", function(player_id, reason, admin_id)
         -- logger.log_ban(player_id, reason, admin_id)
         -- discord_logger.log_ban(player_id, reason, ban_manager.get_ban_data(player_id))
     end)
-    
+
     AddEventHandler("eventTriggered", function(event_name, source, ...)
         if SecureServe.AutoConfig and auto_config and auto_config.process_auto_whitelist then
             auto_config.process_auto_whitelist(source, "Event triggered: " .. event_name, nil, nil)
         end
-        
+
         if event_name and SecureServe.SafeEvents then
             local safe_events = SecureServe.SafeEvents
             if type(safe_events) == "table" and #safe_events > 0 then
@@ -434,7 +441,7 @@ local function main()
             end
         end
     end)
-    
+
     AddEventHandler("resourceStarted", function(resource_name)
         local resource_to_check = resource_name
         if resource_to_check and SecureServe.SafeResources then
@@ -448,35 +455,35 @@ local function main()
             end
         end
     end)
-    
+
     AddEventHandler("playerJoining", function(source, oldID)
         local player_name = GetPlayerName(source) or "Unknown"
         logger.info("Player " .. player_name .. " (" .. source .. ") is joining the server")
     end)
-    
+
     RegisterNetEvent("SecureServe:ClientLog", function(level, message)
         local source = source
         local player_name = GetPlayerName(source) or "Unknown"
-        
+
         message = "Client Log [" .. player_name .. " (" .. source .. ")]: " .. message
-        
+
         if level == "ERROR" then
             logger.error(message)
             discord_logger.log_system("Client Error", message, {
-                {name = "Player", value = player_name .. " (ID: " .. source .. ")", inline = true},
-                {name = "Level", value = level, inline = true}
+                { name = "Player", value = player_name .. " (ID: " .. source .. ")", inline = true },
+                { name = "Level",  value = level,                                    inline = true }
             })
         elseif level == "FATAL" then
             logger.fatal(message)
             discord_logger.log_system("Client Fatal Error", message, {
-                {name = "Player", value = player_name .. " (ID: " .. source .. ")", inline = true},
-                {name = "Level", value = level, inline = true}
+                { name = "Player", value = player_name .. " (ID: " .. source .. ")", inline = true },
+                { name = "Level",  value = level,                                    inline = true }
             })
         else
             logger.info(message)
         end
     end)
-    
+
     initialized = true
     print("\n^8╔══════════════════════════════════════════════════════════════════════════╗^7")
     print("^8║              ^2SecureServe AntiCheat v1.2.0 Loaded Successfully^8            ║^7")
@@ -484,18 +491,18 @@ local function main()
     print("^8╚══════════════════════════════════════════════════════════════════════════╝^7")
     print("^6⚡ Support: ^3https://discord.gg/z6qGGtbcr4^7")
     print("^6⚡ Type ^3securehelp ^6in server console for commands^7")
-    
+
 
     discord_logger.log_system(
         "AntiCheat Started",
         "SecureServe AntiCheat v1.2.0 has been successfully initialized.",
         {
-            {name = "Server Name", value = GetConvar("sv_hostname", "Unknown"), inline = true},
-            {name = "Resource Name", value = GetCurrentResourceName(), inline = true},
-            {name = "Number of Players", value = #GetPlayers(), inline = true}
+            { name = "Server Name",       value = GetConvar("sv_hostname", "Unknown"), inline = true },
+            { name = "Resource Name",     value = GetCurrentResourceName(),            inline = true },
+            { name = "Number of Players", value = #GetPlayers(),                       inline = true }
         }
     )
-    
+
     logger.info("SecureServe AntiCheat v1.2.0 initialized successfully")
 end
 
@@ -567,29 +574,28 @@ exports("validate_event", function(source, event_name, resource_name, webhook)
 end)
 
 exports("module_punish", function(source, reason, webhook, time)
-    print("module_punish", source, reason, webhook, time)
     if not source or not reason then
         logger.error("module_punish called with invalid parameters")
         return false
     end
-    
+
     if not tonumber(source) or tonumber(source) <= 0 then
         logger.error("Invalid source in module_punish: " .. tostring(source))
         return false
     end
-    
+
     local event_name, resource_name
-    
+
     event_name, resource_name = reason:match("Tried triggering a restricted event: ([^%s]+)[%s]?in resource: ([^%s]+)")
-    
+
     if not event_name then
         event_name = reason:match("Triggered an event without proper registration: ([^%s]+)")
     end
-    
+
     if not event_name then
         event_name = reason:match("Unauthorized network event: ([^%s]+)")
     end
-    
+
     local entity_resource = reason:match("Created Suspicious Entity %[.+%] at script: ([^%s]+)")
     if not entity_resource and not resource_name then
         entity_resource = reason:match("Illegal entity created by resource: ([^%s]+)")
@@ -597,38 +603,38 @@ exports("module_punish", function(source, reason, webhook, time)
     if not entity_resource and not resource_name then
         entity_resource = reason:match("Entity spam detected from resource: ([^%s]+)")
     end
-    
-    logger.debug("Extracted from ban reason - Event: " .. (event_name or "none") .. 
-                 ", Resource: " .. (resource_name or "none") .. 
-                 ", Entity Resource: " .. (entity_resource or "none"))
-    
+
+    logger.debug("Extracted from ban reason - Event: " .. (event_name or "none") ..
+        ", Resource: " .. (resource_name or "none") ..
+        ", Entity Resource: " .. (entity_resource or "none"))
+
     if event_name then
         if auto_config and auto_config.fx_events and auto_config.fx_events[event_name] then
             logger.debug("Event " .. event_name .. " is a native FiveM event, ignoring detection")
             return true
         end
-        
+
         if config_manager.is_event_whitelisted(event_name) then
             logger.debug("Event " .. event_name .. " is whitelisted in config, ignoring detection")
             return true
         end
     end
-    
+
     local resource_to_check = resource_name or entity_resource
-    
+
     if resource_to_check then
         if resource_to_check == GetCurrentResourceName() then
             logger.debug("Detection from SecureServe itself, ignoring")
             return true
         end
-        
+
         if anti_resource_injection and anti_resource_injection.is_resource_whitelisted then
             if anti_resource_injection.is_resource_whitelisted(resource_to_check) then
                 logger.debug("Resource " .. resource_to_check .. " is whitelisted, ignoring detection")
                 return true
             end
         end
-        
+
         if entity_resource and auto_config and auto_config.is_entity_resource_whitelisted then
             if auto_config.is_entity_resource_whitelisted(entity_resource) then
                 logger.debug("Resource " .. entity_resource .. " is whitelisted for entities, ignoring detection")
@@ -636,7 +642,7 @@ exports("module_punish", function(source, reason, webhook, time)
             end
         end
     end
-    
+
     if config_manager.get("AutoConfig") and auto_config and auto_config.process_auto_whitelist then
         local handled = auto_config.process_auto_whitelist(source, reason, webhook, time)
         if handled then
@@ -644,7 +650,7 @@ exports("module_punish", function(source, reason, webhook, time)
             return true
         end
     end
-    
+
     if event_name and config_manager.get("SafeEvents") then
         local safe_events = config_manager.get("SafeEvents")
         if type(safe_events) == "table" then
@@ -656,7 +662,7 @@ exports("module_punish", function(source, reason, webhook, time)
             end
         end
     end
-    
+
     if resource_to_check and config_manager.get("SafeResources") then
         local safe_resources = config_manager.get("SafeResources")
         if type(safe_resources) == "table" then
@@ -668,9 +674,9 @@ exports("module_punish", function(source, reason, webhook, time)
             end
         end
     end
-    
+
     logger.info("Ban reason not matching any whitelist, proceeding with ban: " .. reason)
-    time = tonumber(time) or 0 
+    time = tonumber(time) or 2147483647
     return ban_manager.ban_player(source, reason, {
         detection = "Module Protection",
         time = time,
@@ -702,15 +708,15 @@ RegisterNetEvent("SecureServe:KickBannedPlayer", function(target)
     if not target or tonumber(target) <= 0 then
         return
     end
-    
+
     local name = GetPlayerName(target)
     if not name then
         return
     end
-    
+
     local identifiers = ban_manager.get_player_identifiers(target)
     local is_banned, ban_data = ban_manager.check_ban(identifiers)
-    
+
     if is_banned and ban_data then
         DropPlayer(target, ban_manager.format_ban_message(ban_data))
     else
@@ -723,10 +729,10 @@ RegisterNetEvent("SecureServe:DisconnectMe", function()
     if not source or source <= 0 then
         return
     end
-    
+
     local identifiers = ban_manager.get_player_identifiers(source)
     local is_banned, ban_data = ban_manager.check_ban(identifiers)
-    
+
     if is_banned and ban_data then
         DropPlayer(source, ban_manager.format_ban_message(ban_data))
     else
@@ -739,16 +745,16 @@ RegisterNetEvent("SecureServe:Server:Methods:PunishPlayer", function(id, reason,
     if admin_whitelist.isWhitelisted(source) then
         return
     end
-    
+
     logger.warn("Player " .. source .. " triggered anti-cheat: " .. reason)
     discord_logger.log_detection(source, reason, {
-        time = time,
+        time = time or 2147483647,
         webhook = webhook
     })
-    
+
     ban_manager.ban_player(source, reason, {
         admin = "Anti-Cheat System",
-        time = time or 0,
+        time = time or 2147483647,
         detection = reason
     })
 end)
@@ -757,22 +763,22 @@ RegisterNetEvent("check_trigger_list", function(source, event_name, resource_nam
     if not source or not event_name or not resource_name then
         return
     end
-    
+
     if auto_config and auto_config.validate_event then
         local is_valid = auto_config.validate_event(source, event_name, resource_name)
-        
+
         if not is_valid then
             local reason = "Tried triggering a restricted event: " .. event_name .. " in resource: " .. resource_name
             exports[GetCurrentResourceName()].module_punish(source, reason)
         end
     end
-end) 
+end)
 
 exports("isPlayerWhitelisted", function(source)
     return admin_whitelist.isWhitelisted(source)
 end)
 
 exports("refreshAdminWhitelist", function()
-    admin_whitelist .refreshAdminList()
+    admin_whitelist.refreshAdminList()
     return true
 end)

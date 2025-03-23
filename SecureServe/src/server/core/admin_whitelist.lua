@@ -1,39 +1,101 @@
 ---@class AdminWhitelistModule
 local AdminWhitelist = {}
 
+--- huge thx to @zinvera for fixing the memory leak!
+
 local config_manager = require("server/core/config_manager")
 local logger = require("server/core/logger")
 
 local detectedFramework = nil
 local cachedAdmins = {}
 local pendingAdminChecks = {}
+local adminCheckCooldown = {}
 
 ---@description Initialize the admin whitelist module
 function AdminWhitelist.initialize()
-    logger.info("^3[INFO] ^7Initializing Admin Whitelist module")
+    logger.info("^3[INFO] ^7InitialiSecureg Admin Whitelist module")
+    
+    CreateThread(function()
+        while true do
+            collectgarbage("collect")
+            Wait(600000)
+        end
+    end)
     
     AdminWhitelist.detectFramework()
-    
     AdminWhitelist.setupAdminSync()
     
-    AddEventHandler("playerJoining", function(source, oldID)
+    if not _G.SecureServe then _G.SecureServe = {} end
+    if not _G.SecureServe.Whitelisted then _G.SecureServe.Whitelisted = {} end
+    
+    AddEventHandler("playerJoining", function(source)
         local src = tonumber(source)
-        pendingAdminChecks[source] = true
+        if src then
+            pendingAdminChecks[src] = true
+        end
     end)
     
     CreateThread(function()
         while true do
+            local processed = false
+            
             for src, _ in pairs(pendingAdminChecks) do
+                processed = true
                 pendingAdminChecks[src] = nil
-                
-                Wait(2000)
                 
                 if GetPlayerName(src) then 
                     AdminWhitelist.checkAndAddAdmin(src)
                 end
             end
 
-            Wait(15000) 
+            Wait(processed and 1000 or 5000)
+        end
+    end)
+    
+    local lastResponseTimes = {}
+    local maxRequestsPerMinute = 10
+    local requestCounts = {}
+    local cleanupTimer = 0
+    
+    RegisterNetEvent("SecureServe:CheckWhitelist", function()
+        local src = source
+        local currentTime = os.time()
+        
+        if currentTime - cleanupTimer >= 60 then
+            requestCounts = {}
+            cleanupTimer = currentTime
+        end
+        
+        requestCounts[src] = (requestCounts[src] or 0) + 1
+        
+        if requestCounts[src] > maxRequestsPerMinute then
+            return
+        end
+        
+        if lastResponseTimes[src] and (currentTime - lastResponseTimes[src]) < 2 then
+            return
+        end
+        
+        lastResponseTimes[src] = currentTime
+        
+        local isWhitelisted = AdminWhitelist.isWhitelisted(src)
+        TriggerClientEvent("SecureServe:WhitelistResponse", src, isWhitelisted)
+    end)
+    
+    AddEventHandler("playerDropped", function()
+        local src = source
+        cachedAdmins[src] = nil
+        adminCheckCooldown[src] = nil
+        lastResponseTimes[src] = nil
+        requestCounts[src] = nil
+        
+        if _G.SecureServe and _G.SecureServe.Whitelisted then
+            for i = #_G.SecureServe.Whitelisted, 1, -1 do
+                if tonumber(_G.SecureServe.Whitelisted[i]) == tonumber(src) then
+                    table.remove(_G.SecureServe.Whitelisted, i)
+                    break
+                end
+            end
         end
     end)
     
@@ -42,33 +104,24 @@ end
 
 ---@description Detect which framework is being used
 function AdminWhitelist.detectFramework()
-    if GetResourceState("es_extended") == "started" then
-        detectedFramework = "ESX"
-        logger.info("^3[INFO] ^7ESX framework detected")
-        return
-    end
+    local frameworks = {
+        { name = "ESX", resource = "es_extended" },
+        { name = "QBCore", resource = "qb-core" },
+        { name = "vRP", resource = "vrp" },
+        { name = "ox_core", resource = "ox_core" }
+    }
     
-    if GetResourceState("qb-core") == "started" then
-        detectedFramework = "QBCore"
-        logger.info("^3[INFO] ^7QBCore framework detected")
-        return
-    end
-    
-    if GetResourceState("vrp") == "started" then
-        detectedFramework = "vRP"
-        logger.info("^3[INFO] ^7vRP framework detected")
-        return
+    for _, fw in ipairs(frameworks) do
+        if GetResourceState(fw.resource) == "started" then
+            detectedFramework = fw.name
+            logger.info("^3[INFO] ^7" .. fw.name .. " framework detected")
+            return
+        end
     end
     
     if GetConvar("txAdmin-version", "none") ~= "none" then
         detectedFramework = "txAdmin"
         logger.info("^3[INFO] ^7txAdmin detected")
-        return
-    end
-    
-    if GetResourceState("ox_core") == "started" then
-        detectedFramework = "ox_core"
-        logger.info("^3[INFO] ^7ox_core framework detected")
         return
     end
     
@@ -79,12 +132,12 @@ end
 function AdminWhitelist.setupAdminSync()
     CreateThread(function()
         while true do
-            Wait(60000) 
+            Wait(300000) 
             AdminWhitelist.refreshAdminList()
         end
     end)
     
-    RegisterCommand("secureadmins", function(source, args)
+    RegisterCommand("Secureadmins", function(source)
         if source ~= 0 then 
             return
         end
@@ -98,8 +151,6 @@ end
 ---@param source number The player source
 ---@return boolean isAdmin Whether the player is an admin
 function AdminWhitelist.getESXAdmin(source)
-    local isAdmin = false
-    
     local status, result = pcall(function()
         if not _G.exports or not _G.exports["es_extended"] then
             return false
@@ -142,21 +193,13 @@ function AdminWhitelist.getESXAdmin(source)
         return false
     end)
     
-    if status then
-        isAdmin = result
-    else
-        logger.error("Error checking ESX admin status: " .. tostring(result))
-    end
-    
-    return isAdmin
+    return status and result or false
 end
 
 ---@description Get admin status from QBCore
 ---@param source number The player source
 ---@return boolean isAdmin Whether the player is an admin
 function AdminWhitelist.getQBCoreAdmin(source)
-    local isAdmin = false
-    
     local status, result = pcall(function()
         if not _G.exports or not _G.exports["qb-core"] then
             return false
@@ -169,11 +212,10 @@ function AdminWhitelist.getQBCoreAdmin(source)
         if not Player then return false end
        
         if QBCore.Functions.HasPermission then
-                return QBCore.Functions.HasPermission(source, "admin") or
-                       QBCore.Functions.HasPermission(source, "god") or
-                       QBCore.Functions.HasPermission(source, "mod")
+            return QBCore.Functions.HasPermission(source, "admin") or
+                   QBCore.Functions.HasPermission(source, "god") or
+                   QBCore.Functions.HasPermission(source, "mod")
         end
-  
         
         if Player.PlayerData.group then
             local adminGroups = {"admin", "superadmin", "god", "mod"}
@@ -191,21 +233,13 @@ function AdminWhitelist.getQBCoreAdmin(source)
         return false
     end)
     
-    if status then
-        isAdmin = result
-    else
-        logger.error("Error checking QBCore admin status: " .. tostring(result))
-    end
-    
-    return isAdmin
+    return status and result or false
 end
 
 ---@description Get admin status from vRP
 ---@param source number The player source
 ---@return boolean isAdmin Whether the player is an admin
 function AdminWhitelist.getVRPAdmin(source)
-    local isAdmin = false
-    
     local status, result = pcall(function()
         if not _G.exports or not _G.exports.vrp then
             if not vRP then
@@ -262,53 +296,25 @@ function AdminWhitelist.getVRPAdmin(source)
         return false
     end)
     
-    if status then
-        isAdmin = result
-    else
-        logger.error("Error checking vRP admin status: " .. tostring(result))
-    end
-    
-    return isAdmin
+    return status and result or false
 end
 
 ---@description Get admin status from txAdmin
 ---@param source number The player source
 ---@return boolean isAdmin Whether the player is an admin
 function AdminWhitelist.getTxAdminPerm(source)
-    local isAdmin = false
-    
     local status, result = pcall(function()
-        local identifiers = GetPlayerIdentifiers(source)
-        
-        for _, id in pairs(identifiers) do
-            if string.find(id, "license:") then
-                local license = string.gsub(id, "license:", "")
-                local adminPrincipal = "txAdmin.permissions"
-                
-                if IsPlayerAceAllowed(source, adminPrincipal) then
-                    return true
-                end
-            end
-        end
-        
-        return false
+        local adminPrincipal = "txAdmin.permissions"
+        return IsPlayerAceAllowed(source, adminPrincipal)
     end)
     
-    if status then
-        isAdmin = result
-    else
-        logger.error("Error checking txAdmin permissions: " .. tostring(result))
-    end
-    
-    return isAdmin
+    return status and result or false
 end
 
 ---@description Get admin status from ox_core
 ---@param source number The player source
 ---@return boolean isAdmin Whether the player is an admin
 function AdminWhitelist.getOxAdmin(source)
-    local isAdmin = false
-    
     local status, result = pcall(function()
         if not _G.exports or not _G.exports.ox_core then
             return false
@@ -395,13 +401,7 @@ function AdminWhitelist.getOxAdmin(source)
         return false
     end)
     
-    if status then
-        isAdmin = result
-    else
-        logger.error("Error checking ox_core admin status: " .. tostring(result))
-    end
-    
-    return isAdmin
+    return status and result or false
 end
 
 ---@description Check if player is an admin based on manual list
@@ -429,11 +429,7 @@ end
 ---@param source number The player source
 ---@return boolean isAdmin Whether the player is an admin
 function AdminWhitelist.isAdmin(source)
-    if not source or source <= 0 then
-        return false
-    end
-
-    if not GetPlayerName(source) then
+    if not source or source <= 0 or not GetPlayerName(source) then
         cachedAdmins[source] = nil
         return false
     end
@@ -469,11 +465,7 @@ end
 ---@param source number The player source
 ---@return boolean isWhitelisted Whether the player is whitelisted
 function AdminWhitelist.isWhitelisted(source)
-    if not source or source <= 0 then
-        return false
-    end
-
-    if not GetPlayerName(source) then
+    if not source or source <= 0 or not GetPlayerName(source) then
         return false
     end
 
@@ -482,8 +474,9 @@ function AdminWhitelist.isWhitelisted(source)
     end
     
     if _G.SecureServe and _G.SecureServe.Whitelisted then
+        local src = tonumber(source)
         for _, id in ipairs(_G.SecureServe.Whitelisted) do
-            if tonumber(id) == tonumber(source) then
+            if tonumber(id) == src then
                 return true
             end
         end
@@ -496,27 +489,17 @@ end
 ---@param source number The player source
 function AdminWhitelist.checkAndAddAdmin(source)
     local src = tonumber(source)
-    if not src or src <= 0 then
+    if not src or src <= 0 or not GetPlayerName(src) then
         return
     end
 
-    if not GetPlayerName(src) then
-        return
-    end
-
-    if not _G.SecureServe then
-        _G.SecureServe = {}
-    end
-    
-    if not _G.SecureServe.Whitelisted then
-        _G.SecureServe.Whitelisted = {}
-    end
+    if not _G.SecureServe then _G.SecureServe = {} end
+    if not _G.SecureServe.Whitelisted then _G.SecureServe.Whitelisted = {} end
     
     if AdminWhitelist.isAdmin(src) then
         local alreadyWhitelisted = false
-        
         for _, id in ipairs(_G.SecureServe.Whitelisted) do
-            if tonumber(id) == tonumber(src) then
+            if tonumber(id) == src then
                 alreadyWhitelisted = true
                 break
             end
@@ -534,26 +517,25 @@ end
 function AdminWhitelist.refreshAdminList()
     cachedAdmins = {}
     
-    for _, playerId in ipairs(GetPlayers()) do
-        local src = tonumber(playerId)
-        if src then
-            AdminWhitelist.checkAndAddAdmin(src)
-        end
-    end
+    local players = GetPlayers()
+    local batchSize = 5
     
-    logger.info("Admin whitelist refreshed")
+    CreateThread(function()
+        for i = 1, #players, batchSize do
+            local endIdx = math.min(i + batchSize - 1, #players)
+            
+            for j = i, endIdx do
+                local src = tonumber(players[j])
+                if src then
+                    AdminWhitelist.checkAndAddAdmin(src)
+                end
+            end
+            
+            Wait(100) 
+        end
+        
+        logger.info("Admin whitelist refresh completed")
+    end)
 end
 
-AddEventHandler("playerDropped", function()
-    local source = source
-    cachedAdmins[source] = nil
-end)
-
-RegisterNetEvent("SecureServe:CheckWhitelist", function()
-    local src = source
-    local isWhitelisted = AdminWhitelist.isWhitelisted(src)
-
-    TriggerClientEvent("SecureServe:WhitelistResponse", src, isWhitelisted)
-end)
-
-return AdminWhitelist 
+return AdminWhitelist

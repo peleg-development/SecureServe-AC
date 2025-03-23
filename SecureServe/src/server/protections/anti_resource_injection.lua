@@ -20,28 +20,6 @@ function AntiResourceInjection.initialize()
     end
     
     AntiResourceInjection.initial_resources_loaded = true
-    
-    AddEventHandler("onResourceStart", function(resource_name)
-        if AntiResourceInjection.initial_resources_loaded and not AntiResourceInjection.whitelisted_server_resources[resource_name] then
-            if config_manager.is_resource_injection_protection_enabled() then
-                for _, src in pairs(GetPlayers()) do
-                    ban_manager.ban_player(src, "Resource Injection", "New resource injected: " .. resource_name)
-                end
-                
-                StopResource(resource_name)
-            end
-        end
-    end)
-    
-    AddEventHandler("onResourceListRefresh", function()
-        if AntiResourceInjection.initial_resources_loaded then
-            if config_manager.is_resource_injection_protection_enabled() then
-                for _, src in pairs(GetPlayers()) do
-                    ban_manager.ban_player(src, "Resource Injection", "Resource list was refreshed")
-                end
-            end
-        end
-    end)
 end
 
 ---@param resource_name string The resource name to whitelist

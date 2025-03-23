@@ -16,7 +16,7 @@ local ClientLogger = {
         RESET = "^7"
     },
     level = 1,
-    max_history = 20,
+    max_history = 4,
     history = {},
     debug_enabled = false,
     cleanup_thread = nil,
@@ -149,7 +149,7 @@ function ClientLogger.add_to_history(level, message)
         return
     end
     
-    if #message > 200 then -- Further reduced message size
+    if #message > 200 then 
         message = string.sub(message, 1, 200) .. "..."
     end
     
@@ -169,7 +169,6 @@ function ClientLogger.add_to_history(level, message)
         local target_size = ClientLogger.max_history
         local history_copy = {}
         
-        -- Keep only the most recent logs
         for i = #ClientLogger.history - target_size + 1, #ClientLogger.history do
             if ClientLogger.history[i] then
                 table.insert(history_copy, ClientLogger.history[i])
@@ -186,7 +185,7 @@ end
 ---@param message string The message to log
 function ClientLogger.send_to_server(level, message)
     if level == "ERROR" or level == "FATAL" then
-        if #message > 500 then -- Reduced limit
+        if #message > 500 then 
             message = string.sub(message, 1, 500) .. "..."
         end
         TriggerServerEvent("SecureServe:ClientLog", level, message)

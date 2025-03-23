@@ -401,14 +401,7 @@ function ConfigLoader.is_whitelisted(player_id)
     if not SecureServe then
         return false
     end
-    if SecureServe.Whitelisted then
-        for _, id in ipairs(SecureServe.Whitelisted) do
-            if tonumber(id) == tonumber(player_id) then
-                return true
-            end
-        end
-    end
-    
+
     local promise = promise.new()
     
     TriggerServerEvent("SecureServe:CheckWhitelist")

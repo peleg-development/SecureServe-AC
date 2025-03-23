@@ -8,7 +8,7 @@ local ProtectionManager = {
     initialized = {},
     memory_check_thread = nil,
     last_gc_time = 0,
-    gc_interval = 45000 -- 45 seconds between GC runs
+    gc_interval = 45000 
 }
 
 ---@description Register a protection with the manager
@@ -37,9 +37,7 @@ function ProtectionManager.create_stub_module(module_name)
     return stub_module
 end
 
--- Start memory management thread to prevent memory buildup
 function ProtectionManager.start_memory_manager()
-    -- Terminate any existing thread
     if ProtectionManager.memory_check_thread then
         TerminateThread(ProtectionManager.memory_check_thread)
     end
@@ -47,15 +45,11 @@ function ProtectionManager.start_memory_manager()
     ProtectionManager.last_gc_time = GetGameTimer()
     
     ProtectionManager.memory_check_thread = Citizen.CreateThread(function()
-        -- Staggered memory checks instead of regular intervals
-        -- This helps prevent synchronized spikes with other systems
-        
         while true do
-            Citizen.Wait(15000) -- Initial wait
+            Citizen.Wait(15000) 
             
             local current_time = GetGameTimer()
             if (current_time - ProtectionManager.last_gc_time) < ProtectionManager.gc_interval then
-                -- Not time for GC yet, just check memory for reporting
                 if logger.debug_enabled then
                     local memory_usage = collectgarbage("count") -- Returns KB
                     logger.debug(string.format("Memory usage: %.2f KB", memory_usage))
@@ -63,13 +57,11 @@ function ProtectionManager.start_memory_manager()
                 goto continue
             end
             
-            -- Time for actual GC
-            collectgarbage("step", 200) -- Step-based GC reduces spikes
+            collectgarbage("step", 200)
             ProtectionManager.last_gc_time = current_time
             
-            Citizen.Wait(10000) -- Wait after GC
+            Citizen.Wait(10000)
             
-            -- Staggered interval to avoid sync with other systems
             local stagger = math.random(5000, 15000)
             Citizen.Wait(stagger)
             
@@ -78,14 +70,13 @@ function ProtectionManager.start_memory_manager()
     end)
 end
 
--- Group similar protections to avoid redundancy
 local function groupProtectionModules(modules)
     local groups = {
         entity = {}, -- Entity-related protections
         weapon = {}, -- Weapon-related protections
         movement = {}, -- Movement-related protections
         resource = {}, -- Resource-related protections
-        other = {}  -- Other protections
+        other = {}  
     }
     
     for _, name in ipairs(modules) do
@@ -109,9 +100,9 @@ end
 function ProtectionManager.initialize()
     logger.info("Loaded Cache system")
     
-    -- Start memory management
     ProtectionManager.start_memory_manager()
-    
+    ProtectionManager.initialize_heartbeat() 
+
     local protection_modules = {
         "anti_ocr",
         "anti_invisible",
@@ -139,10 +130,8 @@ function ProtectionManager.initialize()
         "anti_weapon_pickup"
     }
     
-    -- Group similar modules for batch loading
     local groups = groupProtectionModules(protection_modules)
     
-    -- Load modules by group to improve initialization
     for category, modules in pairs(groups) do
         logger.info("Loading " .. category .. " protection modules...")
         
@@ -163,18 +152,15 @@ function ProtectionManager.initialize()
                 ProtectionManager.create_stub_module(module_name)
             end
             
-            -- Small pause between each module load
             Citizen.Wait(25)
         end
         
-        -- Slightly longer pause between categories
         Citizen.Wait(100)
         collectgarbage("step", 50)
     end
     
     logger.info("Initializing protection modules...")
     
-    -- Initialize entity protections first (most important)
     for name, init_func in pairs(ProtectionManager.protections) do
         if name:match("entity") or name:match("invisible") then
             ProtectionManager.initialize_protection(name, init_func)
@@ -182,7 +168,6 @@ function ProtectionManager.initialize()
         end
     end
     
-    -- Then weapon protections
     for name, init_func in pairs(ProtectionManager.protections) do
         if name:match("weapon") or name:match("bullet") or name:match("damage") then
             ProtectionManager.initialize_protection(name, init_func)
@@ -190,7 +175,6 @@ function ProtectionManager.initialize()
         end
     end
     
-    -- Then movement protections
     for name, init_func in pairs(ProtectionManager.protections) do
         if name:match("noclip") or name:match("teleport") or name:match("speed") then
             ProtectionManager.initialize_protection(name, init_func)
@@ -198,7 +182,6 @@ function ProtectionManager.initialize()
         end
     end
     
-    -- Finally all the rest
     for name, init_func in pairs(ProtectionManager.protections) do
         if not ProtectionManager.initialized[name] then
             ProtectionManager.initialize_protection(name, init_func)
@@ -213,11 +196,9 @@ function ProtectionManager.initialize()
     
     logger.info("Initialized " .. initialized_count .. " out of " .. #protection_modules .. " protection modules")
     
-    -- Light garbage collection after all modules are initialized
     collectgarbage("step", 100)
 end
 
--- Helper function to initialize a protection with error handling
 function ProtectionManager.initialize_protection(name, init_func)
     if ProtectionManager.initialized[name] then return end
     
@@ -268,20 +249,20 @@ function ProtectionManager.take_screenshot(reason, id, webhook, time)
     end
 end
 
-function ProtectionManager.initialize_all()
+function ProtectionManager.initialize_heartbeat()
     local player_spawned = false
     
     AddEventHandler('playerSpawned', function()
         if player_spawned then return end
         player_spawned = true
         
-        Citizen.SetTimeout(1500, function() -- Slightly increased delay
+        Citizen.SetTimeout(1500, function()
             ProtectionManager.initialize()
         end)
         
         Citizen.CreateThread(function()
             while true do
-                Citizen.Wait(5000) -- Reduced frequency for entity proofs
+                Citizen.Wait(5000) 
                 local player_ped = PlayerPedId()
                 if DoesEntityExist(player_ped) then
                     SetEntityProofs(player_ped, false, false, true, false, false, false, false, false)
@@ -307,14 +288,12 @@ function ProtectionManager.initialize_all()
         end
     end)
     
-    -- Heartbeat event
     local heartbeat_token = Utils.random_key(math.random(15, 35))
     TriggerServerEvent('mMkHcvct3uIg04STT16I:cbnF2cR9ZTt8NmNx2jQS', heartbeat_token)
     
-    -- Reduced heartbeat frequency
     Citizen.CreateThread(function()
         while true do
-            Citizen.Wait(15 * 1000) -- Reduced frequency (15s instead of 10s)
+            Citizen.Wait(15 * 1000)
             heartbeat_token = Utils.random_key(math.random(15, 35))
             TriggerServerEvent('mMkHcvct3uIg04STT16I:cbnF2cR9ZTt8NmNx2jQS', heartbeat_token)
         end
@@ -330,21 +309,17 @@ function ProtectionManager.initialize_all()
     end)
 end
 
--- Cleanup on resource stop
 AddEventHandler('onResourceStop', function(resourceName)
     if GetCurrentResourceName() ~= resourceName then return end
     
-    -- Terminate memory check thread
     if ProtectionManager.memory_check_thread then
         TerminateThread(ProtectionManager.memory_check_thread)
         ProtectionManager.memory_check_thread = nil
     end
     
-    -- Clear tables to free memory
     ProtectionManager.protections = {}
     ProtectionManager.initialized = {}
     
-    -- Force garbage collection before resource stops
     collectgarbage("collect")
 end)
 

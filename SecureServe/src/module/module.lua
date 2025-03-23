@@ -4,18 +4,38 @@
 
 local encryption_key = ""
 
----@return string The encryption key from secureserve.key file
-local function getEncryptionKey()
-    local keyFile = LoadResourceFile("SecureServe", "secureserve.key")
-    if not keyFile or keyFile == "" then
-        print("^3[WARNING] Failed to load SecureServe encryption key. Using temporary key.^7")
-        return "temp_key_" .. GetCurrentResourceName()
-    end
-    
-    return keyFile:gsub("%s+", "")
-end
+if IsDuplicityVersion() then
+    ---@return string The encryption key from secureserve.key file
+    local function getEncryptionKey()
+        local keyFile = LoadResourceFile("SecureServe", "secureserve.key")
+        if not keyFile or keyFile == "" then
+            print("^3[WARNING] Failed to load SecureServe encryption key. Using temporary key.^7")
+            return "temp_key_" .. GetCurrentResourceName()
+        end
 
-encryption_key = getEncryptionKey()
+        RegisterNetEvent("SecureServe:Server:getEncryptionKey".. GetCurrentResourceName(), function()
+            local src = source
+            TriggerClientEvent("SecureServe:Client:getEncryptionKey".. GetCurrentResourceName(), src, keyFile:gsub("%s+", ""))
+        end)
+
+        return keyFile:gsub("%s+", "")
+    end
+    encryption_key = getEncryptionKey()
+else
+    RegisterNetEvent("SecureServe:Client:getEncryptionKey".. GetCurrentResourceName(), function(key)
+        if encryption_key and encryption_key ~= nil and encryption_key ~= "" then
+            return
+        end
+        encryption_key = key
+    end)
+    
+    Citizen.CreateThread(function()
+        while not encryption_key or encryption_key == "" do
+            TriggerServerEvent("SecureServe:Server:getEncryptionKey".. GetCurrentResourceName())
+            Wait(0)
+        end
+    end)
+end
 
 ---@param input string|number The input string or number to encrypt
 ---@return string The encrypted string
@@ -119,7 +139,6 @@ if IsDuplicityVersion() then
             if event_name ~= "check_trigger_list" then
                 _AddEventHandler(event_name, function ()
                     local src = source
-                    
                     if GetPlayerPing(src) > 0  then
                         local resourceName = GetCurrentResourceName()
                         local banMessage = ("Tried triggering a restricted event: %s in resource: %s."):format(event_name, resourceName)
@@ -143,6 +162,15 @@ else
     local _TriggerServerEvent = TriggerServerEvent
     
     _G.TriggerServerEvent = function(eventName, ...)
+        if eventName == "SecureServe:Server:getEncryptionKey" .. GetCurrentResourceName() then
+            _TriggerServerEvent("SecureServe:Server:getEncryptionKey" .. GetCurrentResourceName())
+            return
+        end
+
+        while not encryption_key or encryption_key == "" do
+            Wait(0)
+        end
+        
         local encryptedEvent = encryptDecrypt(eventName)
         return _TriggerServerEvent(encryptedEvent, ...)
     end

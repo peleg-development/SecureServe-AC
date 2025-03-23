@@ -7,20 +7,18 @@ version "1.2.0"
 files {
     "bans.json",
     "src/client/protections/index.html",
-    "secureserve.key"
 }
 
 ui_page "src/client/protections/index.html"
 
 shared_scripts {
     "src/module/module.lua",
-    -- "src/module/module.js",
+    "src/module/module.js",
     "src/shared/lib/require.lua",
     "src/shared/lib/encryption.lua",
     "src/shared/lib/utils.lua",
     "src/shared/lib/callbacks.lua",
     "src/shared/init.lua",
-    "config.lua",
 }
 
 client_scripts {
@@ -74,6 +72,7 @@ server_scripts {
     "src/server/protections/anti_weapon_damage_modifier.lua",
     "src/server/protections/anti_explosions.lua",
     "src/server/protections/anti_particle_effects.lua",
+    "src/server/protections/heartbeat.lua",
     "src/server/core/install.js"
 }
 

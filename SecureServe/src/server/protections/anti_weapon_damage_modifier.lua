@@ -56,13 +56,6 @@ function AntiWeaponDamageModifier.initialize()
                 ban_manager.ban_player(sender, "Weapon Damage Modifier", "Abnormal weapon damage: " .. max_damage .. " (expected max: " .. max_normal_damage .. ")")
                 return
             end
-            
-            local damage_ratio = max_damage / (min_damage > 0 and min_damage or 1)
-            
-            if damage_ratio > 5.0 then
-                ban_manager.ban_player(sender, "Weapon Damage Modifier", "Inconsistent weapon damage: ratio " .. damage_ratio)
-                return
-            end
         end
     end)
 end

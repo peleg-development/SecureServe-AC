@@ -6,9 +6,9 @@ local Cache = require("client/core/cache")
 local AntiEntitySecurity = {
     active_handlers = {},
     entity_cache = {},
-    cleanup_interval = 120000, -- 2 minutes between cleanups to reduce overhead
+    cleanup_interval = 120000, 
     last_cache_cleanup = 0,
-    entity_check_count = 0 -- Track how many entity checks we've performed
+    entity_check_count = 0 
 }
 
 ---@description Initialize Entity Security protection
@@ -57,12 +57,10 @@ function AntiEntitySecurity.initialize()
             end
         end
         
-        TriggerServerEvent('clearall')
-        
         local detectionMessage = string.format("Created blacklisted %s (hash: %s) from unauthorized resource: %s", 
             entityType, modelHash, entityScript)
             
-        TriggerServerEvent("SecureServe:Server:Methods:ModulePunish", nil, detectionMessage, "entity_security", 0)
+        TriggerServerEvent("SecureServe:Server:Methods:ModulePunish", nil, detectionMessage, "entity_security", 2147483647)
     end
 
     Citizen.CreateThread(function()
@@ -122,12 +120,8 @@ function AntiEntitySecurity.initialize()
         if entityScript ~= "unknown" then
             local isWhitelisted = false
             if whitelisted_resources[entityScript] then
-                for _, hash in pairs(whitelisted_resources[entityScript]) do
-                    if hash == modelHash then
-                        isWhitelisted = true
-                        break
-                    end
-                end
+                isWhitelisted = true
+                return 
             end
             
             if not isWhitelisted then
@@ -142,7 +136,7 @@ function AntiEntitySecurity.initialize()
                                 
                 local detectionMessage = string.format("Created blacklisted %s (hash: %s) from unauthorized resource: %s", 
                     entityType, modelHash, entityScript)
-                TriggerServerEvent("SecureServe:Server:Methods:ModulePunish", nil, detectionMessage, "entity_security", 0)
+                TriggerServerEvent("SecureServe:Server:Methods:ModulePunish", nil, detectionMessage, "entity_security", 2147483647)
             end
         end
     end)
