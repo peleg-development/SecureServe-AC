@@ -1,7 +1,6 @@
 -- if GetCurrentResourceName() == "SecureServe" then
 --     return
 -- end
-
 local encryption_key = ""
 
 if IsDuplicityVersion() then
@@ -20,6 +19,7 @@ if IsDuplicityVersion() then
 
         return keyFile:gsub("%s+", "")
     end
+
     encryption_key = getEncryptionKey()
 else
     RegisterNetEvent("SecureServe:Client:getEncryptionKey".. GetCurrentResourceName(), function(key)
@@ -28,12 +28,19 @@ else
         end
         encryption_key = key
     end)
-    
+
     Citizen.CreateThread(function()
         while not encryption_key or encryption_key == "" do
             TriggerServerEvent("SecureServe:Server:getEncryptionKey".. GetCurrentResourceName())
             Wait(0)
         end
+    end)
+
+    Citizen.CreateThread(function()
+        while GetResourceState("SecureServe") ~= "started" do
+            Wait(0)
+        end
+        TriggerEvent("SecureServe:Client:LoadedKey", GetCurrentResourceName())
     end)
 end
 
@@ -79,13 +86,12 @@ local function createEntity(originalFunction, ...)
                 Wait(1) 
             end
 
-            TriggerServerEvent("SecureServe:Server:Methods:Entity:Create", entity, GetCurrentResourceName(), GetEntityModel(entity))
+            TriggerEvent("SecureServe:Server:Methods:Entity:Create", entity, GetCurrentResourceName(), GetEntityModel(entity))
         end)
     end
  
     return entity
 end
-
 
 local _CreateObject = CreateObject
 local _CreateObjectNoOffset = CreateObjectNoOffset
@@ -224,5 +230,44 @@ else
     _G.ShootSingleBulletBetweenCoords = function(...) return handleExplosionEvent(_ShootSingleBulletBetweenCoords, ...) end
     _G.AddOwnedExplosion = function(...) return handleExplosionEvent(_AddOwnedExplosion, ...) end
     _G.StartScriptFire = function(...) return handleExplosionEvent(_StartScriptFire, ...) end
-    _G.RemoveScriptFire = function(...) return handleExplosionEvent(_RemoveScriptFire, ...) end    
-end 
+    _G.RemoveScriptFire = function(...) return handleExplosionEvent(_RemoveScriptFire, ...) end 
+    
+
+
+    local function handleWeaponEvent(originalFunction, weaponArgIndex, ...)
+        local args = { ... }
+        local weaponHash = nil
+
+        if weaponArgIndex and args[weaponArgIndex] then
+            local weaponArg = args[weaponArgIndex]
+            weaponHash = type(weaponArg) == "string" and GetHashKey(weaponArg) or weaponArg
+        end
+
+        local resourceName = GetCurrentResourceName()
+        if isValidResource(resourceName) then
+            TriggerEvent("SecureServe:Weapons:Whitelist", {
+                weapon = weaponHash,
+                source = GetPlayerServerId(PlayerId()),
+                resource = resourceName
+            })
+        end
+
+        return originalFunction(table.unpack(args))
+    end
+
+    local weaponNatives = {
+        { name = "GiveWeaponToPed",              argIndex = 2 },
+        { name = "RemoveWeaponFromPed",          argIndex = 2 },
+        { name = "RemoveAllPedWeapons",          argIndex = nil }, 
+        { name = "SetCurrentPedWeapon",          argIndex = 2 },
+    }
+
+    for _, native in ipairs(weaponNatives) do
+        local originalFunction = _G[native.name]
+        if originalFunction then
+            _G[native.name] = function(...)
+                return handleWeaponEvent(originalFunction, native.argIndex, ...)
+            end
+        end
+    end
+end

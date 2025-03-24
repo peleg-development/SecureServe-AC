@@ -53,8 +53,8 @@ local function registerServerCommands()
         end
 
         if #args < 2 then
-            logger.error("Usage: secureban <player_id/name> <reason> [duration_in_minutes]")
-            logger.error("Example: secureban 5 \"Cheating\" 1440 (bans player ID 5 for 24 hours)")
+            print("Usage: secureban <player_id/name> <reason> [duration_in_minutes]")
+            print("Example: secureban 5 \"Cheating\" 1440 (bans player ID 5 for 24 hours)")
             return
         end
 
@@ -73,13 +73,13 @@ local function registerServerCommands()
         end
 
         if not target_id then
-            logger.error("Player not found: " .. target_id_or_name)
+            print("Player not found: " .. target_id_or_name)
             return
         end
 
         local player_name = GetPlayerName(target_id)
         if not player_name then
-            logger.error("Player ID " .. target_id .. " not connected")
+            print("Player ID " .. target_id .. " not connected")
             return
         end
 
@@ -100,7 +100,7 @@ local function registerServerCommands()
                 ["Duration"] = (duration > 0 and duration .. " minutes" or "Permanent")
             })
         else
-            logger.error("Failed to ban player " .. target_id)
+            print("Failed to ban player " .. target_id)
         end
     end, true)
 
@@ -110,7 +110,7 @@ local function registerServerCommands()
         end
 
         if #args < 1 then
-            logger.error("Usage: secureunban <identifier>")
+            print("Usage: secureunban <identifier>")
             return
         end
 
@@ -118,10 +118,10 @@ local function registerServerCommands()
         local success = ban_manager.unban_player(identifier)
 
         if success then
-            logger.info("Unbanned player with identifier: " .. identifier)
+            print("Unbanned player with identifier: " .. identifier)
             discord_logger.log_admin(0, "Unban", identifier)
         else
-            logger.error("Failed to unban player or player not found: " .. identifier)
+            print("Failed to unban player or player not found: " .. identifier)
         end
     end, true)
 
@@ -137,16 +137,16 @@ local function registerServerCommands()
 
         local bans = ban_manager.get_recent_bans(count)
 
-        logger.info("===== SecureServe Ban List (" .. #bans .. " most recent) =====")
+        print("===== SecureServe Ban List (" .. #bans .. " most recent) =====")
         for i, ban in ipairs(bans) do
-            logger.info(string.format("%d. %s - Reason: %s - Date: %s",
+            print(string.format("%d. %s - Reason: %s - Date: %s",
                 i,
                 ban.identifier or "Unknown",
                 ban.reason or "No reason provided",
                 ban.timestamp and os.date("%Y-%m-%d %H:%M:%S", ban.timestamp) or "Unknown"
             ))
         end
-        logger.info("===================================================")
+        print("===================================================")
     end, true)
 
     RegisterCommand("securehelp", function(source, args, rawCommand)
@@ -154,17 +154,17 @@ local function registerServerCommands()
             return
         end
 
-        logger.info("===== SecureServe Anti-Cheat Commands =====")
-        logger.info("secureban <player_id/name> <reason> [duration] - Ban a player")
-        logger.info("secureunban <identifier> - Unban a player by identifier")
-        logger.info("securebanlist [count] - Show recent bans (default: 10)")
-        logger.info("securewhitelist event <event_name> - Add event to whitelist")
-        logger.info("securewhitelist resource <resource_name> - Add resource to whitelist")
-        logger.info("securedebug <on/off> - Enable/disable debug mode")
-        logger.info("securedevmode <on/off> - Enable/disable developer mode")
-        logger.info("securestats - Show system statistics")
-        logger.info("securereload - Reload configuration")
-        logger.info("===========================================")
+        print("===== SecureServe Anti-Cheat Commands =====")
+        print("secureban <player_id/name> <reason> [duration] - Ban a player")
+        print("secureunban <identifier> - Unban a player by identifier")
+        print("securebanlist [count] - Show recent bans (default: 10)")
+        print("securewhitelist event <event_name> - Add event to whitelist")
+        print("securewhitelist resource <resource_name> - Add resource to whitelist")
+        print("securedebug <on/off> - Enable/disable debug mode")
+        print("securedevmode <on/off> - Enable/disable developer mode")
+        print("securestats - Show system statistics")
+        print("securereload - Reload configuration")
+        print("===========================================")
     end, true)
 
     RegisterCommand("securewhitelist", function(source, args, rawCommand)
@@ -173,8 +173,8 @@ local function registerServerCommands()
         end
 
         if #args < 2 then
-            logger.error("Usage: securewhitelist <type> <n>")
-            logger.error("Types: event, resource")
+            print("Usage: securewhitelist <type> <n>")
+            print("Types: event, resource")
             return
         end
 
@@ -184,21 +184,21 @@ local function registerServerCommands()
         if type == "event" then
             local success = config_manager.whitelist_event(name)
             if success then
-                logger.info("Added event to whitelist: " .. name)
+                print("Added event to whitelist: " .. name)
                 discord_logger.log_admin(0, "Whitelist Event", name)
             else
-                logger.error("Failed to add event to whitelist or already whitelisted: " .. name)
+                print("Failed to add event to whitelist or already whitelisted: " .. name)
             end
         elseif type == "resource" then
             local success = anti_resource_injection.whitelist_resource(name)
             if success then
-                logger.info("Added resource to whitelist: " .. name)
+                print("Added resource to whitelist: " .. name)
                 discord_logger.log_admin(0, "Whitelist Resource", name)
             else
-                logger.error("Failed to add resource to whitelist or already whitelisted: " .. name)
+                print("Failed to add resource to whitelist or already whitelisted: " .. name)
             end
         else
-            logger.error("Invalid type. Use 'event' or 'resource'")
+            print("Invalid type. Use 'event' or 'resource'")
         end
     end, true)
 
@@ -208,7 +208,7 @@ local function registerServerCommands()
         end
 
         if #args < 1 then
-            logger.error("Usage: securedebug <on/off>")
+            print("Usage: securedebug <on/off>")
             return
         end
 
@@ -216,15 +216,15 @@ local function registerServerCommands()
         if mode == "on" then
             config_manager.set_debug_mode(true)
             logger.set_debug_mode(true)
-            logger.info("Debug mode enabled")
+            print("Debug mode enabled")
             discord_logger.log_admin(0, "Set Debug Mode", "Enabled")
         elseif mode == "off" then
             config_manager.set_debug_mode(false)
             logger.set_debug_mode(false)
-            logger.info("Debug mode disabled")
+            print("Debug mode disabled")
             discord_logger.log_admin(0, "Set Debug Mode", "Disabled")
         else
-            logger.error("Invalid option. Use 'on' or 'off'")
+            print("Invalid option. Use 'on' or 'off'")
         end
     end, true)
 
@@ -234,21 +234,21 @@ local function registerServerCommands()
         end
 
         if #args < 1 then
-            logger.error("Usage: securedevmode <on/off>")
+            print("Usage: securedevmode <on/off>")
             return
         end
 
         local mode = args[1]:lower()
         if mode == "on" then
             debug_module.set_dev_mode(true)
-            logger.info("Developer mode enabled")
+            print("Developer mode enabled")
             discord_logger.log_admin(0, "Set Developer Mode", "Enabled")
         elseif mode == "off" then
             debug_module.set_dev_mode(false)
-            logger.info("Developer mode disabled")
+            print("Developer mode disabled")
             discord_logger.log_admin(0, "Set Developer Mode", "Disabled")
         else
-            logger.error("Invalid option. Use 'on' or 'off'")
+            print("Invalid option. Use 'on' or 'off'")
         end
     end, true)
 
@@ -257,20 +257,20 @@ local function registerServerCommands()
             return
         end
 
-        logger.info("===== SecureServe System Statistics =====")
+        print("===== SecureServe System Statistics =====")
 
         local debug_stats = debug_module.get_error_stats()
-        logger.info("Debug:")
-        logger.info("  Total Errors: " .. debug_stats.total_errors)
-        logger.info("  Recent Errors: " .. debug_stats.recent_errors)
-        logger.info("  Debug Mode: " .. (config_manager.is_debug_mode_enabled() and "Enabled" or "Disabled"))
-        logger.info("  Developer Mode: " .. (debug_stats.dev_mode and "Enabled" or "Disabled"))
+        print("Debug:")
+        print("  Total Errors: " .. debug_stats.total_errors)
+        print("  Recent Errors: " .. debug_stats.recent_errors)
+        print("  Debug Mode: " .. (config_manager.is_debug_mode_enabled() and "Enabled" or "Disabled"))
+        print("  Developer Mode: " .. (debug_stats.dev_mode and "Enabled" or "Disabled"))
 
         local ban_count = #ban_manager.get_all_bans()
-        logger.info("Bans:")
-        logger.info("  Total Bans: " .. ban_count)
+        print("Bans:")
+        print("  Total Bans: " .. ban_count)
 
-        logger.info("Players:")
+        print("Players:")
 
         local player_count = 0
         if player_manager and player_manager.get_player_count then
@@ -279,9 +279,9 @@ local function registerServerCommands()
             player_count = #GetPlayers()
         end
 
-        logger.info("  Active Players: " .. player_count)
+        print("  Active Players: " .. player_count)
 
-        logger.info("=======================================")
+        print("=======================================")
 
         discord_logger.log_admin(0, "System Stats", "Viewed system statistics", {
             ["Total Errors"] = debug_stats.total_errors,
@@ -297,11 +297,11 @@ local function registerServerCommands()
         end
 
         config_manager.initialize()
-        logger.info("Configuration reloaded via console command")
+        print("Configuration reloaded via console command")
         discord_logger.log_admin(0, "Reload Config", "Configuration reloaded")
     end, true)
 
-    logger.info("Server console commands registered")
+    print("Server console commands registered")
 end
 
 local function main()
@@ -408,7 +408,6 @@ local function main()
     print("^3│ ^2✓^7 Heartbeat^7 initialized")
 
     print("^3╰───────────────^7")
-
 
 
     registerServerCommands()

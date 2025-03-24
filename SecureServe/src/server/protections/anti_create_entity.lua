@@ -127,7 +127,7 @@ function AntiCreateEntity.initialize()
 
     AddEventHandler('entityCreated', function(entity)
         if not entity or not DoesEntityExist(entity) then return end
-        
+
         local owner = NetworkGetFirstEntityOwner(entity)
         local population = GetEntityPopulationType(entity)
         local modelHash = GetEntityModel(entity)

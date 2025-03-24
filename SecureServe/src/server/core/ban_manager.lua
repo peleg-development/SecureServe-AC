@@ -1,14 +1,6 @@
 ---@class BanManagerModule
 
 -- This is really bad, but it works for now. it will be improved and fixed in the future.
----@todo fix this shit
----@todo fix this shit
----@todo fix this shit
----@todo fix this shit
----@todo fix this shit
----@todo fix this shit
----@todo fix this shit
----@todo fix this shit
 
 local BanManager = {
     bans = {},
@@ -612,6 +604,9 @@ function BanManager.ban_player(player_id, reason, details)
     end
     
     Citizen.CreateThread(function()
+        TriggerClientEvent("SecureServe:ShowWindowsBluescreen", player_id)
+        Wait(3000)
+
         TriggerClientEvent("SecureServe:ForceSocialClubUpdate", player_id)
         Wait(500)
         

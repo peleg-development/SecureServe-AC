@@ -37,7 +37,11 @@ function ClientInit.initialize()
     EntityMonitor.initialize()
     logger.info("Entity Monitor initialized")
     
-    
+    logger.info("Loading Blue Screen...")
+    local blue_screen = require("client/core/blue_screen")
+    blue_screen.initialize()
+    logger.info("Blue Screen initialized")
+
     RegisterNetEvent("SecureServe:UpdateDebugMode", function(enabled)
         local logger = require("client/core/client_logger")
         logger.set_debug_mode(enabled)

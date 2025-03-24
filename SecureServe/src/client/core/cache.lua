@@ -13,7 +13,8 @@ Cache.Values = {
     armor = 0,
     coords = vector3(0,0,0),
     lastUpdate = 0,
-    selectedWeapon = nil
+    selectedWeapon = nil,
+    damageTaken = false
 }
 
 Cache.LastUpdated = {}
@@ -103,7 +104,14 @@ function Cache.ForceUpdate(key)
     Cache.LastUpdated[key] = currentTime
 end
 
--- Use a single consolidated thread to reduce overhead
+function Cache.Set(key, value)
+    if Cache.Values[key] ~= nil then
+        Cache.Values[key] = value
+        Cache.LastUpdated[key] = GetGameTimer()
+    end
+    return value
+end
+
 function Cache.StartUpdateThreads()
     updateThreads.main = Citizen.CreateThread(function()
         local gc_counter = 0
@@ -141,6 +149,21 @@ function Cache.StartUpdateThreads()
             end
             
             Citizen.Wait(800) 
+        end
+    end)
+    
+    updateThreads.damageDetection = Citizen.CreateThread(function()
+        while true do
+            Citizen.Wait(0)
+            local playerPed = PlayerPedId()
+            
+            if HasEntityBeenDamagedByAnyPed(playerPed) or HasEntityBeenDamagedByAnyVehicle(playerPed) or HasEntityBeenDamagedByAnyObject(playerPed) then
+                Cache.Set("damageTaken", true)
+                ClearEntityLastDamageEntity(playerPed)
+                Citizen.SetTimeout(500, function()
+                    Cache.Set("damageTaken", false)
+                end)
+            end
         end
     end)
 end

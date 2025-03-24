@@ -75,10 +75,10 @@ SecureServe.Module = {
 		},
 
 		Limits = { -- Defines maximum number of entities each player can spawn before triggering bans.
-			Vehicles = 20,
-			Peds = 20,
-			Objects = 20,
-			Entities = 70,
+			Vehicles = 15,
+			Peds = 15,
+			Objects = 25,
+			Entities = 50,
 		},
 	},
 
@@ -349,8 +349,8 @@ SecureServe.Protection.BlacklistedExplosions = {
     { id = 3, time = "Ban",  webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Molotov Cocktails
     { id = 4, time = "Ban",  webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Rockets
     { id = 5, time = "Ban",  webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Tank Shells
-    { id = 6, time = "Ban",  webhook = "", limit = 2, audio = true, scale = 1.0, invisible = false }, -- Hi Octane
-    { id = 7, time = "Ban",  webhook = "", limit = 2, audio = true, scale = 1.0, invisible = false }, -- Car Explosions
+    { id = 6, time = "Ban",  webhook = "", limit = 4, audio = true, scale = 1.0, invisible = false }, -- Hi Octane
+    { id = 7, time = "Ban",  webhook = "", limit = 5, audio = true, scale = 1.0, invisible = false }, -- Car Explosions
     { id = 18, time = "Ban", webhook = "", limit = 12, audio = true, scale = 1.0, invisible = false }, -- Bullet Explosions
     { id = 19, time = "Ban", webhook = "", limit = 12, audio = true, scale = 1.0, invisible = false }, -- Smoke Grenade Launcher
     { id = 20, time = "Ban", webhook = "", limit = 5, audio = true, scale = 1.0, invisible = false }, -- Smoke Grenades

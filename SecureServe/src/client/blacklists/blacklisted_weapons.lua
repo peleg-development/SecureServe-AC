@@ -16,7 +16,6 @@ function BlacklistedWeapons.initialize()
             for k, v in pairs(SecureServe.Protection.BlacklistedWeapons) do
                 if weapon == GetHashKey(v.name) then
                     RemoveWeaponFromPed(player, weapon)
-                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Blacklisted Weapon (" .. v.name .. ")", v.webhook, v.time)
                 end
             end
         end

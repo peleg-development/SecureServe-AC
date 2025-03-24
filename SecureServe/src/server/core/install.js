@@ -856,7 +856,6 @@ function decrypt(input) {
     return output.join('');
 }
 
-// Register commands
 RegisterCommand('secureinstall', (source, args, raw) => {
     if (source !== 0) {
         Logger.warning('This command can only be run from the server console');
@@ -899,14 +898,11 @@ RegisterCommand('securenewkey', (source, args, raw) => {
     }
 }, true);
 
-// Main execution
 
 Logger.info(`${CURRENT_RESOURCE_NAME} install script starting...`);
 
-// Check for default keys on startup
 checkAndFixDefaultKey();
 
-// Continue only if key exists and is not a default key
 if (!fs.existsSync(path.join(RESOURCES_PATH, 'secureserve.key'))) {
     const keySuccess = ensureKeyFileExists();
     if (!keySuccess) {
@@ -914,11 +910,9 @@ if (!fs.existsSync(path.join(RESOURCES_PATH, 'secureserve.key'))) {
         Logger.critical(`Check file permissions and server configuration`);
     }
 } else {
-    // Continue with installation only if the key file already exists and is not default
     installSecureServe();
 }
 
-// Initialize encryption key for this instance
 const enc_key = getEncryptionKey();
 let key_loaded = false;
 let retry_count = 0;

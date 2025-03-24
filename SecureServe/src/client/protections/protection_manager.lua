@@ -104,6 +104,7 @@ function ProtectionManager.initialize()
     ProtectionManager.initialize_heartbeat() 
 
     local protection_modules = {
+        "anti_load_resource_file",
         "anti_ocr",
         "anti_invisible",
         "anti_no_reload",
@@ -123,6 +124,7 @@ function ProtectionManager.initialize()
         "anti_bigger_hitbox",
         "anti_no_recoil",
         "anti_player_blips",
+        "anti_give_weapon",
         "anti_resource_events",
         "anti_speed_hack",
         "anti_state_bag_overflow",

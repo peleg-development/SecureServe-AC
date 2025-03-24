@@ -15,7 +15,6 @@ function AntiExplosions.initialize()
     local whitelist = {}
     local explosions = {}
     local detected = {}
-    
     local false_explosions = {
         [11] = true,
         [12] = true,
@@ -23,151 +22,99 @@ function AntiExplosions.initialize()
         [24] = true,
         [30] = true,
     }
-
+    
     RegisterNetEvent("SecureServe:Explosions:Whitelist", function(data)
-        if not data or not data.source then return end
-        
-        local src = source
-        if src > 0 then
-            whitelist[tostring(src)] = true
-            logger.debug("Whitelisted explosion for player ID: " .. src)
-        end
+        if (data.source == nil) then return end
+        whitelist[data.source] = true
+        logger.debug("Whitelisted explosion for player ID: " .. data.source)
     end)
     
-    AddEventHandler("explosionEvent", function(sender, ev)
-        local canceled = AntiExplosions.handle_explosion(sender, ev.explosionType, ev.posX, ev.posY, ev.posZ, ev.damageScale)
+    AddEventHandler('explosionEvent', function(sender, ev)
+        explosions[sender] = explosions[sender] or {}
         
-        if canceled then
+        if ev.ownerNetId == 0 then
             CancelEvent()
+            return
+        end
+
+        local explosionType = ev.explosionType
+        local explosionPos = ev.posX and ev.posY and ev.posZ and vector3(ev.posX, ev.posY, ev.posZ) or "Unknown"
+        local explosionDamage = ev.damageScale or "Unknown"
+        local explosionOwner = GetPlayerName(sender) or "Unknown"
+    
+        logger.debug(string.format("Explosion detected! Type: %s | Position: %s | Damage Scale: %s | Owner: %s", 
+            explosionType, explosionPos, explosionDamage, explosionOwner))
+
+        local resourceName = GetInvokingResource()
+        if GetPlayerPing(sender) > 0 and SecureServe.ExplosionsModule then
+            if whitelist[sender] or SecureServe.ExplosionsWhitelist[resourceName] then
+                whitelist[sender] = false
+            else
+                ban_manager.ban_player(sender, "Explosions", string.format("Explosion Details: Type: %s, Position: %s, Damage Scale: %s", 
+                    explosionType, explosionPos, explosionDamage))
+                CancelEvent()
+                return
+            end
+        end
+    
+        for k, v in pairs(SecureServe.Protection.BlacklistedExplosions) do
+            if ev.explosionType == v.id then
+                local explosionInfo = string.format("Explosion Type: %d, Position: (%.2f, %.2f, %.2f)", ev.explosionType, ev.posX, ev.posY, ev.posZ)
+
+                if v.limit and explosions[sender][v.id] and explosions[sender][v.id] >= v.limit then
+                    ban_manager.ban_player(sender, "Explosions", "Exceeded explosion limit at explosion: " .. v.id .. ". " .. explosionInfo)
+                    CancelEvent()
+                    return
+                end
+
+                explosions[sender][v.id] = (explosions[sender][v.id] or 0) + 1
+
+                if v.limit and explosions[sender][v.id] > v.limit then
+                    ban_manager.ban_player(sender, "Explosions", "Exceeded explosion limit at explosion: " .. v.id .. ". " .. explosionInfo)
+                    CancelEvent()
+                    return
+                end
+
+                if v.limit then
+                    if explosions[sender][v.id] > v.limit then
+                        if false_explosions[ev.explosionType] then return end
+                        if not detected[sender] then
+                            detected[sender] = true
+                            CancelEvent()
+                            ban_manager.ban_player(sender, "Explosions", "Exceeded explosion limit at explosion: " .. v.id .. ". " .. explosionInfo)
+                        end
+                    end
+                end
+
+                if v.audio and ev.isAudible == false then
+                    ban_manager.ban_player(sender, "Explosions", "Used inaudible explosion. " .. explosionInfo)
+                    CancelEvent()
+                    return
+                end
+
+                if v.invisible and ev.isInvisible == true then
+                    ban_manager.ban_player(sender, "Explosions", "Used invisible explosion. " .. explosionInfo)
+                    CancelEvent()
+                    return
+                end
+
+                if v.damageScale and ev.damageScale > 1.0 then
+                    ban_manager.ban_player(sender, "Explosions", "Used boosted explosion. " .. explosionInfo)
+                    return
+                end
+
+                if SecureServe.Protection.CancelOtherExplosions then
+                    for k, v in pairs(SecureServe.Protection.BlacklistedExplosions) do
+                        if ev.explosionType ~= v.id then
+                            CancelEvent()
+                        end
+                    end
+                end
+            end
         end
     end)
     
     logger.info("Anti-Explosions protection initialized")
-end
-
----@description Whitelist an explosion for a player
----@param source number The player source
----@param explosion_type number The explosion type
----@return boolean success Whether the whitelist was successful
-function AntiExplosions.whitelist_explosion(source, explosion_type)
-    if not source or source <= 0 then
-        return false
-    end
-    
-    local sender_id = tostring(source)
-    whitelist[sender_id] = true
-    logger.debug("Manually whitelisted explosion type " .. explosion_type .. " for player ID: " .. source)
-    return true
-end
-
----@param explosion_type number The explosion type ID
----@return boolean is_blacklisted Whether the explosion type is blacklisted
-function AntiExplosions.is_blacklisted_explosion(explosion_type)
-    local blacklisted_explosions = SecureServe.Protection.BlacklistedExplosions or {}
-    
-    for _, blacklisted in pairs(blacklisted_explosions) do
-        if tonumber(blacklisted.id) == tonumber(explosion_type) then
-            return true, blacklisted
-        end
-    end
-    
-    return false, nil
-end
-
-function AntiExplosions.handle_explosion(sender, explosionType, posX, posY, posZ, damageScale)
-    if not config_manager.get("ExplosionProtection") then
-        return false
-    end
-    
-    local sender_id = tostring(sender)
-    explosions[sender_id] = explosions[sender_id] or {}
-    
-    if posX == nil or posY == nil or posZ == nil then
-        return false
-    end
-
-    local explosionPos = vector3(posX, posY, posZ)
-    local playerName = GetPlayerName(sender) or "Unknown"
-    
-    if debug_module and debug_module.is_debug_enabled() then
-        logger.debug(string.format("Explosion detected! Type: %s | Position: %s | Damage Scale: %s | Player: %s", 
-            explosionType, explosionPos, damageScale, playerName))
-    end
-
-    local resourceName = GetInvokingResource()
-    if GetPlayerPing(sender) > 0 then
-        local config = SecureServe
-        local explosion_whitelist = config and config.ExplosionsWhitelist or {}
-        
-        if whitelist[sender_id] then
-            whitelist[sender_id] = nil
-            return false
-        elseif explosion_whitelist[resourceName] then
-            return false
-        elseif false_explosions[explosionType] then
-            return false
-        end
-    end
-
-    local blacklisted_explosions = config_manager.get("BlacklistedExplosions") or {}
-    for _, blacklisted in ipairs(blacklisted_explosions) do
-        if explosionType == blacklisted.id then
-            local explosionInfo = string.format("Explosion Type: %d, Position: (%.2f, %.2f, %.2f)", 
-                explosionType, posX, posY, posZ)
-
-            if blacklisted.limit then
-                explosions[sender_id][explosionType] = (explosions[sender_id][explosionType] or 0) + 1
-                
-                if explosions[sender_id][explosionType] > blacklisted.limit then
-                    if not detected[sender_id] then
-                        detected[sender_id] = true
-                        CancelEvent()
-                        
-                        exports[GetCurrentResourceName()].module_punish(sender, 
-                            "Exceeded explosion limit for type: " .. explosionType .. ". " .. explosionInfo, 
-                            blacklisted.webhook or config_manager.get("Webhooks.BlacklistedExplosions"), 
-                            blacklisted.time or 0)
-                        
-                        return true
-                    end
-                end
-            end
-
-            if blacklisted.audio and ev.isAudible == false then
-                CancelEvent()
-                exports[GetCurrentResourceName()].module_punish(sender, 
-                    "Used inaudible explosion. " .. explosionInfo, 
-                    blacklisted.webhook or config_manager.get("Webhooks.BlacklistedExplosions"), 
-                    blacklisted.time or 0)
-                return true
-            end
-
-            if blacklisted.invisible and ev.isInvisible == true then
-                CancelEvent()
-                exports[GetCurrentResourceName()].module_punish(sender, 
-                    "Used invisible explosion. " .. explosionInfo, 
-                    blacklisted.webhook or config_manager.get("Webhooks.BlacklistedExplosions"), 
-                    blacklisted.time or 0)
-                return true
-            end
-
-            if blacklisted.damageScale and damageScale > 1.0 then
-                CancelEvent()
-                exports[GetCurrentResourceName()].module_punish(sender, 
-                    "Used boosted explosion damage. " .. explosionInfo, 
-                    blacklisted.webhook or config_manager.get("Webhooks.BlacklistedExplosions"), 
-                    blacklisted.time or 0)
-                return true
-            end
-        end
-    end
-    
-    if config_manager.get("CancelOtherExplosions") then
-        CancelEvent()
-        return true
-    end
-    
-    return false
 end
 
 return AntiExplosions

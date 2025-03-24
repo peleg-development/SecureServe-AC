@@ -89,7 +89,6 @@ function AntiEntitySecurity.initialize()
                 
                 AntiEntitySecurity.entity_check_count = 0
                 
-                -- Force light garbage collection after cleanup
                 if count > 0 then
                     collectgarbage("step", 50)
                 end
