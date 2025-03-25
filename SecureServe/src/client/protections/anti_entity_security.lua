@@ -102,7 +102,7 @@ function AntiEntitySecurity.initialize()
 
     AntiEntitySecurity.event_handler = RegisterNetEvent("SecureServe:CheckEntityResource", function(netId, modelHash)
         local entity = NetworkGetEntityFromNetworkId(netId)
-        if not entity or not DoesEntityExist(entity) then return end
+        if entity == nil or not DoesEntityExist(entity) then return end
         
         local entityType = "Unknown"
         if IsEntityAVehicle(entity) then
