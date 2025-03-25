@@ -2,7 +2,7 @@ fx_version "cerulean"
 game "gta5"
 
 author "SecureServe.net"
-version "1.2.0"
+version "1.2.1"
 
 files {
     "bans.json",

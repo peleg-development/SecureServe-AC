@@ -324,7 +324,7 @@ local function main()
   ^7]])
 
     print("^8╔══════════════════════════════════════════════════════════════════════════╗^7")
-    print("^8║                  ^2SecureServe AntiCheat v1.2.0 Initializing^8               ║^7")
+    print("^8║                  ^2SecureServe AntiCheat v1.2.1 Initializing^8               ║^7")
     print("^8╚══════════════════════════════════════════════════════════════════════════╝^7")
 
     print("\n^2╭─── Core Modules ^7")
@@ -485,7 +485,7 @@ local function main()
 
     initialized = true
     print("\n^8╔══════════════════════════════════════════════════════════════════════════╗^7")
-    print("^8║              ^2SecureServe AntiCheat v1.2.0 Loaded Successfully^8            ║^7")
+    print("^8║              ^2SecureServe AntiCheat v1.2.1 Loaded Successfully^8            ║^7")
     print("^8║                 ^3All Modules Initialized and Protection Active^8            ║^7")
     print("^8╚══════════════════════════════════════════════════════════════════════════╝^7")
     print("^6⚡ Support: ^3https://discord.gg/z6qGGtbcr4^7")
@@ -494,7 +494,7 @@ local function main()
 
     discord_logger.log_system(
         "AntiCheat Started",
-        "SecureServe AntiCheat v1.2.0 has been successfully initialized.",
+        "SecureServe AntiCheat v1.2.1 has been successfully initialized.",
         {
             { name = "Server Name",       value = GetConvar("sv_hostname", "Unknown"), inline = true },
             { name = "Resource Name",     value = GetCurrentResourceName(),            inline = true },
@@ -502,7 +502,7 @@ local function main()
         }
     )
 
-    logger.info("SecureServe AntiCheat v1.2.0 initialized successfully")
+    logger.info("SecureServe AntiCheat v1.2.1 initialized successfully")
 end
 
 CreateThread(function()

@@ -11,7 +11,7 @@ function ClientInit.initialize()
     })
     
     logger.info("==============================================")
-    logger.info("SecureServe Client v1.2.0 initializing...")
+    logger.info("SecureServe Client v1.2.1 initializing...")
     
     local ConfigLoader = require("client/core/config_loader")
     ConfigLoader.initialize()
