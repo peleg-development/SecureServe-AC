@@ -258,10 +258,6 @@ function ProtectionManager.initialize_heartbeat()
         if player_spawned then return end
         player_spawned = true
         
-        Citizen.SetTimeout(1500, function()
-            ProtectionManager.initialize()
-        end)
-        
         Citizen.CreateThread(function()
             while true do
                 Citizen.Wait(5000) 
