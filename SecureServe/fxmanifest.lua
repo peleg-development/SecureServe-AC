@@ -7,6 +7,7 @@ version "1.2.1"
 files {
     "bans.json",
     "src/client/protections/index.html",
+    "secureserve.key"
 }
 
 ui_page "src/client/protections/index.html"
