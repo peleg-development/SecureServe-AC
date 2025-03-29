@@ -101,10 +101,15 @@ function AntiCreateEntity.initialize()
             end
         end
     end)
+    
+    RegisterNetEvent("SecureServe:Server:Methods:Entity:CreateServer", function(entityId, resourceName, modelHash)
+        local src = source
+        AntiCreateEntity.allowHash(modelHash)
+    end)
 
     RegisterNetEvent("SecureServe:Server:Methods:Entity:Create", function(entityId, resourceName, modelHash)
         local src = source
-        if GetPlayerPing(tonumber(src)) <= 0 then return end
+        if GetPlayerPing(tonumber(src)) <= tonumber(0) then return end
         if not AntiCreateEntity.entityRegistry[src] then
             AntiCreateEntity.entityRegistry[src] = {}
         end
@@ -144,6 +149,8 @@ function AntiCreateEntity.initialize()
             end
             
             if AntiCreateEntity.entityRegistry[owner] and (AntiCreateEntity.entityRegistry[owner][entity] or AntiCreateEntity.entityRegistry[owner][modelHash]) then 
+                return
+            elseif AntiCreateEntity.entityRegistry[0] and (AntiCreateEntity.entityRegistry[0][entity] or AntiCreateEntity.entityRegistry[0][modelHash]) then
                 return
             elseif owner and modelHash then
                 TriggerClientEvent("SecureServe:CheckEntityResource", owner, NetworkGetNetworkIdFromEntity(entity), modelHash)

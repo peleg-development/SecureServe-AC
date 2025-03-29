@@ -59,7 +59,7 @@ local function createEntity(originalFunction, ...)
                 Wait(1) 
             end
             
-            TriggerEvent("SecureServe:Server:Methods:Entity:Create", entity, GetCurrentResourceName(), GetEntityModel(entity))
+            TriggerEvent("SecureServe:Server:Methods:Entity:CreateServer", entity, GetCurrentResourceName(), GetEntityModel(entity))
         end)
     end
  

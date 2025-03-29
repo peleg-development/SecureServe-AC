@@ -19,9 +19,6 @@ function ClientInit.initialize()
     logger.info("Config Loader initialized")
     
     local secureServe = ConfigLoader.get_secureserve()
-    if secureServe and secureServe.Debug ~= nil then
-        logger.set_debug_mode(secureServe.Debug)
-    end
     
     local Cache = require("client/core/cache")
     Cache.initialize()
