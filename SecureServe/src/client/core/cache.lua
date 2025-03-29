@@ -65,14 +65,10 @@ function Cache.UpdateAll()
         Cache.Values.vehicle = nil
     end
     
-    Cache.Values.isSwimming = IsPedSwimming(Cache.Values.ped)
-    Cache.Values.isSwimmingUnderWater = IsPedSwimmingUnderWater(Cache.Values.ped)
-    Cache.Values.isFalling = IsPedFalling(Cache.Values.ped)
-    Cache.Values.isInvisible = IsEntityVisible(Cache.Values.ped) == 0
-    
-    for k in pairs(Cache.Values) do
-        Cache.LastUpdated[k] = currentTime
-    end
+    Cache.Values.isSwimming = IsPedSwimming(ped)
+    Cache.Values.isSwimmingUnderWater = IsPedSwimmingUnderWater(ped)
+    Cache.Values.isFalling = IsPedFalling(ped)
+    Cache.Values.isInvisible = IsEntityVisible(ped) == 0
 end
 
 function Cache.Get(key)
