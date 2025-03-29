@@ -7,10 +7,11 @@ local AntiGodMode = {}
 
 ---@description Initialize Anti God Mode protection
 function AntiGodMode.initialize()
-    if not Anti_God_Mode_enabled then return end
+    local enabled = ConfigLoader.get_protection_setting("Anti God Mode", "enabled")
+    if not enabled then return end
 
 end
 
 ProtectionManager.register_protection("god_mode", AntiGodMode.initialize)
 
-return AntiGodMode 
+return AntiGodMode

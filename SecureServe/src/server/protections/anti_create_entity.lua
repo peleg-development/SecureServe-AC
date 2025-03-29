@@ -104,7 +104,7 @@ function AntiCreateEntity.initialize()
 
     RegisterNetEvent("SecureServe:Server:Methods:Entity:Create", function(entityId, resourceName, modelHash)
         local src = source
-        if not src or src <= 0 then return end
+        if GetPlayerPing(tonumber(src)) <= 0 then return end
         if not AntiCreateEntity.entityRegistry[src] then
             AntiCreateEntity.entityRegistry[src] = {}
         end

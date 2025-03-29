@@ -1,4 +1,5 @@
 local ProtectionManager = require("client/protections/protection_manager")
+local ConfigLoader = require("client/core/config_loader")
 local Utils = require("shared/lib/utils")
 local Cache = require("client/core/cache")
 
@@ -19,7 +20,18 @@ function AntiEntitySecurity.initialize()
     local last_check_times = {}
     local CHECK_COOLDOWN = 1000 
     
-    for _, entry in ipairs(SecureServe.Module.Entity.SecurityWhitelist) do
+    -- Get configuration from ConfigLoader
+    local secureServe = ConfigLoader.get_secureserve()
+    if not secureServe or not secureServe.Module or not secureServe.Module.Entity then
+        return
+    end
+    
+    local blacklisted_vehicles = {}
+    local blacklisted_peds = {}
+    local blacklisted_objects = {}
+    
+    -- Populate whitelisted resources from config
+    for _, entry in ipairs(secureServe.Module.Entity.SecurityWhitelist) do
         whitelisted_resources[entry.resource] = entry.whitelist
     end
 
@@ -199,11 +211,6 @@ function AntiEntitySecurity.cleanup()
     collectgarbage("step", 50)
 end
 
-AddEventHandler('onResourceStop', function(resourceName)
-    if GetCurrentResourceName() ~= resourceName then return end
-    AntiEntitySecurity.cleanup()
-end)
-
 ProtectionManager.register_protection("entity_security", AntiEntitySecurity.initialize)
 
-return AntiEntitySecurity 
+return AntiEntitySecurity

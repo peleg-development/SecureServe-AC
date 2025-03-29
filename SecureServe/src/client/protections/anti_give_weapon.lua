@@ -9,7 +9,8 @@ local flag = 0
 
 ---@description Initialize Anti Give Weapon protection
 function AntiGiveWeapon.initialize()
-    if not Anti_Give_Weapon_enabled then return end
+    local enabled = ConfigLoader.get_protection_setting("Anti Give Weapon", "enabled")
+    if not enabled then return end
 
 
     RegisterNetEvent("SecureServe:Weapons:Whitelist", function(data)

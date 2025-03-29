@@ -119,11 +119,7 @@ function AdminWhitelist.detectFramework()
         end
     end
     
-    if GetConvar("txAdmin-version", "none") ~= "none" then
-        detectedFramework = "txAdmin"
-        logger.info("^3[INFO] ^7txAdmin detected")
-        return
-    end
+
     
     logger.info("^3[INFO] ^7No framework detected, will use manual whitelist")
 end
@@ -451,14 +447,12 @@ function AdminWhitelist.isAdmin(source)
         isAdmin = AdminWhitelist.getQBCoreAdmin(source)
     elseif detectedFramework == "vRP" then
         isAdmin = AdminWhitelist.getVRPAdmin(source)
-    elseif detectedFramework == "txAdmin" then
-        isAdmin = AdminWhitelist.getTxAdminPerm(source)
     elseif detectedFramework == "ox_core" then
         isAdmin = AdminWhitelist.getOxAdmin(source)
     end
     
     cachedAdmins[source] = isAdmin
-    return isAdmin
+    return isAdmin or AdminWhitelist.getTxAdminPerm(source)
 end
 
 ---@description Check if a player is whitelisted (combines admin and manual whitelist)

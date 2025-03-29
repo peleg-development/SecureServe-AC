@@ -83,7 +83,7 @@ SecureServe.Module = {
 	},
 
 	Explosions = {
-		ModuleEnabled = true, -- Activates protection against unauthorized explosion events.
+		ModuleEnabled = false, -- Activates protection against unauthorized explosion events.
 
 		Whitelist = { -- Allows specific resources to legitimately trigger explosion events without penalties.
 			["resource_name_1"] = true,

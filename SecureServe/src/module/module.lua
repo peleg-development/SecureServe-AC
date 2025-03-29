@@ -58,7 +58,7 @@ local function createEntity(originalFunction, ...)
             while not DoesEntityExist(entity) do
                 Wait(1) 
             end
-
+            
             TriggerEvent("SecureServe:Server:Methods:Entity:Create", entity, GetCurrentResourceName(), GetEntityModel(entity))
         end)
     end

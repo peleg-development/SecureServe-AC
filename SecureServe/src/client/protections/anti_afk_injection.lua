@@ -1,4 +1,5 @@
 local ProtectionManager = require("client/protections/protection_manager")
+local ConfigLoader = require("client/core/config_loader")
 local Cache = require("client/core/cache")
 
 ---@class AntiAfkInjectionModule
@@ -6,7 +7,11 @@ local AntiAfkInjection = {}
 
 ---@description Initialize Anti AFK Injection protection
 function AntiAfkInjection.initialize()
-    if not Anti_AFK_enabled then return end
+    local enabled = ConfigLoader.get_protection_setting("Anti AFK Injection", "enabled")
+    if not enabled then return end
+    
+    local webhook = ConfigLoader.get_protection_setting("Anti AFK Injection", "webhook")
+    local time = ConfigLoader.get_protection_setting("Anti AFK Injection", "time")
     
     Citizen.CreateThread(function()
         while true do
@@ -16,7 +21,7 @@ function AntiAfkInjection.initialize()
                 or (GetIsTaskActive(pid, 151))
                 or (GetIsTaskActive(pid, 221))
                 or (GetIsTaskActive(pid, 222)) then
-                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti AFK Injection", Anti_AFK_webhook, Anti_AFK_time)
+                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti AFK Injection", webhook, time)
             end
             Citizen.Wait(5000)
         end
@@ -25,4 +30,4 @@ end
 
 ProtectionManager.register_protection("afk_injection", AntiAfkInjection.initialize)
 
-return AntiAfkInjection 
+return AntiAfkInjection

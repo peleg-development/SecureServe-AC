@@ -1,4 +1,5 @@
 local ProtectionManager = require("client/protections/protection_manager")
+local ConfigLoader = require("client/core/config_loader")
 local Cache = require("client/core/cache")
 
 ---@class AntiMagicBulletModule
@@ -6,7 +7,12 @@ local AntiMagicBullet = {}
 
 ---@description Initialize Anti Magic Bullet protection
 function AntiMagicBullet.initialize()
-    if not Anti_Magic_Bullet_enabled then return end
+    local enabled = ConfigLoader.get_protection_setting("Anti Magic Bullet", "enabled")
+    if not enabled then return end
+    
+    local tolerance = ConfigLoader.get_protection_setting("Anti Magic Bullet", "tolerance")
+    local webhook = ConfigLoader.get_protection_setting("Anti Magic Bullet", "webhook")
+    local time = ConfigLoader.get_protection_setting("Anti Magic Bullet", "time")
     
     local function check_killer_has_los(attacker, victim, killer_client_id)
         local attempt = 0
@@ -17,8 +23,8 @@ function AntiMagicBullet.initialize()
             Wait(1500)
         end
         
-        if (attempt >= Anti_Magic_Bullet_tolerance) then
-            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Magic Bullet Detected", Anti_Magic_Bullet_webhook, Anti_Magic_Bullet_time)
+        if (attempt >= tolerance) then
+            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Magic Bullet Detected", webhook, time)
         end
     end
 
@@ -44,4 +50,4 @@ end
 
 ProtectionManager.register_protection("magic_bullet", AntiMagicBullet.initialize)
 
-return AntiMagicBullet 
+return AntiMagicBullet

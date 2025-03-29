@@ -2,8 +2,6 @@
 local BlueScreen = {}
 local bluescreenActive = false
 
--- credit goes to @zinvera for making this
-
 ---@description Initialize the blue screen module
 function BlueScreen.initialize()
     local bluescreenActive = false
