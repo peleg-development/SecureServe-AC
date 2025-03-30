@@ -7,7 +7,7 @@ local AntiAI = {}
 ---@description Initialize Anti AI protection
 function AntiAI.initialize()
     if not ConfigLoader.get_protection_setting("Anti AI", "enabled") then return end
-    
+    local default = ConfigLoader.get_protection_setting("Anti AI", "default")
     Citizen.CreateThread(function()
         while true do
             Citizen.Wait(15000)

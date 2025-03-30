@@ -5,7 +5,6 @@ local EntityMonitor = {
 }
 
 local Utils = require("shared/lib/utils")
-local ConfigLoader = require("client/core/config_loader")
 
 ---@description Initialize entity monitoring
 function EntityMonitor.initialize()

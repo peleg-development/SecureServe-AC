@@ -52,43 +52,40 @@ function AdminWhitelist.initialize()
         end
     end)
     
-    local lastResponseTimes = {}
-    local maxRequestsPerMinute = 10
-    local requestCounts = {}
-    local cleanupTimer = 0
-    
     RegisterNetEvent("SecureServe:CheckWhitelist", function()
         local src = source
         local currentTime = os.time()
         
-        if currentTime - cleanupTimer >= 60 then
-            requestCounts = {}
-            cleanupTimer = currentTime
-        end
-        
-        requestCounts[src] = (requestCounts[src] or 0) + 1
-        
-        if requestCounts[src] > maxRequestsPerMinute then
-            return
-        end
-        
-        if lastResponseTimes[src] and (currentTime - lastResponseTimes[src]) < 2 then
-            return
-        end
-        
-        lastResponseTimes[src] = currentTime
         
         local isWhitelisted = AdminWhitelist.isWhitelisted(src)
         TriggerClientEvent("SecureServe:WhitelistResponse", src, isWhitelisted)
     end)
     
+    RegisterNetEvent("SecureServe:RequestAdminList", function()
+        local src = source
+        local currentTime = os.time()
+        
+        
+        local adminList = {}
+        
+        if _G.SecureServe and _G.SecureServe.Whitelisted then
+            for _, adminId in ipairs(_G.SecureServe.Whitelisted) do
+                adminList[tostring(adminId)] = true
+            end
+        end
+        
+        if AdminWhitelist.isWhitelisted(src) then
+            adminList[tostring(src)] = true
+        end
+
+        TriggerClientEvent("SecureServe:ReceiveAdminList", src, adminList)
+        logger.debug("Sent admin list to player: " .. src)
+    end)
+    
     AddEventHandler("playerDropped", function()
         local src = source
         cachedAdmins[src] = nil
-        adminCheckCooldown[src] = nil
-        lastResponseTimes[src] = nil
-        requestCounts[src] = nil
-        
+
         if _G.SecureServe and _G.SecureServe.Whitelisted then
             for i = #_G.SecureServe.Whitelisted, 1, -1 do
                 if tonumber(_G.SecureServe.Whitelisted[i]) == tonumber(src) then
@@ -206,7 +203,7 @@ function AdminWhitelist.getQBCoreAdmin(source)
         
         local Player = QBCore.Functions.GetPlayer(source)
         if not Player then return false end
-       
+
         if QBCore.Functions.HasPermission then
             return QBCore.Functions.HasPermission(source, "admin") or
                    QBCore.Functions.HasPermission(source, "god") or
@@ -444,6 +441,7 @@ function AdminWhitelist.isAdmin(source)
     if detectedFramework == "ESX" then
         isAdmin = AdminWhitelist.getESXAdmin(source)
     elseif detectedFramework == "QBCore" then
+        
         isAdmin = AdminWhitelist.getQBCoreAdmin(source)
     elseif detectedFramework == "vRP" then
         isAdmin = AdminWhitelist.getVRPAdmin(source)

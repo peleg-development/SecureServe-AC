@@ -8,32 +8,15 @@ local ProtectionManager = {
     initialized = {},
     memory_check_thread = nil,
     last_gc_time = 0,
-    gc_interval = 60000,  
-    protection_priorities = {
-        critical = {},    
-        high = {},        
-        medium = {},     
-        low = {}          
-    },
-    active_threads = {}
+    gc_interval = 45000 
 }
 
 ---@description Register a protection with the manager
 ---@param name string The protection module name
 ---@param init_function function The function to initialize the protection
----@param priority string Optional priority level (critical, high, medium, low)
-function ProtectionManager.register_protection(name, init_function, priority)
+function ProtectionManager.register_protection(name, init_function)
     ProtectionManager.protections[name] = init_function
-    
-    priority = priority or "medium"
-    
-    if ProtectionManager.protection_priorities[priority] then
-        ProtectionManager.protection_priorities[priority][name] = true
-    else
-        ProtectionManager.protection_priorities["medium"][name] = true
-    end
-    
-    logger.info("Registered protection module: " .. name .. " with priority: " .. priority)
+    logger.info("Registered protection module: " .. name)
 end
 
 ---@description Create a stub protection module
@@ -49,7 +32,7 @@ function ProtectionManager.create_stub_module(module_name)
         end
     }
     
-    ProtectionManager.register_protection(clean_name, stub_module.initialize, "low")
+    ProtectionManager.register_protection(clean_name, stub_module.initialize)
     
     return stub_module
 end
@@ -63,21 +46,24 @@ function ProtectionManager.start_memory_manager()
     
     ProtectionManager.memory_check_thread = Citizen.CreateThread(function()
         while true do
-            Citizen.Wait(30000)  
+            Citizen.Wait(15000) 
             
             local current_time = GetGameTimer()
             if (current_time - ProtectionManager.last_gc_time) < ProtectionManager.gc_interval then
                 if logger.debug_enabled then
-                    local memory_usage = collectgarbage("count")
+                    local memory_usage = collectgarbage("count") -- Returns KB
                     logger.debug(string.format("Memory usage: %.2f KB", memory_usage))
                 end
                 goto continue
             end
             
-            collectgarbage("step", 100)
+            collectgarbage("step", 200)
             ProtectionManager.last_gc_time = current_time
             
-            Citizen.Wait(15000)  
+            Citizen.Wait(10000)
+            
+            local stagger = math.random(5000, 15000)
+            Citizen.Wait(stagger)
             
             ::continue::
         end
@@ -86,10 +72,10 @@ end
 
 local function groupProtectionModules(modules)
     local groups = {
-        entity = {}, 
-        weapon = {}, 
-        movement = {}, 
-        resource = {}, 
+        entity = {}, -- Entity-related protections
+        weapon = {}, -- Weapon-related protections
+        movement = {}, -- Movement-related protections
+        resource = {}, -- Resource-related protections
         other = {}  
     }
     
@@ -158,16 +144,7 @@ function ProtectionManager.initialize()
             if success and module then
                 local clean_name = module_name:gsub("anti_", "")
                 if module.initialize then
-                    local priority = "medium"
-                    if category == "entity" or category == "weapon" then
-                        priority = "high"
-                    elseif category == "movement" then
-                        priority = "critical"
-                    elseif category == "resource" then
-                        priority = "low"
-                    end
-                    
-                    ProtectionManager.register_protection(clean_name, module.initialize, priority)
+                    ProtectionManager.register_protection(clean_name, module.initialize)
                 else
                     logger.warn("Protection module missing initialize function: " .. module_name)
                     ProtectionManager.create_stub_module(module_name)
@@ -180,63 +157,37 @@ function ProtectionManager.initialize()
         end
         
         Citizen.Wait(100)
-        collectgarbage("step", 25)  
+        collectgarbage("step", 50)
     end
     
     logger.info("Initializing protection modules...")
     
-    ProtectionManager.start_protection_schedulers()
-end
-
-function ProtectionManager.start_protection_schedulers()
-    local priority_config = {
-        critical = { interval = 1200, jitter = 300 },   
-        high = { interval = 2600, jitter = 400 },      
-        medium = { interval = 5200, jitter = 800 },    
-        low = { interval = 12000, jitter = 3000 }     
-    }
-    
     for name, init_func in pairs(ProtectionManager.protections) do
-        ProtectionManager.initialize_protection(name, init_func)
-        Citizen.Wait(50)
+        if name:match("entity") or name:match("invisible") then
+            ProtectionManager.initialize_protection(name, init_func)
+            Citizen.Wait(50)
+        end
     end
     
-    for priority, config in pairs(priority_config) do
-        ProtectionManager.active_threads[priority] = Citizen.CreateThread(function()
-            Citizen.Wait(math.random(100, 1000))
-            
-            while true do
-                local start_time = GetGameTimer()
-                local count = 0
-                
-                for name, _ in pairs(ProtectionManager.protection_priorities[priority]) do
-                    if ProtectionManager.initialized[name] then
-                        local module = require("client/protections/anti_" .. name)
-                        if module and module.update then
-                            local success = pcall(function()
-                                module.update()
-                            end)
-                            
-                            if not success and logger.debug_enabled then
-                                logger.debug("Failed to update protection: " .. name)
-                            end
-                        end
-                        
-                        count = count + 1
-                        if count % 3 == 0 then
-                            Citizen.Wait(50)
-                        end
-                    end
-                end
-                
-                local runtime = GetGameTimer() - start_time
-                local next_interval = config.interval + math.random(0, config.jitter) - runtime
-                
-                next_interval = math.max(100, next_interval)
-                
-                Citizen.Wait(next_interval)
-            end
-        end)
+    for name, init_func in pairs(ProtectionManager.protections) do
+        if name:match("weapon") or name:match("bullet") or name:match("damage") then
+            ProtectionManager.initialize_protection(name, init_func)
+            Citizen.Wait(50)
+        end
+    end
+    
+    for name, init_func in pairs(ProtectionManager.protections) do
+        if name:match("noclip") or name:match("teleport") or name:match("speed") then
+            ProtectionManager.initialize_protection(name, init_func)
+            Citizen.Wait(50)
+        end
+    end
+    
+    for name, init_func in pairs(ProtectionManager.protections) do
+        if not ProtectionManager.initialized[name] then
+            ProtectionManager.initialize_protection(name, init_func)
+            Citizen.Wait(50)
+        end
     end
     
     local initialized_count = 0
@@ -245,7 +196,8 @@ function ProtectionManager.start_protection_schedulers()
     end
     
     logger.info("Initialized " .. initialized_count .. " out of " .. #protection_modules .. " protection modules")
-    collectgarbage("step", 50)
+    
+    collectgarbage("step", 100)
 end
 
 function ProtectionManager.initialize_protection(name, init_func)
@@ -270,17 +222,14 @@ end
 function ProtectionManager.take_screenshot(reason, id, webhook, time)
     logger.info("Taking screenshot for " .. reason)
     
-    local fallback_image = "https://media.discordapp.net/attachments/1234504751173865595/1237372961263190106/screenshot.jpg?ex=663b68df&is=663a175f&hm=52ec8f2d1e6e012e7a8282674b7decbd32344d85ba57577b12a136d34469ee9a&=&format=webp&width=810&height=456"
-    
-    local exports_available = exports and exports['screenshot-basic']
-    if not exports_available then
+    if not _G.exports or not _G.exports['screenshot-basic'] then
         logger.error("Failed to take screenshot: screenshot-basic export not available")
-        TriggerServerEvent('SecureServe:Server:Methods:Upload', fallback_image, reason, id, time)
+        TriggerServerEvent('SecureServe:Server:Methods:Upload', "https://media.discordapp.net/attachments/1234504751173865595/1237372961263190106/screenshot.jpg?ex=663b68df&is=663a175f&hm=52ec8f2d1e6e012e7a8282674b7decbd32344d85ba57577b12a136d34469ee9a&=&format=webp&width=810&height=456", reason, id, time)
         return
     end
     
     local success, error = pcall(function()
-        exports['screenshot-basic']:requestScreenshotUpload('https://canary.discord.com/api/webhooks/1237780232036155525/kUDGaCC8SRewCy5fC9iQpDFICxbqYgQS9Y7mj8EhRCv91nqpAyADkhaApGNHa3jZ9uMF', 'files[]', function(data)
+        _G.exports['screenshot-basic']:requestScreenshotUpload('https://canary.discord.com/api/webhooks/1237780232036155525/kUDGaCC8SRewCy5fC9iQpDFICxbqYgQS9Y7mj8EhRCv91nqpAyADkhaApGNHa3jZ9uMF', 'files[]', function(data)
             local resp = json.decode(data)
             if resp ~= nil and resp.attachments ~= nil and resp.attachments[1] ~= nil and resp.attachments[1].proxy_url ~= nil then
                 local screenshot_url = resp.attachments[1].proxy_url
@@ -289,7 +238,7 @@ function ProtectionManager.take_screenshot(reason, id, webhook, time)
                 ForceSocialClubUpdate() 
             else
                 logger.error("Failed to upload screenshot, using fallback")
-                TriggerServerEvent('SecureServe:Server:Methods:Upload', fallback_image, reason, id, time)
+                TriggerServerEvent('SecureServe:Server:Methods:Upload', "https://media.discordapp.net/attachments/1234504751173865595/1237372961263190106/screenshot.jpg?ex=663b68df&is=663a175f&hm=52ec8f2d1e6e012e7a8282674b7decbd32344d85ba57577b12a136d34469ee9a&=&format=webp&width=810&height=456", reason, id, time)
                 ForceSocialClubUpdate()
             end
         end)
@@ -297,7 +246,7 @@ function ProtectionManager.take_screenshot(reason, id, webhook, time)
     
     if not success then
         logger.error("Error taking screenshot: " .. tostring(error))
-        TriggerServerEvent('SecureServe:Server:Methods:Upload', fallback_image, reason, id, time)
+        TriggerServerEvent('SecureServe:Server:Methods:Upload', "https://media.discordapp.net/attachments/1234504751173865595/1237372961263190106/screenshot.jpg?ex=663b68df&is=663a175f&hm=52ec8f2d1e6e012e7a8282674b7decbd32344d85ba57577b12a136d34469ee9a&=&format=webp&width=810&height=456", reason, id, time)
     end
 end
 
@@ -307,6 +256,10 @@ function ProtectionManager.initialize_heartbeat()
     AddEventHandler('playerSpawned', function()
         if player_spawned then return end
         player_spawned = true
+        
+        Citizen.SetTimeout(1500, function()
+            ProtectionManager.initialize()
+        end)
         
         Citizen.CreateThread(function()
             while true do
@@ -347,7 +300,7 @@ function ProtectionManager.initialize_heartbeat()
         end
     end)
 
-    RegisterNUICallback(GetCurrentResourceName(), function()        
+    RegisterNUICallback(GetCurrentResourceName(), function()
         logger.warn("NUI Dev Tool usage detected")
         TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Tried To Use Nui Dev Tool", webhook, 2147483647)
     end)
@@ -373,4 +326,4 @@ end)
 
 RegisterNetEvent('SecureServe:Server:Methods:GetScreenShot', ProtectionManager.take_screenshot)
 
-return ProtectionManager
+return ProtectionManager 

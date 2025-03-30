@@ -14,7 +14,7 @@ local AntiFreecam = {
     },
     current_flags = 0,
     check_interval = 2000,
-    flag_threshold = 3,
+    flag_threshold = 9,
     flag_weight = {
         [1] = 1,   
         [2] = 1,   
