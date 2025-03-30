@@ -3,7 +3,7 @@ local logger = require("server/core/logger")
 ---@class AntiServerCfgOptionsModule
 local AntiServerCfgOptions = {}
 
----@return void
+---@return void This function will apply the server security settings to the server
 function AntiServerCfgOptions.initialize()
     -- Check if server security settings are enabled
     if not SecureServe.ServerSecurity or not SecureServe.ServerSecurity.Enabled then
