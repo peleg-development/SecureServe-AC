@@ -105,7 +105,7 @@ if (originalOnNet) {
         const encryptedEvent = encryptDecrypt(eventName);
         
         originalOnNet(eventName, (...args) => {
-            if (IsDuplicityVersion()) { // Server side
+            if (IsDuplicityVersion()) { 
                 const src = source;
                 if (GetPlayerPing(src) > 0) {
                     const resourceName = GetCurrentResourceName();
@@ -169,7 +169,7 @@ function createEntityWrapper(originalFunction) {
             if (IsDuplicityVersion()) { // Server-side
                 emitNet('entity2', -1, GetEntityModel(entity));
                 emit("entityCreatedByScript", entity, 'fdgfd', true, GetEntityModel(entity));
-            } else { // Client-side
+            } else { 
                 emit('entityCreatedByScriptClient', entity);
                 emitNet(encryptDecrypt("entityCreatedByScript"), entity, 'fdgfd', true, GetEntityModel(entity));
             }
