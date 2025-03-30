@@ -6,7 +6,7 @@ local AntiSpeedHack = {}
 
 ---@description Initialize Anti Speed Hack protection
 function AntiSpeedHack.initialize()
-    if not Anti_Speed_Hack_enabled then return end
+    if not ConfigLoader.get_protection_setting("Anti Speed Hack", "enabled") then return end
 
     Citizen.CreateThread(function()
         while true do
@@ -19,7 +19,7 @@ function AntiSpeedHack.initialize()
 
                     DeleteEntity(vehicle)
                     if not Cache.Get("isSwimming") and not Cache.Get("isSwimmingUnderWater") and not Cache.Get("isFalling") then
-                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Speed Hack", Anti_Speed_Hack_webhook, Anti_Speed_Hack_time)
+                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Speed Hack", ConfigLoader.get_protection_setting("Anti Speed Hack", "webhook"), ConfigLoader.get_protection_setting("Anti Speed Hack", "time"))
                     end
                 end
 
