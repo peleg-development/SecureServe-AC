@@ -14,7 +14,7 @@ function AntiResourceStop.initialize()
             callback = function(stopped_by_server, started_resources, restarted)
                if not stopped_by_server and not started_resources and not restarted then
                   TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil,
-                     "Anti Start Resource " .. resource_name, Anti_Resource_Starter_webhook, Anti_Resource_Starter_time)
+                     "Anti Start Resource " .. resource_name, ConfigLoader.get_protection_setting("Anti Resource Stop", "webhook"), ConfigLoader.get_protection_setting("Anti Resource Stop", "time"))
                end
             end
          }
@@ -29,7 +29,7 @@ function AntiResourceStop.initialize()
             callback = function(stopped_by_server, started_resources, restarted)
                if not stopped_by_server and not restarted and not started_resources then
                   TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil,
-                     "Anti Stop Resource " .. resource_name, Anti_Resource_Stopper_webhook, Anti_Resource_Stopper_time)
+                     "Anti Stop Resource " .. resource_name, ConfigLoader.get_protection_setting("Anti Resource Stop", "webhook"), ConfigLoader.get_protection_setting("Anti Resource Stop", "time"))
                end
             end
          }
