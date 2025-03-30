@@ -1,11 +1,12 @@
 local ProtectionManager = require("client/protections/protection_manager")
+local ConfigLoader = require("client/core/config_loader")
 
 ---@class AntiWeaponPickupModule
 local AntiWeaponPickup = {}
 
 ---@description Initialize Anti Weapon Pickup protection
 function AntiWeaponPickup.initialize()
-    if not Anti_Weapon_Pickup_enabled then return end
+    if not ConfigLoader.get_protection_setting("Anti Weapon Pickup", "enabled") then return end
     
     Citizen.CreateThread(function()
         while true do

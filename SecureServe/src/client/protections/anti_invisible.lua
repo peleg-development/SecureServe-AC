@@ -10,10 +10,10 @@ function AntiInvisible.initialize()
     Citizen.CreateThread(function()
         while true do
             Citizen.Wait(2500)
-            if not Anti_Invisible_enabled then return end
+            if not ConfigLoader.get_protection_setting("Anti Invisible", "enabled") then return end
             
-            if Cache.Get("isInvisible") then
-                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Invisible", Anti_Invisible_webhook, Anti_Invisible_time)
+            if Cache.Get("isInvisible") and not Cache.Get("isAdmin") then
+                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Invisible", ConfigLoader.get_protection_setting("Anti Invisible", "webhook"), ConfigLoader.get_protection_setting("Anti Invisible", "time"))
             end
         end
     end)

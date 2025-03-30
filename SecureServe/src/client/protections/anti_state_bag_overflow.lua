@@ -1,5 +1,6 @@
 local ProtectionManager = require("client/protections/protection_manager")
 local ConfigLoader = require("client/core/config_loader")
+
 ---@class AntiStateBagOverflowModule
 local AntiStateBagOverflow = {
     active_handlers = {},
