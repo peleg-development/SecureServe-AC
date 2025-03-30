@@ -298,6 +298,12 @@ function ClientLogger.get_history(count, level)
     return result
 end
 
+---@description Set the debug mode
+---@param enabled boolean The debug mode
+function ClientLogger.set_debug_mode(enabled)
+    ClientLogger.debug_enabled = enabled
+end
+
 function ClientLogger.cleanup()
     if ClientLogger.cleanup_thread then
         TerminateThread(ClientLogger.cleanup_thread)
