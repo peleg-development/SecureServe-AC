@@ -139,7 +139,6 @@ function ProtectionManager.initialize()
         "anti_no_recoil",
         "anti_player_blips",
         "anti_give_weapon",
-        "anti_resource_events",
         "anti_speed_hack",
         "anti_state_bag_overflow",
         "anti_visions",
