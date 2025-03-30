@@ -35,6 +35,8 @@ SecureServe.Debug = false 																      -- Enables debug mode, this will
 
 
 -- FiveM built-in server security options to prevent cheating
+-- First try enabling everything and then disable the ones that are not needed or cause issues in your server 
+-- This system is Fivem Built-in and not created by SecureServe's team...
 SecureServe.ServerSecurity = {
     Enabled = true, -- Master toggle for all server security settings
     
@@ -65,7 +67,7 @@ SecureServe.ServerSecurity = {
     -- NETWORK EVENT SECURITY
     NetworkEvents = {
         -- Prevent malicious network events
-        FilterRequestControl = true,    -- Block REQUEST_CONTROL_EVENT routing
+        FilterRequestControl = false,   -- Block REQUEST_CONTROL_EVENT routing
                                         -- Disable if vehicle-related issues occur
         
         DisableNetworkedSounds = true,  -- Block NETWORK_PLAY_SOUND_EVENT routing
@@ -74,8 +76,8 @@ SecureServe.ServerSecurity = {
         DisablePhoneExplosions = true,  -- Block REQUEST_PHONE_EXPLOSION_EVENT
                                         -- Safe to keep enabled in most cases
         
-        DisableScriptEntityStates = true -- Block SCRIPT_ENTITY_STATE_CHANGE_EVENT
-                                         -- May interfere with some entity-based scripts
+        DisableScriptEntityStates = false -- Block SCRIPT_ENTITY_STATE_CHANGE_EVENT
+                                          -- May interfere with some entity-based scripts
     },
     
     -- CLIENT MODIFICATION PROTECTION
