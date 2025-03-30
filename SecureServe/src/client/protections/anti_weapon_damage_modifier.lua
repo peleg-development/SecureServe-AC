@@ -7,7 +7,7 @@ local AntiWeaponDamageModifier = {}
 
 ---@description Initialize Anti Weapon Damage Modifier protection
 function AntiWeaponDamageModifier.initialize()
-    if not Anti_Weapon_Damage_Modifier_enabled then return end
+    if not ConfigLoader.get_protection_setting("Anti Weapon Damage Modifier", "enabled") then return end
     
     local lastCheckedWeapon = nil
     local suspiciousModifiers = 0
@@ -27,8 +27,8 @@ function AntiWeaponDamageModifier.initialize()
                             local damage = Citizen.InvokeNative(0x4757f00bc6323cfe, currentWeapon, 1.0)
                             TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, 
                                 "Weapon damage modifier detected: " .. damage, 
-                                Anti_Weapon_Damage_Modifier_webhook, 
-                                Anti_Weapon_Damage_Modifier_time)
+                                ConfigLoader.get_protection_setting("Anti Weapon Damage Modifier", "webhook"), 
+                                ConfigLoader.get_protection_setting("Anti Weapon Damage Modifier", "time"))
                             
                             N_0x4757f00bc6323cfe(currentWeapon, 1.0)
                             suspiciousModifiers = 0
