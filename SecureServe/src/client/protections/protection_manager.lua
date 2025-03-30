@@ -158,7 +158,6 @@ function ProtectionManager.initialize()
             if success and module then
                 local clean_name = module_name:gsub("anti_", "")
                 if module.initialize then
-                    -- Auto-assign priority based on category
                     local priority = "medium"
                     if category == "entity" or category == "weapon" then
                         priority = "high"
@@ -186,7 +185,6 @@ function ProtectionManager.initialize()
     
     logger.info("Initializing protection modules...")
     
-    -- Start protection schedulers by priority
     ProtectionManager.start_protection_schedulers()
 end
 
@@ -325,9 +323,6 @@ function ProtectionManager.initialize_heartbeat()
     end)
     
     RegisterNetEvent('SecureServe:checkTaze', function()
-        -- Get configuration from ConfigLoader
-        local webhook = ConfigLoader.get_secureserve().Webhooks.Simple
-        
         if not HasPedGotWeapon(PlayerPedId(), GetHashKey("WEAPON_STUNGUN"), false) then
             logger.warn("Detected taze through menu attempt")
             TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Tried To taze through menu", webhook, 2147483647)
@@ -352,10 +347,7 @@ function ProtectionManager.initialize_heartbeat()
         end
     end)
 
-    RegisterNUICallback(GetCurrentResourceName(), function()
-        -- Get configuration from ConfigLoader
-        local webhook = ConfigLoader.get_secureserve().Webhooks.Simple
-        
+    RegisterNUICallback(GetCurrentResourceName(), function()        
         logger.warn("NUI Dev Tool usage detected")
         TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Tried To Use Nui Dev Tool", webhook, 2147483647)
     end)
