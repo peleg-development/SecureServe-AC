@@ -60,7 +60,6 @@ const originalOnAll = typeof onAll !== 'undefined' ? onAll : null;
 const originalEmitNet = typeof emitNet !== 'undefined' ? emitNet : null;
 const originalOnNet = typeof onNet !== 'undefined' ? onNet : null;
 
-// Override emit function
 if (originalEmit) {
     /**
      * @param {string} eventName - The name of the event to emit
