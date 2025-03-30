@@ -13,13 +13,13 @@ function AntiVisions.initialize()
             
             if ConfigLoader.get_protection_setting("Anti Visions", "enabled") then
                 if GetUsingseethrough() then
-                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Thermal Vision", ConfigLoader.get_protection_setting("Anti Visions", "webhook"), ConfigLoader.get_protection_setting("Anti Visions", "time"))
+                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Thermal Vision", webhook, time)
                 end
             end
             
             if ConfigLoader.get_protection_setting("Anti Visions", "enabled") then
                 if GetUsingnightvision() then
-                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Night Vision", ConfigLoader.get_protection_setting("Anti Visions", "webhook"), ConfigLoader.get_protection_setting("Anti Visions", "time"))
+                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Night Vision", webhook, time)
                 end
             end
         end

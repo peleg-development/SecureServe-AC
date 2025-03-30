@@ -22,7 +22,7 @@ function AntiStateBagOverflow.initialize()
         AntiStateBagOverflow.last_check_time = current_time
         
         if type(key) == "string" and #key > 131072 then
-            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti State Bag Overflow", ConfigLoader.get_protection_setting("Anti State Bag Overflow", "webhook"), ConfigLoader.get_protection_setting("Anti State Bag Overflow", "time"))
+            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti State Bag Overflow", webhook, time)
         end
     end)
 end

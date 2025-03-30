@@ -7,12 +7,9 @@ local AntiMagicBullet = {}
 
 ---@description Initialize Anti Magic Bullet protection
 function AntiMagicBullet.initialize()
-    local enabled = ConfigLoader.get_protection_setting("Anti Magic Bullet", "enabled")
-    if not enabled then return end
+    if not ConfigLoader.get_protection_setting("Anti Magic Bullet", "enabled") then return end
     
     local tolerance = ConfigLoader.get_protection_setting("Anti Magic Bullet", "tolerance")
-    local webhook = ConfigLoader.get_protection_setting("Anti Magic Bullet", "webhook")
-    local time = ConfigLoader.get_protection_setting("Anti Magic Bullet", "time")
     
     local function check_killer_has_los(attacker, victim, killer_client_id)
         local attempt = 0

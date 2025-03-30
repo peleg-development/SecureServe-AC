@@ -7,7 +7,7 @@ local AntiNoclip = {}
 
 ---@description Initialize Anti Noclip protection
 function AntiNoclip.initialize()
-    if not Anti_Noclip_enabled then return end
+    if not ConfigLoader.get_protection_setting("Anti Noclip", "enabled") then return end
     
     local lastPos = vector3(0, 0, 0)
     local teleport_threshold = 16.0
@@ -53,7 +53,7 @@ function AntiNoclip.initialize()
                 clip_flags = clip_flags + 1
                 
                 if clip_flags >= 7 and not Cache.Get("isAdmin") then
-                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Noclip", Anti_Noclip_webhook, Anti_Noclip_time)
+                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Noclip", webhook, time)
                     clip_flags = 0
                 end
             else

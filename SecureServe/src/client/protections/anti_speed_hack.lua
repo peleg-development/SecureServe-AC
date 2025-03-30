@@ -1,6 +1,6 @@
 local ProtectionManager = require("client/protections/protection_manager")
 local Cache = require("client/core/cache")
-
+local ConfigLoader = require("client/core/config_loader")
 ---@class AntiSpeedHackModule
 local AntiSpeedHack = {}
 
@@ -19,7 +19,7 @@ function AntiSpeedHack.initialize()
 
                     DeleteEntity(vehicle)
                     if not Cache.Get("isSwimming") and not Cache.Get("isSwimmingUnderWater") and not Cache.Get("isFalling") then
-                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Speed Hack", ConfigLoader.get_protection_setting("Anti Speed Hack", "webhook"), ConfigLoader.get_protection_setting("Anti Speed Hack", "time"))
+                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Speed Hack", webhook, time)
                     end
                 end
 

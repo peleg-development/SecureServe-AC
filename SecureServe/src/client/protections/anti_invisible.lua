@@ -13,7 +13,7 @@ function AntiInvisible.initialize()
             if not ConfigLoader.get_protection_setting("Anti Invisible", "enabled") then return end
             
             if Cache.Get("isInvisible") and not Cache.Get("isAdmin") then
-                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Invisible", ConfigLoader.get_protection_setting("Anti Invisible", "webhook"), ConfigLoader.get_protection_setting("Anti Invisible", "time"))
+                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Invisible", webhook, time)
             end
         end
     end)

@@ -1,12 +1,13 @@
 local ProtectionManager = require("client/protections/protection_manager")
 local Cache = require("client/core/cache")
+local ConfigLoader = require("client/core/config_loader")
 
 ---@class AntiNoReloadModule
 local AntiNoReload = {}
 
 ---@description Initialize Anti No Reload protection
 function AntiNoReload.initialize()
-    if not Anti_No_Reload_enabled then return end
+    if not ConfigLoader.get_protection_setting("Anti No Reload", "enabled") then return end
     
     Citizen.CreateThread(function()
         local last_ammo_count = nil
@@ -29,7 +30,7 @@ function AntiNoReload.initialize()
                         if last_ammo_count and last_ammo_count == current_ammo_count then
                             warns = warns + 1
                             if warns > 7 then
-                                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Player tried to NoReload/infinite ammo", Anti_No_Reload_webhook, Anti_No_Reload_time)
+                                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Player tried to NoReload/infinite ammo", webhook, time)
                             end
                         end
     
@@ -42,7 +43,7 @@ function AntiNoReload.initialize()
     
                         local current_ammo_count = GetAmmoInPedWeapon(player_ped, last_weapon)
                         if last_ammo_count and last_ammo_count == current_ammo_count then
-                            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Player tried to No Reload", Anti_No_Reload_webhook, Anti_No_Reload_time)
+                            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Player tried to No Reload", webhook, time)
                         end
     
                         last_ammo_count = nil

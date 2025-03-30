@@ -7,7 +7,7 @@ local AntiSpectate = {}
 
 ---@description Initialize Anti Spectate protection
 function AntiSpectate.initialize()
-    if not Anti_Spectate_enabled then return end
+    if not ConfigLoader.get_protection_setting("Anti Spectate", "enabled") then return end
     
     Citizen.CreateThread(function()
         while true do
@@ -17,8 +17,8 @@ function AntiSpectate.initialize()
                 if NetworkIsInSpectatorMode() then
                     TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, 
                         "Spectating players detected", 
-                        Anti_Spectate_webhook, 
-                        Anti_Spectate_time)
+                        webhook, 
+                        time)
                 end
             end
         end

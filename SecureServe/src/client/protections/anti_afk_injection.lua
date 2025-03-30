@@ -7,11 +7,7 @@ local AntiAfkInjection = {}
 
 ---@description Initialize Anti AFK Injection protection
 function AntiAfkInjection.initialize()
-    local enabled = ConfigLoader.get_protection_setting("Anti AFK Injection", "enabled")
-    if not enabled then return end
-    
-    local webhook = ConfigLoader.get_protection_setting("Anti AFK Injection", "webhook")
-    local time = ConfigLoader.get_protection_setting("Anti AFK Injection", "time")
+    if not ConfigLoader.get_protection_setting("Anti AFK Injection", "enabled") then return end
     
     Citizen.CreateThread(function()
         while true do

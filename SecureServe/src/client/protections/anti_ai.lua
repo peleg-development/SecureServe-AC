@@ -6,12 +6,7 @@ local AntiAI = {}
 
 ---@description Initialize Anti AI protection
 function AntiAI.initialize()
-    local enabled = ConfigLoader.get_protection_setting("Anti AI", "enabled")
-    if not enabled then return end
-    
-    local default = ConfigLoader.get_protection_setting("Anti AI", "default")
-    local webhook = ConfigLoader.get_protection_setting("Anti AI", "webhook")
-    local time = ConfigLoader.get_protection_setting("Anti AI", "time")
+    if not ConfigLoader.get_protection_setting("Anti AI", "enabled") then return end
     
     Citizen.CreateThread(function()
         while true do

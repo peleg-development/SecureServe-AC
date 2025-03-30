@@ -7,7 +7,7 @@ local AntiPlayerBlips = {}
 
 ---@description Initialize Anti Player Blips protection
 function AntiPlayerBlips.initialize()
-    if not Anti_Player_Blips_enabled then return end
+    if not ConfigLoader.get_protection_setting("Anti Player Blips", "enabled") then return end
     
     Citizen.CreateThread(function()
         while true do
@@ -21,7 +21,7 @@ function AntiPlayerBlips.initialize()
 
                     if DoesBlipExist(blip) then
                         if not Cache.Get("isAdmin") then
-                            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Player Blips", Anti_Player_Blips_webhook, Anti_Player_Blips_time)
+                            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Player Blips", webhook, time)
                         end
                     end
                 end

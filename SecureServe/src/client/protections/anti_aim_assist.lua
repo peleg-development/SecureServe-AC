@@ -6,11 +6,7 @@ local AntiAimAssist = {}
 
 ---@description Initialize Anti Aim Assist protection
 function AntiAimAssist.initialize()
-    local enabled = ConfigLoader.get_protection_setting("Anti Aim Assist", "enabled")
-    if not enabled then return end
-    
-    local webhook = ConfigLoader.get_protection_setting("Anti Aim Assist", "webhook")
-    local time = ConfigLoader.get_protection_setting("Anti Aim Assist", "time")
+    if not ConfigLoader.get_protection_setting("Anti Aim Assist", "enabled") then return end
     
     Citizen.CreateThread(function()
         while true do

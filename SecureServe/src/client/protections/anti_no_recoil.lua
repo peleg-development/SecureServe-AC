@@ -1,12 +1,12 @@
 local ProtectionManager = require("client/protections/protection_manager")
 local Cache = require("client/core/cache")
-
+local ConfigLoader = require("client/core/config_loader")
 ---@class AntiNoRecoilModule
 local AntiNoRecoil = {}
 
 ---@description Initialize Anti No Recoil protection
 function AntiNoRecoil.initialize()
-    if not Anti_No_Recoil_enabled then return end
+    if not ConfigLoader.get_protection_setting("Anti No Recoil", "enabled") then return end
     
     local spawn_time = GetGameTimer()
     
@@ -30,7 +30,7 @@ function AntiNoRecoil.initialize()
                 and not IsPedArmed(player_ped, 1) 
                 and not IsPauseMenuActive() 
                 and IsPedShooting(player_ped) then
-                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti No Recoil", Anti_No_Recoil_webhook, Anti_No_Recoil_time)
+                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti No Recoil", webhook, time)
                 end
             end
         end

@@ -33,9 +33,7 @@ local AntiFreecam = {
 ---@description Initialize Anti Freecam protection
 function AntiFreecam.initialize()
     local enabled = ConfigLoader.get_protection_setting("Anti Freecam", "enabled")
-    local webhook = ConfigLoader.get_protection_setting("Anti Freecam", "webhook")
-    local time = ConfigLoader.get_protection_setting("Anti Freecam", "time")
-    
+
     if not enabled then 
         if AntiFreecam.debug then print("[AntiFreecam] Protection disabled") end
         return 

@@ -7,12 +7,8 @@ local AntiBiggerHitbox = {}
 
 ---@description Initialize Anti Bigger Hitbox protection
 function AntiBiggerHitbox.initialize()
-    local enabled = ConfigLoader.get_protection_setting("Anti Bigger Hitbox", "enabled")
-    if not enabled then return end
-    
-    local webhook = ConfigLoader.get_protection_setting("Anti Bigger Hitbox", "webhook")
-    local time = ConfigLoader.get_protection_setting("Anti Bigger Hitbox", "time")
-    
+    if not ConfigLoader.get_protection_setting("Anti Bigger Hitbox", "enabled") then return end
+
     Citizen.CreateThread(function()
         while true do
             local id = Cache.Get("ped")

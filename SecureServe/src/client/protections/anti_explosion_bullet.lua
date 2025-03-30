@@ -7,11 +7,7 @@ local AntiExplosionBullet = {}
 
 ---@description Initialize Anti Explosion Bullet protection
 function AntiExplosionBullet.initialize()
-    local enabled = ConfigLoader.get_protection_setting("Anti Explosion Bullet", "enabled")
-    if not enabled then return end
-    
-    local webhook = ConfigLoader.get_protection_setting("Anti Explosion Bullet", "webhook")
-    local time = ConfigLoader.get_protection_setting("Anti Explosion Bullet", "time")
+    if not ConfigLoader.get_protection_setting("Anti Explosion Bullet", "enabled") then return end
     
     Citizen.CreateThread(function()
         while true do
