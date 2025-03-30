@@ -53,7 +53,7 @@ function AntiFreecam.initialize()
             local camRot = GetGameplayCamRot(2)
             local current_time = GetGameTimer()
             
-            if ConfigLoader.is_whitelisted(GetPlayerServerId(PlayerId())) then
+            if Cache.Get("isAdmin") then
                 if AntiFreecam.debug then print("[AntiFreecam] Player is whitelisted, skipping checks") end
                 goto continue
             end

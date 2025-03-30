@@ -1,5 +1,6 @@
 local ProtectionManager = require("client/protections/protection_manager")
 local ConfigLoader = require("client/core/config_loader")
+local Cache = require("client/core/cache")
 
 ---@class AntiSpectateModule
 local AntiSpectate = {}
@@ -12,7 +13,7 @@ function AntiSpectate.initialize()
         while true do
             Citizen.Wait(1000)
             
-            if not ConfigLoader.is_whitelisted(GetPlayerServerId(PlayerId())) then
+            if not Cache.Get("isAdmin") then
                 if NetworkIsInSpectatorMode() then
                     TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, 
                         "Spectating players detected", 

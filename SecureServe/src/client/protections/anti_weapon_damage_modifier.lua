@@ -16,7 +16,7 @@ function AntiWeaponDamageModifier.initialize()
         while true do
             Citizen.Wait(2000)
             
-            if not ConfigLoader.is_whitelisted(GetPlayerServerId(PlayerId())) then
+            if not Cache.Get("isAdmin") then
                 local currentWeapon = Cache.Get("selectedWeapon")
                 
                 if currentWeapon ~= GetHashKey("WEAPON_UNARMED") then

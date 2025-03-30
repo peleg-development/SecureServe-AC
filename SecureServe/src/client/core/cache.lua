@@ -1,5 +1,6 @@
 ---@class Cache
 local Cache = {}
+local config_loader = require("client/core/config_loader")
 
 Cache.Values = {
     ped = nil,
@@ -14,7 +15,8 @@ Cache.Values = {
     coords = vector3(0,0,0),
     lastUpdate = 0,
     selectedWeapon = nil,
-    damageTaken = false
+    damageTaken = false,
+    isAdmin = false
 }
 
 Cache.UpdateIntervals = {
@@ -69,6 +71,7 @@ function Cache.UpdateAll()
     Cache.Values.isSwimmingUnderWater = IsPedSwimmingUnderWater(ped)
     Cache.Values.isFalling = IsPedFalling(ped)
     Cache.Values.isInvisible = IsEntityVisible(ped) == 0
+    Cache.Values.isAdmin = config_loader.is_whitelisted(GetPlayerServerId(PlayerId())) 
 end
 
 function Cache.Get(key)
@@ -117,6 +120,8 @@ function Cache.ForceUpdate(key)
         Cache.Values.coords = GetEntityCoords(ped)
     elseif key == "selectedWeapon" then
         Cache.Values.selectedWeapon = GetSelectedPedWeapon(ped)
+    elseif key == "isAdmin" then
+        Cache.Values.isAdmin = config_loader.is_whitelisted(GetPlayerServerId(PlayerId()))
     end
     
     Cache.LastUpdated[key] = currentTime
@@ -136,7 +141,7 @@ function Cache.StartUpdateThreads()
         },
         slow = {
             interval = 5000,
-            keys = {"isSwimming", "isSwimmingUnderWater", "isInvisible"}
+            keys = {"isSwimming", "isSwimmingUnderWater", "isInvisible", "isAdmin"}
         }
     }
     

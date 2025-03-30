@@ -52,7 +52,7 @@ function AntiNoclip.initialize()
                 
                 clip_flags = clip_flags + 1
                 
-                if clip_flags >= 7 and not ConfigLoader.is_whitelisted(GetPlayerServerId(PlayerId())) then
+                if clip_flags >= 7 and not Cache.Get("isAdmin") then
                     TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Noclip", Anti_Noclip_webhook, Anti_Noclip_time)
                     clip_flags = 0
                 end

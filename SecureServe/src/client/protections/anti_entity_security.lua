@@ -20,7 +20,6 @@ function AntiEntitySecurity.initialize()
     local last_check_times = {}
     local CHECK_COOLDOWN = 1000 
     
-    -- Get configuration from ConfigLoader
     local secureServe = ConfigLoader.get_secureserve()
     if not secureServe or not secureServe.Module or not secureServe.Module.Entity then
         return
@@ -30,7 +29,6 @@ function AntiEntitySecurity.initialize()
     local blacklisted_peds = {}
     local blacklisted_objects = {}
     
-    -- Populate whitelisted resources from config
     for _, entry in ipairs(secureServe.Module.Entity.SecurityWhitelist) do
         whitelisted_resources[entry.resource] = entry.whitelist
     end
