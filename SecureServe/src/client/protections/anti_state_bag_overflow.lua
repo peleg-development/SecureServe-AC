@@ -1,5 +1,5 @@
 local ProtectionManager = require("client/protections/protection_manager")
-
+local ConfigLoader = require("client/core/config_loader")
 ---@class AntiStateBagOverflowModule
 local AntiStateBagOverflow = {
     active_handlers = {},
@@ -9,7 +9,7 @@ local AntiStateBagOverflow = {
 
 ---@description Initialize Anti State Bag Overflow protection
 function AntiStateBagOverflow.initialize()
-    if not Anti_State_Bag_Overflow_enabled then return end
+    if not ConfigLoader.get_protection_setting("Anti State Bag Overflow", "enabled") then return end
     
     AntiStateBagOverflow.cleanup()
     
