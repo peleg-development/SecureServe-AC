@@ -9,7 +9,7 @@ local Heartbeat = {
     allowedStop = {},
     failureCount = {},
     checkInterval = 5000,
-    maxFailures = 40
+    maxFailures = 50
 }
 
 ---@description Initialize heartbeat protection
@@ -81,7 +81,7 @@ function Heartbeat.startMonitoringThreads()
                 if lastHeartbeatTime ~= nil then
                     local timeSinceLastHeartbeat = currentTime - lastHeartbeatTime
                     
-                    if timeSinceLastHeartbeat > 15 then
+                    if timeSinceLastHeartbeat > 30 then
                         Heartbeat.banPlayer(playerId, "No heartbeat received")
                         Heartbeat.playerHeartbeats[playerId] = nil
                     end
