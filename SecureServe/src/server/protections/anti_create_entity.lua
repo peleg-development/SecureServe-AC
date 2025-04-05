@@ -67,15 +67,17 @@ function AntiCreateEntity.initialize()
             screenshot = screenshot
         }
         
+        print("[SecureServe] Incase this is a false ban go to config.lua and in it search SecureServe.Module incase this is an event ban go to Events and then to whitelist and add the event")
+        print("[SecureServe] Incase its an entity ban go to Entity and SecurityWhitelist and add the resource name")
         if not screenshot and SecureServe.Module.Entity.TakeScreenshot then
             exports['screenshot-basic']:requestClientScreenshot(src, {
                 fileName = 'entity_' .. src .. '_' .. os.time() .. '.jpg'
             }, function(err, data)
                 details.screenshot = data
-                ban_manager.ban_player(src, "Unauthorized entity creation", details)
+                ban_manager.ban_player(src, reason, details)
             end)
         else
-            ban_manager.ban_player(src, "Unauthorized entity creation", details)
+            ban_manager.ban_player(src, reason, details)
         end
         
         if AntiCreateEntity.entityRegistry[src] then
@@ -99,10 +101,15 @@ function AntiCreateEntity.initialize()
             end
         end
     end)
+    
+    RegisterNetEvent("SecureServe:Server:Methods:Entity:CreateServer", function(entityId, resourceName, modelHash)
+        local src = source
+        AntiCreateEntity.allowHash(modelHash)
+    end)
 
     RegisterNetEvent("SecureServe:Server:Methods:Entity:Create", function(entityId, resourceName, modelHash)
         local src = source
-        if not src or src <= 0 then return end
+        if GetPlayerPing(tonumber(src)) <= tonumber(0) then return end
         if not AntiCreateEntity.entityRegistry[src] then
             AntiCreateEntity.entityRegistry[src] = {}
         end
@@ -143,12 +150,10 @@ function AntiCreateEntity.initialize()
             
             if AntiCreateEntity.entityRegistry[owner] and (AntiCreateEntity.entityRegistry[owner][entity] or AntiCreateEntity.entityRegistry[owner][modelHash]) then 
                 return
+            elseif AntiCreateEntity.entityRegistry[0] and (AntiCreateEntity.entityRegistry[0][entity] or AntiCreateEntity.entityRegistry[0][modelHash]) then
+                return
             elseif owner and modelHash then
                 TriggerClientEvent("SecureServe:CheckEntityResource", owner, NetworkGetNetworkIdFromEntity(entity), modelHash)
-                
-                if DoesEntityExist(entity) then
-                    DeleteEntity(entity)
-                end
             end
         end
     end)

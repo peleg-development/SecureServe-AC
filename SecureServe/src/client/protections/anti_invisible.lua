@@ -7,14 +7,22 @@ local AntiInvisible = {}
 
 ---@description Initialize Anti Invisible protection
 function AntiInvisible.initialize()
+    if not ConfigLoader.get_protection_setting("Anti Invisible", "enabled") then return end
+    
     Citizen.CreateThread(function()
         while true do
-            Citizen.Wait(2500)
-            if not Anti_Invisible_enabled then return end
+            Citizen.Wait(15000)
             
-            if Cache.Get("isInvisible") then
-                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Invisible", Anti_Invisible_webhook, Anti_Invisible_time)
+            if Cache.Get("hasPermission", "invisible") or Cache.Get("hasPermission", "all") or Cache.Get("isAdmin") then
+                goto continue
             end
+            
+            local isInvisible = Cache.Get("isInvisible")
+            if isInvisible then
+                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Invisible", webhook, time)
+            end
+            
+            ::continue::
         end
     end)
 end

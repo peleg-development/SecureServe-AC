@@ -1,33 +1,42 @@
 ---@class ConfigLoaderModule
-local ConfigLoader = {
-    config = nil,
-    loaded = false
-}
+local ConfigLoader = {}
 
 local Utils = require("shared/lib/utils")
 local ClientLogger = require("client/core/client_logger")
 local protection_count = {}
 
+-- Initialize global variables
+_G.SecureServeConfig = nil
+_G.SecureServeLoaded = false
+_G.SecureServeProtectionSettings = {}
+_G.SecureServeInitCalled = false
+_G.SecureServeAdminList = {}
+_G.SecureServeLastAdminUpdate = 0
+
 ---@description Initialize the client-side config loader
 function ConfigLoader.initialize()
+    if _G.SecureServeInitCalled then return end
+    _G.SecureServeInitCalled = true
+    
     ClientLogger.info("^5[LOADING] ^3Client Config^7")
     
     TriggerServerEvent("requestConfig")
     
     RegisterNetEvent("receiveConfig", function(serverConfig)
-        ConfigLoader.config = serverConfig
-        ConfigLoader.loaded = true
+        _G.SecureServeConfig = serverConfig
+        _G.SecureServe = serverConfig
         ConfigLoader.process_config(serverConfig)
+        _G.SecureServeLoaded = true
         ClientLogger.info("^5[SUCCESS] ^3Client Config^7 received from server")
     end)
     
     local attempts = 0
     local maxAttempts = 10
     
-    while not ConfigLoader.loaded do
+    while not _G.SecureServeLoaded and attempts < maxAttempts do
         Wait(1000)
         attempts = attempts + 1
-        if not ConfigLoader.loaded then
+        if not _G.SecureServeLoaded then
             TriggerServerEvent("requestConfig")
         end
     end
@@ -38,7 +47,7 @@ end
 ---@param default any Optional default value if key doesn't exist
 ---@return any The config value or default
 function ConfigLoader.get(key, default)
-    if not ConfigLoader.loaded or not ConfigLoader.config then
+    if not _G.SecureServeLoaded or not _G.SecureServeConfig then
         return default
     end
     
@@ -47,7 +56,7 @@ function ConfigLoader.get(key, default)
         table.insert(parts, part)
     end
     
-    local value = ConfigLoader.config
+    local value = _G.SecureServeConfig
     for _, part in ipairs(parts) do
         if type(value) ~= "table" then
             return default
@@ -64,20 +73,111 @@ end
 ---@description Check if config has been loaded
 ---@return boolean is_loaded Whether config has been loaded
 function ConfigLoader.is_loaded()
-    return ConfigLoader.loaded
+    return _G.SecureServeLoaded
 end
 
 ---@description Get the entire config table
 ---@return table config The config table
 function ConfigLoader.get_config()
-    return ConfigLoader.config
+    return _G.SecureServeConfig
+end
+
+---@description Get the SecureServe configuration
+---@return table secureserve The SecureServe configuration
+function ConfigLoader.get_secureserve()
+    return _G.SecureServe
+end
+
+---@description Ensure settings are initialized
+local function ensure_initialized()
+    if not _G.SecureServeInitCalled then
+        ConfigLoader.initialize()
+        Wait(1000) 
+    end
+end
+
+---@description Get protection setting directly from SecureServe.Protection.Simple
+---@param name string The name of the protection
+---@param property string The property to get
+---@return any value The protection setting value
+local function get_from_simple_protection(name, property)
+    if not _G.SecureServe or not _G.SecureServe.Protection or not _G.SecureServe.Protection.Simple then
+        return nil
+    end
+    
+    for _, v in pairs(_G.SecureServe.Protection.Simple) do
+        if v.protection == name then
+            if property == "time" and type(v.time) ~= "number" and _G.SecureServe.BanTimes then
+                return _G.SecureServe.BanTimes[v.time]
+            elseif property == "webhook" and v.webhook == "" and _G.SecureServe.Webhooks then
+                return _G.SecureServe.Webhooks.Simple
+            else
+                return v[property]
+            end
+        end
+    end
+    
+    return nil
+end
+
+---@description Get a protection setting by name and property
+---@param name string The name of the protection
+---@param property string The property to get
+---@return any value The protection setting value
+function ConfigLoader.get_protection_setting(name, property)
+
+    
+    if not name or not property then
+        return nil
+    end
+    
+    if _G.SecureServeProtectionSettings[name] and _G.SecureServeProtectionSettings[name][property] ~= nil then
+        return _G.SecureServeProtectionSettings[name][property]
+    end
+    
+    if _G.SecureServeLoaded and _G.SecureServe and _G.SecureServe.Protection and _G.SecureServe.Protection.Simple then
+        for _, v in pairs(_G.SecureServe.Protection.Simple) do
+            if v.protection == name then
+                local time = v.time
+                if type(time) ~= "number" and _G.SecureServe.BanTimes then
+                    time = _G.SecureServe.BanTimes[v.time]
+                end
+                
+                local webhook = v.webhook
+                if webhook == "" and _G.SecureServe.Webhooks then
+                    webhook = _G.SecureServe.Webhooks.Simple
+                end
+                
+                local settings = {
+                    time = time,
+                    limit = v.limit or 999,
+                    webhook = webhook,
+                    enabled = v.enabled,
+                    default = v.default,
+                    defaultr = v.defaultr,
+                    tolerance = v.tolerance,
+                    defaults = v.defaults,
+                    dispatch = v.dispatch
+                }
+                
+                _G.SecureServeProtectionSettings[name] = settings
+                
+                return settings[property]
+            end
+        end
+    end
+    
+    return get_from_simple_protection(name, property)
 end
 
 ---@param config table The received config from server
 function ConfigLoader.process_config(config)
-    
     if not config then return end
-    _G.SecureServe = config
+    
+    _G.SecureServe = config 
+    local SecureServe = _G.SecureServe
+    
+    _G.SecureServeProtectionSettings = _G.SecureServeProtectionSettings or {}
     
     for k, v in pairs(SecureServe.Protection.Simple) do
         if v.webhook == "" then
@@ -103,16 +203,17 @@ function ConfigLoader.process_config(config)
             webhook = SecureServe.Webhooks.Simple
         end
         local enabled = SecureServe.Protection.Simple[k].enabled
+        
         ConfigLoader.assign_protection_settings(name, {
-            time = time,
-            limit = limit,
-            webhook = webhook,
-            enabled = enabled,
-            default = default,
-            defaultr = defaultr,
-            tolerance = tolerance,
-            defaults = defaults,
-            dispatch = dispatch
+            ["time"] = time,
+            ["limit"] = limit,
+            ["webhook"] = webhook,
+            ["enabled"] = enabled,
+            ["default"] = default,
+            ["defaultr"] = defaultr,
+            ["tolerance"] = tolerance,
+            ["defaults"] = defaults,
+            ["dispatch"] = dispatch
         })
         
         if not protection_count["SecureServe.Protection.Simple"] then protection_count["SecureServe.Protection.Simple"] = 0 end
@@ -120,22 +221,18 @@ function ConfigLoader.process_config(config)
     end
 
     ConfigLoader.process_blacklist_category("BlacklistedCommands")
-    
     ConfigLoader.process_blacklist_category("BlacklistedSprites")
-    
     ConfigLoader.process_blacklist_category("BlacklistedAnimDicts")
-    
     ConfigLoader.process_blacklist_category("BlacklistedExplosions")
-    
     ConfigLoader.process_blacklist_category("BlacklistedWeapons")
-    
     ConfigLoader.process_blacklist_category("BlacklistedVehicles")
-    
     ConfigLoader.process_blacklist_category("BlacklistedObjects")
 end
 
 ---@param category string The blacklist category to process
 function ConfigLoader.process_blacklist_category(category)
+    local SecureServe = _G.SecureServe  
+    
     for k, v in pairs(SecureServe.Protection[category]) do
         if v.webhook == "" then
             SecureServe.Protection[category][k].webhook = SecureServe.Webhooks[category]
@@ -154,265 +251,37 @@ end
 ---@param name string The name of the protection
 ---@param settings table The settings to assign
 function ConfigLoader.assign_protection_settings(name, settings)
-    if name == "Anti Give Weapon" then
-        _G.Anti_Give_Weapon_time = settings.time
-        _G.Anti_Give_Weapon_limit = settings.limit
-        _G.Anti_Give_Weapon_webhook = settings.webhook
-        _G.Anti_Give_Weapon_enabled = settings.enabled
-    elseif name == "Anti Remove Weapon" then
-        _G.Anti_Remove_Weapon_time = settings.time
-        _G.Anti_Remove_Weapon_limit = settings.limit
-        _G.Anti_Remove_Weapon_webhook = settings.webhook
-        _G.Anti_Remove_Weapon_enabled = settings.enabled
-    elseif name == "Anti Player Blips" then
-        _G.Anti_Player_Blips_time = settings.time
-        _G.Anti_Player_Blips_limit = settings.limit
-        _G.Anti_Player_Blips_webhook = settings.webhook
-        _G.Anti_Player_Blips_enabled = settings.enabled
-    elseif name == "Anti Car Fly" then
-        _G.Anti_Car_Fly_time = settings.time
-        _G.Anti_Car_Fly_limit = settings.limit
-        _G.Anti_Car_Fly_webhook = settings.webhook
-        _G.Anti_Car_Fly_enabled = settings.enabled
-    elseif name == "Anti Car Ram" then
-        _G.Anti_Car_Ram_time = settings.time
-        _G.Anti_Car_Ram_limit = settings.limit
-        _G.Anti_Car_Ram_webhook = settings.webhook
-        _G.Anti_Car_Ram_enabled = settings.enabled
-    elseif name == "Anti Particles" then
-        _G.Anti_Particles_time = settings.time
-        _G.Anti_Particles_limit = settings.limit
-        _G.Anti_Particles_webhook = settings.webhook
-        _G.Anti_Particles_enabled = settings.enabled
-    elseif name == "Anti Internal" then
-        _G.Anti_Internal_time = settings.time
-        _G.Anti_Internal_limit = settings.limit
-        _G.Anti_Internal_webhook = settings.webhook
-        _G.Anti_Internal_enabled = settings.enabled
-    elseif name == "Anti Damage Modifier" then
-        _G.Anti_Damage_Modifier_default = settings.default
-        _G.Anti_Damage_Modifier_time = settings.time
-        _G.Anti_Damage_Modifier_limit = settings.limit
-        _G.Anti_Damage_Modifier_webhook = settings.webhook
-        _G.Anti_Damage_Modifier_enabled = settings.enabled
-    elseif name == "Anti Weapon Pickup" then
-        _G.Anti_Weapon_Pickup_time = settings.time
-        _G.Anti_Weapon_Pickup_limit = settings.limit
-        _G.Anti_Weapon_Pickup_webhook = settings.webhook
-        _G.Anti_Weapon_Pickup_enabled = settings.enabled
-    elseif name == "Anti Remove From Car" then
-        _G.Anti_Remove_From_Car_time = settings.time
-        _G.Anti_Remove_From_Car_limit = settings.limit
-        _G.Anti_Remove_From_Car_webhook = settings.webhook
-        _G.Anti_Remove_From_Car_enabled = settings.enabled
-    elseif name == "Anti Spectate" then
-        _G.Anti_Spectate_time = settings.time
-        _G.Anti_Spectate_limit = settings.limit
-        _G.Anti_Spectate_webhook = settings.webhook
-        _G.Anti_Spectate_enabled = settings.enabled
-    elseif name == "Anti Freecam" then
-        _G.Anti_Freecam_time = settings.time
-        _G.Anti_Freecam_limit = settings.limit
-        _G.Anti_Freecam_webhook = settings.webhook
-        _G.Anti_Freecam_enabled = settings.enabled
-    elseif name == "Anti Explosion Bullet" then
-        _G.Anti_Explosion_Bullet_time = settings.time
-        _G.Anti_Explosion_Bullet_limit = settings.limit
-        _G.Anti_Explosion_Bullet_webhook = settings.webhook
-        _G.Anti_Explosion_Bullet_enabled = settings.enabled
-    elseif name == "Anti Magic Bullet" then
-        _G.Anti_Magic_Bullet_time = settings.time
-        _G.Anti_Magic_Bullet_limit = settings.limit
-        _G.Anti_Magic_Bullet_webhook = settings.webhook
-        _G.Anti_Magic_Bullet_enabled = settings.enabled
-        _G.Anti_Magic_Bullet_tolerance = settings.tolerance
-    elseif name == "Anti Night Vision" then
-        _G.Anti_Night_Vision_time = settings.time
-        _G.Anti_Night_Vision_limit = settings.limit
-        _G.Anti_Night_Vision_webhook = settings.webhook
-        _G.Anti_Night_Vision_enabled = settings.enabled
-    elseif name == "Anti Thermal Vision" then
-        _G.Anti_Thermal_Vision_time = settings.time
-        _G.Anti_Thermal_Vision_limit = settings.limit
-        _G.Anti_Thermal_Vision_webhook = settings.webhook
-        _G.Anti_Thermal_Vision_enabled = settings.enabled
-    elseif name == "Anti God Mode" then
-        _G.Anti_God_Mode_time = settings.time
-        _G.Anti_God_Mode_limit = settings.limit
-        _G.Anti_God_Mode_webhook = settings.webhook
-        _G.Anti_God_Mode_enabled = settings.enabled
-    elseif name == "Anti Infinite Ammo" then
-        _G.Anti_Infinite_Ammo_time = settings.time
-        _G.Anti_Infinite_Ammo_limit = settings.limit
-        _G.Anti_Infinite_Ammo_webhook = settings.webhook
-        _G.Anti_Infinite_Ammo_enabled = settings.enabled
-    elseif name == "Anti Teleport" then
-        _G.Anti_Teleport_time = settings.time
-        _G.Anti_Teleport_limit = settings.limit
-        _G.Anti_Teleport_webhook = settings.webhook
-        _G.Anti_Teleport_enabled = settings.enabled
-    elseif name == "Anti Invisible" then
-        _G.Anti_Invisible_time = settings.time
-        _G.Anti_Invisible_limit = settings.limit
-        _G.Anti_Invisible_webhook = settings.webhook
-        _G.Anti_Invisible_enabled = settings.enabled
-    elseif name == "Anti Resource Stopper" then
-        _G.Anti_Resource_Stopper_dispatch = settings.dispatch
-        _G.Anti_Resource_Stopper_time = settings.time
-        _G.Anti_Resource_Stopper_limit = settings.limit
-        _G.Anti_Resource_Stopper_webhook = settings.webhook
-        _G.Anti_Resource_Stopper_enabled = settings.enabled
-    elseif name == "Anti Resource Starter" then
-        _G.Anti_Resource_Starter_dispatch = settings.dispatch
-        _G.Anti_Resource_Starter_time = settings.time
-        _G.Anti_Resource_Starter_limit = settings.limit
-        _G.Anti_Resource_Starter_webhook = settings.webhook
-        _G.Anti_Resource_Starter_enabled = settings.enabled
-    elseif name == "Anti Vehicle God Mode" then
-        _G.Anti_Vehicle_God_Mode_time = settings.time
-        _G.Anti_Vehicle_God_Mode_limit = settings.limit
-        _G.Anti_Vehicle_God_Mode_webhook = settings.webhook
-        _G.Anti_Vehicle_God_Mode_enabled = settings.enabled
-    elseif name == "Anti Vehicle Power Increase" then
-        _G.Anti_Vehicle_Power_Increase_time = settings.time
-        _G.Anti_Vehicle_Power_Increase_limit = settings.limit
-        _G.Anti_Vehicle_Power_Increase_webhook = settings.webhook
-        _G.Anti_Vehicle_Power_Increase_enabled = settings.enabled
-    elseif name == "Anti Speed Hack" then
-        _G.Anti_Speed_Hack_time = settings.time
-        _G.Anti_Speed_Hack_limit = settings.limit
-        _G.Anti_Speed_Hack_webhook = settings.webhook
-        _G.Anti_Speed_Hack_defaultr = settings.defaultr
-        _G.Anti_Speed_Hack_defaults = settings.defaults
-        _G.Anti_Speed_Hack_enabled = settings.enabled
-    elseif name == "Anti Vehicle Spawn" then
-        _G.Anti_Vehicle_Spawn_time = settings.time
-        _G.Anti_Vehicle_Spawn_limit = settings.limit
-        _G.Anti_Vehicle_Spawn_webhook = settings.webhook
-        _G.Anti_Vehicle_Spawn_enabled = settings.enabled
-    elseif name == "Anti Ped Spawn" then
-        _G.Anti_Ped_Spawn_time = settings.time
-        _G.Anti_Ped_Spawn_limit = settings.limit
-        _G.Anti_Ped_Spawn_webhook = settings.webhook
-        _G.Anti_Ped_Spawn_enabled = settings.enabled
-    elseif name == "Anti Plate Changer" then
-        _G.Anti_Plate_Changer_time = settings.time
-        _G.Anti_Plate_Changer_limit = settings.limit
-        _G.Anti_Plate_Changer_webhook = settings.webhook
-        _G.Anti_Plate_Changer_enabled = settings.enabled
-    elseif name == "Anti Cheat Engine" then
-        _G.Anti_Cheat_Engine_time = settings.time
-        _G.Anti_Cheat_Engine_limit = settings.limit
-        _G.Anti_Cheat_Engine_webhook = settings.webhook
-        _G.Anti_Cheat_Engine_enabled = settings.enabled
-    elseif name == "Anti Rage" then
-        _G.Anti_Rage_time = settings.time
-        _G.Anti_Rage_limit = settings.limit
-        _G.Anti_Rage_webhook = settings.webhook
-        _G.Anti_Rage_enabled = settings.enabled
-    elseif name == "Anti Aim Assist" then
-        _G.Anti_Aim_Assist_time = settings.time
-        _G.Anti_Aim_Assist_limit = settings.limit
-        _G.Anti_Aim_Assist_webhook = settings.webhook
-        _G.Anti_Aim_Assist_enabled = settings.enabled
-    elseif name == "Anti Kill All" then
-        _G.Anti_Kill_All_time = settings.time
-        _G.Anti_Kill_All_limit = settings.limit
-        _G.Anti_Kill_All_webhook = settings.webhook
-        _G.Anti_Kill_All_enabled = settings.enabled
-    elseif name == "Anti Solo Session" then
-        _G.Anti_Solo_Session_time = settings.time
-        _G.Anti_Solo_Session_limit = settings.limit
-        _G.Anti_Solo_Session_webhook = settings.webhook
-        _G.Anti_Solo_Session_enabled = settings.enabled
-    elseif name == "Anti AI" then
-        _G.Anti_AI_default = settings.default
-        _G.Anti_AI_time = settings.time
-        _G.Anti_AI_limit = settings.limit
-        _G.Anti_AI_webhook = settings.webhook
-        _G.Anti_AI_enabled = settings.enabled
-    elseif name == "Anti No Reload" then
-        _G.Anti_No_Reload_time = settings.time
-        _G.Anti_No_Reload_limit = settings.limit
-        _G.Anti_No_Reload_webhook = settings.webhook
-        _G.Anti_No_Reload_enabled = settings.enabled
-    elseif name == "Anti Rapid Fire" then
-        _G.Anti_Rapid_Fire_time = settings.time
-        _G.Anti_Rapid_Fire_limit = settings.limit
-        _G.Anti_Rapid_Fire_webhook = settings.webhook
-        _G.Anti_Rapid_Fire_enabled = settings.enabled
-    elseif name == "Anti Bigger Hitbox" then
-        _G.Anti_Bigger_Hitbox_default = settings.default
-        _G.Anti_Bigger_Hitbox_time = settings.time
-        _G.Anti_Bigger_Hitbox_limit = settings.limit
-        _G.Anti_Bigger_Hitbox_webhook = settings.webhook
-        _G.Anti_Bigger_Hitbox_enabled = settings.enabled
-    elseif name == "Anti No Recoil" then
-        _G.Anti_No_Recoil_default = settings.default
-        _G.Anti_No_Recoil_time = settings.time
-        _G.Anti_No_Recoil_limit = settings.limit
-        _G.Anti_No_Recoil_webhook = settings.webhook
-        _G.Anti_No_Recoil_enabled = settings.enabled
-    elseif name == "Anti State Bag Overflow" then
-        _G.Anti_State_Bag_Overflow_time = settings.time
-        _G.Anti_State_Bag_Overflow_limit = settings.limit
-        _G.Anti_State_Bag_Overflow_webhook = settings.webhook
-        _G.Anti_State_Bag_Overflow_enabled = settings.enabled
-    elseif name == "Anti Extended NUI Devtools" then
-        _G.Anti_Extended_NUI_Devtools_time = settings.time
-        _G.Anti_Extended_NUI_Devtools_limit = settings.limit
-        _G.Anti_Extended_NUI_Devtools_webhook = settings.webhook
-        _G.Anti_Extended_NUI_Devtools_enabled = settings.enabled
-    elseif name == "Anti No Ragdoll" then
-        _G.Anti_No_Ragdoll_time = settings.time
-        _G.Anti_No_Ragdoll_limit = settings.limit
-        _G.Anti_No_Ragdoll_webhook = settings.webhook
-        _G.Anti_No_Ragdoll_enabled = settings.enabled
-    elseif name == "Anti Super Jump" then
-        _G.Anti_Super_Jump_time = settings.time
-        _G.Anti_Super_Jump_limit = settings.limit
-        _G.Anti_Super_Jump_webhook = settings.webhook
-        _G.Anti_Super_Jump_enabled = settings.enabled
-    elseif name == "Anti Noclip" then
-        _G.Anti_Noclip_time = settings.time
-        _G.Anti_Noclip_limit = settings.limit
-        _G.Anti_Noclip_webhook = settings.webhook
-        _G.Anti_Noclip_enabled = settings.enabled
-    elseif name == "Anti Infinite Stamina" then
-        _G.Anti_Infinite_Stamina_time = settings.time
-        _G.Anti_Infinite_Stamina_limit = settings.limit
-        _G.Anti_Infinite_Stamina_webhook = settings.webhook
-        _G.Anti_Infinite_Stamina_enabled = settings.enabled
-    elseif name == "Anti AFK Injection" then
-        _G.Anti_AFK_time = settings.time
-        _G.Anti_AFK_limit = settings.limit
-        _G.Anti_AFK_webhook = settings.webhook
-        _G.Anti_AFK_enabled = settings.enabled
-    elseif name == "Anti Play Sound" then
-        _G.Anti_Play_Sound_time = settings.time
-        _G.Anti_Play_Sound_webhook = settings.webhook
-        _G.Anti_Play_Sound_enabled = settings.enabled
-    end
+    _G.SecureServeProtectionSettings[name] = settings
 end
 
 ---@param player number The player ID to check
 ---@return boolean is_whitelisted Whether the player is whitelisted
 function ConfigLoader.is_whitelisted(player_id)
-    if not SecureServe then
-        return false
+    local player_id = player_id or GetPlayerServerId(PlayerId())
+    
+    local currentTime = GetGameTimer()
+    if currentTime - _G.SecureServeLastAdminUpdate > 60000 then
+        TriggerServerEvent("SecureServe:RequestAdminList")
+        _G.SecureServeLastAdminUpdate = currentTime
     end
-
-    local promise = promise.new()
     
-    TriggerServerEvent("SecureServe:CheckWhitelist")
+    if _G.SecureServeAdminList[tostring(player_id)] then
+        return true
+    end
     
-    RegisterNetEvent("SecureServe:WhitelistResponse", function(result)
-        promise:resolve(result)
-    end)
-    
-    local result = Citizen.Await(promise)
-    return result == true
+    return false
 end
+
+RegisterNetEvent("SecureServe:ReceiveAdminList", function(adminList)
+    _G.SecureServeAdminList = adminList
+    _G.SecureServeLastAdminUpdate = GetGameTimer()
+end)
+
+Citizen.CreateThread(function()
+    Citizen.Wait(2000) 
+    TriggerServerEvent("SecureServe:RequestAdminList")
+    _G.SecureServeLastAdminUpdate = GetGameTimer()
+end)
 
 ---@param player number The player ID to check
 ---@return boolean is_menu_admin Whether the player is a menu admin
@@ -433,30 +302,30 @@ end
 ---@return boolean is_blacklisted Whether the model is blacklisted
 function ConfigLoader.is_model_blacklisted(model_hash)
 
-    if not ConfigLoader.loaded or not ConfigLoader.config then
+    if not _G.SecureServeLoaded or not _G.SecureServeConfig then
         return false
     end
     
     model_hash = tostring(model_hash)
     
-    if ConfigLoader.config.Protection and ConfigLoader.config.Protection.BlacklistedObjects then
-        for _, blacklisted in pairs(ConfigLoader.config.Protection.BlacklistedObjects) do
+    if _G.SecureServeConfig.Protection and _G.SecureServeConfig.Protection.BlacklistedObjects then
+        for _, blacklisted in pairs(_G.SecureServeConfig.Protection.BlacklistedObjects) do
             if tostring(blacklisted.hash) == model_hash then
                 return true
             end
         end
     end
     
-    if ConfigLoader.config.Protection and ConfigLoader.config.Protection.BlacklistedVehicles then
-        for _, blacklisted in pairs(ConfigLoader.config.Protection.BlacklistedVehicles) do
+    if _G.SecureServeConfig.Protection and _G.SecureServeConfig.Protection.BlacklistedVehicles then
+        for _, blacklisted in pairs(_G.SecureServeConfig.Protection.BlacklistedVehicles) do
             if tostring(blacklisted.hash) == model_hash then
                 return true
             end
         end
     end
     
-    if ConfigLoader.config.Protection and ConfigLoader.config.Protection.BlacklistedPeds then
-        for _, blacklisted in pairs(ConfigLoader.config.Protection.BlacklistedPeds) do
+    if _G.SecureServeConfig.Protection and _G.SecureServeConfig.Protection.BlacklistedPeds then
+        for _, blacklisted in pairs(_G.SecureServeConfig.Protection.BlacklistedPeds) do
             if tostring(blacklisted.hash) == model_hash then
                 return true
             end
@@ -466,4 +335,4 @@ function ConfigLoader.is_model_blacklisted(model_hash)
     return false
 end
 
-return ConfigLoader 
+return ConfigLoader

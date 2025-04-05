@@ -1,4 +1,5 @@
 local ProtectionManager = require("client/protections/protection_manager")
+local ConfigLoader = require("client/core/config_loader")
 
 ---@class AntiStateBagOverflowModule
 local AntiStateBagOverflow = {
@@ -9,7 +10,7 @@ local AntiStateBagOverflow = {
 
 ---@description Initialize Anti State Bag Overflow protection
 function AntiStateBagOverflow.initialize()
-    if not Anti_State_Bag_Overflow_enabled then return end
+    if not ConfigLoader.get_protection_setting("Anti State Bag Overflow", "enabled") then return end
     
     AntiStateBagOverflow.cleanup()
     
@@ -21,7 +22,7 @@ function AntiStateBagOverflow.initialize()
         AntiStateBagOverflow.last_check_time = current_time
         
         if type(key) == "string" and #key > 131072 then
-            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti State Bag Overflow", Anti_State_Bag_Overflow_webhook, Anti_State_Bag_Overflow_time)
+            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti State Bag Overflow", webhook, time)
         end
     end)
 end

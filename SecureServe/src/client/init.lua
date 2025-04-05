@@ -6,18 +6,20 @@ local ClientInit = {}
 ---@description Initialize all client components
 function ClientInit.initialize()
     local logger = require("client/core/client_logger")
+    local ConfigLoader = require("client/core/config_loader")
+    
     logger.initialize({
-        Debug = _G.SecureServe and _G.SecureServe.Debug or false
+        Debug = false
     })
     
     logger.info("==============================================")
-    logger.info("SecureServe Client v1.2.0 initializing...")
+    logger.info("SecureServe Client v1.2.1 initializing...")
     
-    local ConfigLoader = require("client/core/config_loader")
     ConfigLoader.initialize()
     logger.info("Config Loader initialized")
     
-
+    local secureServe = ConfigLoader.get_secureserve()
+    
     local Cache = require("client/core/cache")
     Cache.initialize()
     logger.info("Cache initialized")
@@ -60,4 +62,4 @@ CreateThread(function()
     ClientInit.initialize()
 end)
 
-return ClientInit 
+return ClientInit

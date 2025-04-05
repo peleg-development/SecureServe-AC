@@ -1,15 +1,22 @@
 local ProtectionManager = require("client/protections/protection_manager")
 local ConfigLoader = require("client/core/config_loader")
+local Cache = require("client/core/cache")
 
 ---@class AntiPlayerBlipsModule
 local AntiPlayerBlips = {}
 
 ---@description Initialize Anti Player Blips protection
 function AntiPlayerBlips.initialize()
-    if not Anti_Player_Blips_enabled then return end
+    if not ConfigLoader.get_protection_setting("Anti Player Blips", "enabled") then return end
     
     Citizen.CreateThread(function()
-        while true do
+        while true do    
+            Citizen.Wait(15000)
+  
+            if Cache.Get("hasPermission", "playerblips") or Cache.Get("hasPermission", "all") or Cache.Get("isAdmin") then
+                goto continue
+            end
+
             local pid = PlayerId()
             local active_players = GetActivePlayers()
 
@@ -19,14 +26,12 @@ function AntiPlayerBlips.initialize()
                     local blip = GetBlipFromEntity(player_ped)
 
                     if DoesBlipExist(blip) then
-                        if not ConfigLoader.is_whitelisted(GetPlayerServerId(PlayerId())) then
-                            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Player Blips", Anti_Player_Blips_webhook, Anti_Player_Blips_time)
-                        end
+                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Player Blips", webhook, time)
                     end
                 end
             end
-
-            Citizen.Wait(15000)
+            
+            ::continue::
         end
     end)
 end

@@ -1,12 +1,13 @@
 local ProtectionManager = require("client/protections/protection_manager")
+local ConfigLoader = require("client/core/config_loader")
 
 ---@class AntiAIModule
 local AntiAI = {}
 
 ---@description Initialize Anti AI protection
 function AntiAI.initialize()
-    if not Anti_AI_enabled then return end
-    
+    if not ConfigLoader.get_protection_setting("Anti AI", "enabled") then return end
+    local default = ConfigLoader.get_protection_setting("Anti AI", "default")
     Citizen.CreateThread(function()
         while true do
             Citizen.Wait(15000)
@@ -54,8 +55,8 @@ function AntiAI.initialize()
                 local accuracy_mod = GetWeaponComponentAccuracyModifier(weapons[i])
                 local range_mod = GetWeaponComponentRangeModifier(weapons[i])
                 
-                if dmg_mod > Anti_AI_default or accuracy_mod > Anti_AI_default or range_mod > Anti_AI_default then
-                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti AIS", Anti_AI_webhook, Anti_AI_time)
+                if dmg_mod > default or accuracy_mod > default or range_mod > default then
+                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti AIS", webhook, time)
                 end
             end
         end
@@ -64,4 +65,4 @@ end
 
 ProtectionManager.register_protection("ai", AntiAI.initialize)
 
-return AntiAI 
+return AntiAI

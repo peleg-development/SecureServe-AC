@@ -125,7 +125,6 @@ function ProtectionManager.initialize()
         "anti_no_recoil",
         "anti_player_blips",
         "anti_give_weapon",
-        "anti_resource_events",
         "anti_speed_hack",
         "anti_state_bag_overflow",
         "anti_visions",
@@ -257,6 +256,10 @@ function ProtectionManager.initialize_heartbeat()
     AddEventHandler('playerSpawned', function()
         if player_spawned then return end
         player_spawned = true
+        
+        Citizen.SetTimeout(1500, function()
+            ProtectionManager.initialize()
+        end)
         
         Citizen.CreateThread(function()
             while true do

@@ -2,11 +2,12 @@ fx_version "cerulean"
 game "gta5"
 
 author "SecureServe.net"
-version "1.2.0"
+version "1.2.1"
 
 files {
     "bans.json",
     "src/client/protections/index.html",
+    "secureserve.key"
 }
 
 ui_page "src/client/protections/index.html"
@@ -46,7 +47,6 @@ client_scripts {
     "src/client/protections/anti_weapon_damage_modifier.lua",
     "src/client/protections/anti_ocr.lua",
     "src/client/protections/anti_player_blips.lua",
-    "src/client/protections/anti_resource_events.lua",
     "src/client/protections/anti_speed_hack.lua",
     "src/client/protections/anti_state_bag_overflow.lua",
     "src/client/protections/anti_afk_injection.lua",

@@ -7,7 +7,7 @@ local AntiNoclip = {}
 
 ---@description Initialize Anti Noclip protection
 function AntiNoclip.initialize()
-    if not Anti_Noclip_enabled then return end
+    if not ConfigLoader.get_protection_setting("Anti Noclip", "enabled") then return end
     
     local lastPos = vector3(0, 0, 0)
     local teleport_threshold = 16.0
@@ -29,6 +29,13 @@ function AntiNoclip.initialize()
             
             local current_pos = Cache.Get("coords")
             local isInVehicle = Cache.Get("isInVehicle")
+            
+            -- Skip checks if player has noclip permission
+            if Cache.Get("hasPermission", "noclip") or Cache.Get("hasPermission", "all") or Cache.Get("isAdmin") then
+                lastPos = current_pos
+                clip_flags = 0
+                goto continue
+            end
             
             if not isInVehicle then
                 local distance = #(current_pos - lastPos)
@@ -52,8 +59,8 @@ function AntiNoclip.initialize()
                 
                 clip_flags = clip_flags + 1
                 
-                if clip_flags >= 7 and not ConfigLoader.is_whitelisted(GetPlayerServerId(PlayerId())) then
-                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Noclip", Anti_Noclip_webhook, Anti_Noclip_time)
+                if clip_flags >= 7 then
+                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Noclip", webhook, time)
                     clip_flags = 0
                 end
             else

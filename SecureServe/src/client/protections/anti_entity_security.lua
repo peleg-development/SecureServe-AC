@@ -1,4 +1,5 @@
 local ProtectionManager = require("client/protections/protection_manager")
+local ConfigLoader = require("client/core/config_loader")
 local Utils = require("shared/lib/utils")
 local Cache = require("client/core/cache")
 
@@ -19,7 +20,16 @@ function AntiEntitySecurity.initialize()
     local last_check_times = {}
     local CHECK_COOLDOWN = 1000 
     
-    for _, entry in ipairs(SecureServe.Module.Entity.SecurityWhitelist) do
+    local secureServe = ConfigLoader.get_secureserve()
+    if not secureServe or not secureServe.Module or not secureServe.Module.Entity then
+        return
+    end
+    
+    local blacklisted_vehicles = {}
+    local blacklisted_peds = {}
+    local blacklisted_objects = {}
+    
+    for _, entry in ipairs(secureServe.Module.Entity.SecurityWhitelist) do
         whitelisted_resources[entry.resource] = entry.whitelist
     end
 
@@ -102,7 +112,7 @@ function AntiEntitySecurity.initialize()
 
     AntiEntitySecurity.event_handler = RegisterNetEvent("SecureServe:CheckEntityResource", function(netId, modelHash)
         local entity = NetworkGetEntityFromNetworkId(netId)
-        if not entity or not DoesEntityExist(entity) then return end
+        if entity == nil or not DoesEntityExist(entity) then return end
         
         local entityType = "Unknown"
         if IsEntityAVehicle(entity) then
@@ -115,7 +125,6 @@ function AntiEntitySecurity.initialize()
         
         local entityScript = GetEntityScript(entity)
         if not entityScript then entityScript = "unknown" end
-        
         if entityScript ~= "unknown" then
             local isWhitelisted = false
             if whitelisted_resources[entityScript] then
@@ -199,11 +208,6 @@ function AntiEntitySecurity.cleanup()
     collectgarbage("step", 50)
 end
 
-AddEventHandler('onResourceStop', function(resourceName)
-    if GetCurrentResourceName() ~= resourceName then return end
-    AntiEntitySecurity.cleanup()
-end)
-
 ProtectionManager.register_protection("entity_security", AntiEntitySecurity.initialize)
 
-return AntiEntitySecurity 
+return AntiEntitySecurity

@@ -1,4 +1,5 @@
 local ProtectionManager = require("client/protections/protection_manager")
+local ConfigLoader = require("client/core/config_loader")
 local Cache = require("client/core/cache")
 
 ---@class AntiBiggerHitboxModule
@@ -6,8 +7,8 @@ local AntiBiggerHitbox = {}
 
 ---@description Initialize Anti Bigger Hitbox protection
 function AntiBiggerHitbox.initialize()
-    if not Anti_Bigger_Hitbox_enabled then return end
-    
+    if not ConfigLoader.get_protection_setting("Anti Bigger Hitbox", "enabled") then return end
+
     Citizen.CreateThread(function()
         while true do
             local id = Cache.Get("ped")
@@ -20,7 +21,7 @@ function AntiBiggerHitbox.initialize()
                     or (min.y < -0.252)
                     or (min.y < -0.29)
                     or (max.z > 0.98) then
-                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Bigger Hit Box", Anti_Bigger_Hitbox_webhook, Anti_Bigger_Hitbox_time)
+                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Bigger Hit Box", webhook, time)
                 end
             end
 
@@ -31,4 +32,4 @@ end
 
 ProtectionManager.register_protection("bigger_hitbox", AntiBiggerHitbox.initialize)
 
-return AntiBiggerHitbox 
+return AntiBiggerHitbox

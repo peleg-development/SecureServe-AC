@@ -14,13 +14,13 @@ local AntiFreecam = {
     },
     current_flags = 0,
     check_interval = 2000,
-    flag_threshold = 3,
+    flag_threshold = 9,
     flag_weight = {
-        [1] = 1,    -- DISTANCE_EXCEEDED
-        [2] = 1,    -- ANGLE_SUSPICIOUS  
-        [4] = 2,    -- THROUGH_WALL
-        [8] = 1,    -- STATIC_PLAYER
-        [16] = 1    -- MOVING_CAMERA
+        [1] = 1,   
+        [2] = 1,   
+        [4] = 2,   
+        [8] = 1,    
+        [16] = 1    
     },
     cooldown = 9000,
     last_detection_time = 0,
@@ -32,27 +32,23 @@ local AntiFreecam = {
 
 ---@description Initialize Anti Freecam protection
 function AntiFreecam.initialize()
-    if not Anti_Freecam_enabled then 
-        if AntiFreecam.debug then print("[AntiFreecam] Protection disabled") end
-        return 
-    end
+    if not ConfigLoader.get_protection_setting("Anti Freecam", "enabled") then return end
     
     if AntiFreecam.debug then print("[AntiFreecam] Protection initialized with flag-based detection") end
     
     Citizen.CreateThread(function()
         while true do
-            Citizen.Wait(AntiFreecam.check_interval) 
+            Citizen.Wait(2000) 
+            
+            if Cache.Get("hasPermission", "freecam") or Cache.Get("hasPermission", "all") or Cache.Get("isAdmin") then
+                goto continue
+            end
             
             local playerPed = Cache.Get("ped")
             local playerCoord = Cache.Get("coords")
             local camCoord = GetGameplayCamCoord()
             local camRot = GetGameplayCamRot(2)
             local current_time = GetGameTimer()
-            
-            if ConfigLoader.is_whitelisted(GetPlayerServerId(PlayerId())) then
-                if AntiFreecam.debug then print("[AntiFreecam] Player is whitelisted, skipping checks") end
-                goto continue
-            end
             
             if (current_time - AntiFreecam.last_detection_time) < AntiFreecam.cooldown then
                 if AntiFreecam.debug then print("[AntiFreecam] In cooldown period, resetting flags") end
@@ -61,7 +57,8 @@ function AntiFreecam.initialize()
             end
             
             if IsCutsceneActive() or IsPlayerSwitchInProgress() or IsPauseMenuActive() or
-               IsFirstPersonAimCamActive() or IsPedInAnyVehicle(playerPed, false) then
+               IsFirstPersonAimCamActive() or IsPedInAnyVehicle(playerPed, false) or 
+               IsPedRagdoll(playerPed) or IsPedFalling(playerPed) then
                 if AntiFreecam.debug then print("[AntiFreecam] Excluded state detected, skipping checks") end
                 AntiFreecam.current_flags = 0
                 goto continue
@@ -181,8 +178,8 @@ function AntiFreecam.initialize()
                 
                 TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, 
                     detection_info, 
-                    Anti_Freecam_webhook, 
-                    2147483647) 
+                    webhook, 
+                    time) 
                 
                 AntiFreecam.current_flags = 0
                 AntiFreecam.last_detection_time = current_time
@@ -230,5 +227,4 @@ end
 
 ProtectionManager.register_protection("freecam", AntiFreecam.initialize)
 
-return AntiFreecam 
-
+return AntiFreecam

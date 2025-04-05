@@ -1,5 +1,6 @@
 ---@class Cache
 local Cache = {}
+local config_loader = require("client/core/config_loader")
 
 Cache.Values = {
     ped = nil,
@@ -14,10 +15,22 @@ Cache.Values = {
     coords = vector3(0,0,0),
     lastUpdate = 0,
     selectedWeapon = nil,
-    damageTaken = false
+    damageTaken = false,
+    isAdmin = false,
+    permissions = {},
+    permissionsLastUpdate = 0
+}
+
+Cache.UpdateIntervals = {
+    coords = 1000,       
+    selectedWeapon = 2500, 
+    ped = 5000,
+    permissions = 30000,  -- Check permissions every 30 seconds    
+    default = 3000    
 }
 
 Cache.LastUpdated = {}
+Cache.LastValues = {}   
 
 local updateThreads = {}
 
@@ -32,41 +45,52 @@ function Cache.initialize()
     
     Cache.UpdateAll()
     Cache.StartUpdateThreads()
+    
+    -- Request permission check on initialization
+    Cache.RequestPermissionCheck()
 end
-
-local UPDATE_INTERVAL = 2000
 
 function Cache.UpdateAll()
     local currentTime = GetGameTimer()
     Cache.Values.lastUpdate = currentTime
     
-    Cache.Values.ped = PlayerPedId()
-    Cache.Values.health = GetEntityHealth(Cache.Values.ped)
-    Cache.Values.armor = GetPedArmour(Cache.Values.ped)
-    Cache.Values.coords = GetEntityCoords(Cache.Values.ped)
-    Cache.Values.selectedWeapon = GetSelectedPedWeapon(Cache.Values.ped)
-    Cache.Values.isInVehicle = IsPedInAnyVehicle(Cache.Values.ped, false)
+    local ped = PlayerPedId()
+    Cache.Values.ped = ped
+    
+    for k, v in pairs(Cache.Values) do
+        Cache.LastValues[k] = v
+        Cache.LastUpdated[k] = currentTime
+    end
+    
+    Cache.Values.health = GetEntityHealth(ped)
+    Cache.Values.armor = GetPedArmour(ped)
+    Cache.Values.coords = GetEntityCoords(ped)
+    Cache.Values.selectedWeapon = GetSelectedPedWeapon(ped)
+    Cache.Values.isInVehicle = IsPedInAnyVehicle(ped, false)
     if Cache.Values.isInVehicle then
-        Cache.Values.vehicle = GetVehiclePedIsIn(Cache.Values.ped, false)
+        Cache.Values.vehicle = GetVehiclePedIsIn(ped, false)
     else
         Cache.Values.vehicle = nil
     end
     
-    Cache.Values.isSwimming = IsPedSwimming(Cache.Values.ped)
-    Cache.Values.isSwimmingUnderWater = IsPedSwimmingUnderWater(Cache.Values.ped)
-    Cache.Values.isFalling = IsPedFalling(Cache.Values.ped)
-    Cache.Values.isInvisible = IsEntityVisible(Cache.Values.ped) == 0
-    
-    for k in pairs(Cache.Values) do
-        Cache.LastUpdated[k] = currentTime
-    end
+    Cache.Values.isSwimming = IsPedSwimming(ped)
+    Cache.Values.isSwimmingUnderWater = IsPedSwimmingUnderWater(ped)
+    Cache.Values.isFalling = IsPedFalling(ped)
+    Cache.Values.isInvisible = IsEntityVisible(ped) == 0
+    Cache.Values.isAdmin = config_loader.is_whitelisted(GetPlayerServerId(PlayerId())) 
 end
 
-function Cache.Get(key)
+function Cache.Get(key, subKey)
     local currentTime = GetGameTimer()
-    local keyUpdateInterval = key == "coords" and 800 or UPDATE_INTERVAL
+    local updateInterval = Cache.UpdateIntervals[key] or Cache.UpdateIntervals.default
     
-    if not Cache.LastUpdated[key] or (currentTime - Cache.LastUpdated[key]) > keyUpdateInterval then
+    -- Handle special case for permission check
+    if key == "hasPermission" and subKey then
+        Cache.CheckPermission(subKey)
+        return Cache.Values.permissions[subKey] or false
+    end
+    
+    if not Cache.LastUpdated[key] or (currentTime - Cache.LastUpdated[key]) > updateInterval then
         Cache.ForceUpdate(key)
     end
     
@@ -75,12 +99,21 @@ end
 
 function Cache.ForceUpdate(key)
     local currentTime = GetGameTimer()
-    local ped = PlayerPedId()
+    local ped = Cache.Values.ped
+    
+    if currentTime - (Cache.LastUpdated["ped"] or 0) > Cache.UpdateIntervals.ped then
+        ped = PlayerPedId()
+        Cache.Values.ped = ped
+        Cache.LastUpdated["ped"] = currentTime
+    end
     
     if key == "ped" then
-        Cache.Values.ped = ped
     elseif key == "vehicle" then
-        Cache.Values.vehicle = IsPedInAnyVehicle(ped, false) and GetVehiclePedIsIn(ped, false) or nil
+        if Cache.Values.isInVehicle then
+            Cache.Values.vehicle = GetVehiclePedIsIn(ped, false)
+        else
+            Cache.Values.vehicle = nil
+        end
     elseif key == "isInVehicle" then
         Cache.Values.isInVehicle = IsPedInAnyVehicle(ped, false)
     elseif key == "isSwimming" then
@@ -99,74 +132,90 @@ function Cache.ForceUpdate(key)
         Cache.Values.coords = GetEntityCoords(ped)
     elseif key == "selectedWeapon" then
         Cache.Values.selectedWeapon = GetSelectedPedWeapon(ped)
+    elseif key == "isAdmin" then
+        Cache.Values.isAdmin = config_loader.is_whitelisted(GetPlayerServerId(PlayerId()))
+    elseif key == "permissions" then
+        Cache.RequestPermissionCheck()
     end
     
     Cache.LastUpdated[key] = currentTime
-end
-
-function Cache.Set(key, value)
-    if Cache.Values[key] ~= nil then
-        Cache.Values[key] = value
-        Cache.LastUpdated[key] = GetGameTimer()
-    end
-    return value
+    
+    Cache.LastValues[key] = Cache.Values[key]
 end
 
 function Cache.StartUpdateThreads()
-    updateThreads.main = Citizen.CreateThread(function()
-        local gc_counter = 0
-        local gc_interval = 10 
-        
-        while true do
-            Cache.ForceUpdate("coords")
-            Citizen.Wait(200) 
-            
-            Cache.ForceUpdate("ped")
-            Cache.ForceUpdate("isInVehicle")
-            Citizen.Wait(200) 
-            
+    local updateGroups = {
+        fast = {
+            interval = 1000,
+            keys = {"coords", "selectedWeapon"}
+        },
+        medium = {
+            interval = 2500,
+            keys = {"isInVehicle", "vehicle", "health", "armor", "isFalling"}
+        },
+        slow = {
+            interval = 5000,
+            keys = {"isSwimming", "isSwimmingUnderWater", "isInvisible", "isAdmin"}
+        },
+        permission = {
+            interval = 30000, -- Every 30 seconds
+            keys = {"permissions"}
+        }
+    }
+    
+    for groupName, groupData in pairs(updateGroups) do
+        updateThreads[groupName] = Citizen.CreateThread(function()
+            while true do
+                Citizen.Wait(groupData.interval)
+                
+                if groupName == "slow" then
+                    local ped = PlayerPedId()
+                    Cache.Values.ped = ped
+                    Cache.LastUpdated["ped"] = GetGameTimer()
+                end
+                
+                for _, key in ipairs(groupData.keys) do
+                    Cache.ForceUpdate(key)
+                end
+            end
+        end)
+    end
+end
+
+---@description Request permission check from server
+function Cache.RequestPermissionCheck()
+    TriggerServerEvent("SecureServe:RequestPermissions")
+    Cache.Values.permissionsLastUpdate = GetGameTimer()
+    Cache.LastUpdated["permissions"] = GetGameTimer()
+end
+
+---@description Check if player has specific permission
+---@param permission string The permission to check
+function Cache.CheckPermission(permission)
+    local currentTime = GetGameTimer()
+    -- If permissions haven't been checked recently, request an update
+    if currentTime - Cache.Values.permissionsLastUpdate > Cache.UpdateIntervals.permissions then
+        Cache.RequestPermissionCheck()
+    end
+end
+
+-- Event handler for receiving permissions from server
+RegisterNetEvent("SecureServe:ReceivePermissions", function(permissions)
+    Cache.Values.permissions = permissions or {}
+    Cache.Values.permissionsLastUpdate = GetGameTimer()
+    Cache.LastUpdated["permissions"] = GetGameTimer()
+end)
+
+AddEventHandler("gameEventTriggered", function(name, args)
+    if name == "CEventNetworkEntityDamage" then
+        local victim = args[1]
+        if victim == Cache.Values.ped then
+            Cache.Values.damageTaken = true
             Cache.ForceUpdate("health")
             Cache.ForceUpdate("armor")
-            Citizen.Wait(200) 
-            
-            if Cache.Values.isInVehicle then
-                Cache.ForceUpdate("vehicle")
-            end
-            Citizen.Wait(200) 
-            
-            Cache.ForceUpdate("selectedWeapon")
-            Citizen.Wait(200) 
-            
-            Cache.ForceUpdate("isSwimming")
-            Cache.ForceUpdate("isSwimmingUnderWater")
-            Cache.ForceUpdate("isFalling")
-            Cache.ForceUpdate("isInvisible")
-            
-            gc_counter = gc_counter + 1
-            if gc_counter >= gc_interval then
-                collectgarbage("step", 100) 
-                gc_counter = 0
-            end
-            
-            Citizen.Wait(800) 
         end
-    end)
-    
-    updateThreads.damageDetection = Citizen.CreateThread(function()
-        while true do
-            Citizen.Wait(0)
-            local playerPed = PlayerPedId()
-            
-            if HasEntityBeenDamagedByAnyPed(playerPed) or HasEntityBeenDamagedByAnyVehicle(playerPed) or HasEntityBeenDamagedByAnyObject(playerPed) then
-                Cache.Set("damageTaken", true)
-                ClearEntityLastDamageEntity(playerPed)
-                Citizen.SetTimeout(500, function()
-                    Cache.Set("damageTaken", false)
-                end)
-            end
-        end
-    end)
-end
+    end
+end)
 
 AddEventHandler('onResourceStop', function(resourceName)
     if GetCurrentResourceName() ~= resourceName then return end
@@ -177,11 +226,10 @@ AddEventHandler('onResourceStop', function(resourceName)
         end
     end
     
+    updateThreads = {}
     Cache.Values = {}
     Cache.LastUpdated = {}
-    updateThreads = {}
-    
-    collectgarbage("collect")
+    Cache.LastValues = {}
 end)
 
-return Cache 
+return Cache
