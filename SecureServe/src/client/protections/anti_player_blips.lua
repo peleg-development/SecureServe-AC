@@ -10,7 +10,9 @@ function AntiPlayerBlips.initialize()
     if not ConfigLoader.get_protection_setting("Anti Player Blips", "enabled") then return end
     
     Citizen.CreateThread(function()
-        while true do      
+        while true do    
+            Citizen.Wait(15000)
+  
             if Cache.Get("hasPermission", "playerblips") or Cache.Get("hasPermission", "all") or Cache.Get("isAdmin") then
                 goto continue
             end
@@ -28,8 +30,7 @@ function AntiPlayerBlips.initialize()
                     end
                 end
             end
-
-            Citizen.Wait(15000)
+            
             ::continue::
         end
     end)
