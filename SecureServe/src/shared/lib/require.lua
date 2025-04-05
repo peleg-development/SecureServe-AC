@@ -87,7 +87,6 @@ function Require.load(module_name)
     
     local module_env = setmetatable({
         require = function(name) return Require.load(name) end,
-        exports = {},
     }, {__index = _G})
     
     local module_func, err = load(code, module_path, "bt", module_env)

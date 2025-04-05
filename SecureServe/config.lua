@@ -67,8 +67,8 @@ SecureServe.ServerSecurity = {
     -- NETWORK EVENT SECURITY
     NetworkEvents = {
         -- Prevent malicious network events
-        FilterRequestControl = false,   -- Block REQUEST_CONTROL_EVENT routing
-                                        -- Disable if vehicle-related issues occur
+        FilterRequestControl = 2,       -- Block REQUEST_CONTROL_EVENT routing (0 = off, 1 = occupied vehicles, 2 = all player-controlled entities)
+                                        -- Set to 0 if vehicle/entity-related issues occur
         
         DisableNetworkedSounds = true,  -- Block NETWORK_PLAY_SOUND_EVENT routing
                                         -- May break some sound-based resources
@@ -83,7 +83,7 @@ SecureServe.ServerSecurity = {
     -- CLIENT MODIFICATION PROTECTION
     ClientProtection = {
         -- Settings to prevent client-side modifications
-        PureLevel = 2,                  -- Block modified client files (2 = max security)
+        PureLevel = 0,                  -- Block modified client files (2 = max security)
                                         -- Set to 1 to allow audio mods and graphics changes
                                         -- Set to 0 to disable (not recommended)
         
@@ -121,7 +121,6 @@ SecureServe.ServerSecurity = {
 -- Meaning no one can be bnnaed while this is active
 SecureServe.AutoConfig = false              
 -- Once u start the server explnation about this option will come up please read everything
-SecureServe.InstructionsPrint = true
 SecureServe.Module = {
 
 	Events = {
@@ -190,56 +189,49 @@ SecureServe.Logs = {
 }
 
 SecureServe.Permissions = {
-	--[[
-		IMPORTANT:
-		- DO NOT uncomment or modify anything ABOVE this function.
-		- Ensure the resource checking permissions is set as a dependency in your fxmanifest.
-		- Built-in support: ESX, QB-Core, vRP, QBox, Taze, and ACE perms.
-		- This callback function runs client-side to prevent admin bans from protections.
-		- Admin bypasses include:
-			• Anti Player Blips
-			• Anti Car Fly
-			• Anti Noclip
-			• Anti God Mode
-			• Anti Spectate
-			• Anti Freecam
-			• Anti Night Vision
-			• Anti Thermal Vision
-			• Anti Infinite Stamina
-	]]
-
-	AdminFramework = "", -- Set "custom" to enable custom whitelist logic.
-
-	IsWhitelisted = function(Player)
-
-		-- QB-Core Example
-		-- local QBCore = exports['qb-core']:GetCoreObject()
-		-- if QBCore and QBCore.Functions.HasPermission(Player, "admin") then
-		-- 	return true
-		-- end
-
-		--[[
-		-- ESX Example
-		local ESX = exports['es_extended']:getSharedObject()
-		local xPlayer = ESX and ESX.GetPlayerFromId(Player)
-		if xPlayer then
-			local group = xPlayer.getGroup()
-			local allowedGroups = {admin=true, mod=true, superadmin=true, god=true}
-			return allowedGroups[group] or false
-		end
-		]]
-
-		--[[
-		-- vRP Example
-		local Tunnel = module("vrp", "lib/Tunnel")
-		local Proxy = module("vrp", "lib/Proxy")
-		local vRP = Proxy.getInterface("vRP")
-		local user_id = vRP.getUserId({Player})
-		return user_id and vRP.hasPermission({user_id, "admin"}) or false
-		]]
-
-		return false -- Default deny
-	end,
+	-- ACE Permission System Configuration
+	Enabled = true,
+	
+	-- Permission levels (you can add/modify as needed)
+	Groups = {
+		["admin"] = true,     -- Full admin access
+		["moderator"] = true, -- Moderator access
+		["staff"] = true      -- Staff access
+	},
+	
+	-- Default ACE permission to check (no need to modify this in most cases)
+	DefaultAce = "secure.admin",
+	
+	-- Group-specific ACE permissions
+	GroupAces = {
+		["admin"] = "secure.admin",
+		["moderator"] = "secure.moderator",
+		["staff"] = "secure.staff"
+	},
+	
+	-- Protection-specific bypass permissions
+	-- These are the ACE permissions that allow bypassing specific protections
+	BypassPermissions = {
+		["teleport"] = "secure.bypass.teleport",         -- Bypass teleport detection
+		["visions"] = "secure.bypass.visions",           -- Bypass night/thermal vision detection
+		["speedhack"] = "secure.bypass.speedhack",       -- Bypass speed hack detection
+		["spectate"] = "secure.bypass.spectate",         -- Bypass spectate detection
+		["noclip"] = "secure.bypass.noclip",             -- Bypass noclip detection
+		["ocr"] = "secure.bypass.ocr",                   -- Bypass OCR detection
+		["playerblips"] = "secure.bypass.playerblips",   -- Bypass player blips detection
+		["invisible"] = "secure.bypass.invisible",       -- Bypass invisible player detection
+		["godmode"] = "secure.bypass.godmode",           -- Bypass god mode detection
+		["freecam"] = "secure.bypass.freecam",           -- Bypass freecam detection
+		["superjump"] = "secure.bypass.superjump",       -- Bypass super jump detection
+		["noragdoll"] = "secure.bypass.noragdoll",       -- Bypass no ragdoll detection
+		["infinitestamina"] = "secure.bypass.infinitestamina", -- Bypass infinite stamina detection
+		["magicbullet"] = "secure.bypass.magicbullet",   -- Bypass magic bullet detection
+		["norecoil"] = "secure.bypass.norecoil",         -- Bypass no recoil detection
+		["aimassist"] = "secure.bypass.aimassist",       -- Bypass aim assist detection
+		
+		-- Master bypass permission (overrides all others)
+		["all"] = "secure.bypass.all"                    -- Bypass all client-side detections
+	}
 }
 
 

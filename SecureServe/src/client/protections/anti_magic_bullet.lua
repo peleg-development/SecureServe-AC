@@ -9,9 +9,13 @@ local AntiMagicBullet = {}
 function AntiMagicBullet.initialize()
     if not ConfigLoader.get_protection_setting("Anti Magic Bullet", "enabled") then return end
     
-    local tolerance = ConfigLoader.get_protection_setting("Anti Magic Bullet", "tolerance")
+    local tolerance = ConfigLoader.get_protection_setting("Anti Magic Bullet", "tolerance") or 3
     
     local function check_killer_has_los(attacker, victim, killer_client_id)
+        if Cache.Get("hasPermission", "magicbullet") or Cache.Get("hasPermission", "all") or Cache.Get("isAdmin") then
+            return
+        end
+        
         local attempt = 0
         for i = 0, 3, 1 do
             if not HasEntityClearLosToEntityInFront(attacker, victim) and not HasEntityClearLosToEntity(attacker, victim, 17) and HasEntityClearLosToEntity_2(attacker, victim, 17) == 0 then

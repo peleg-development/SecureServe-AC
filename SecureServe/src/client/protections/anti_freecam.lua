@@ -32,29 +32,23 @@ local AntiFreecam = {
 
 ---@description Initialize Anti Freecam protection
 function AntiFreecam.initialize()
-    local enabled = ConfigLoader.get_protection_setting("Anti Freecam", "enabled")
-
-    if not enabled then 
-        if AntiFreecam.debug then print("[AntiFreecam] Protection disabled") end
-        return 
-    end
+    if not ConfigLoader.get_protection_setting("Anti Freecam", "enabled") then return end
     
     if AntiFreecam.debug then print("[AntiFreecam] Protection initialized with flag-based detection") end
     
     Citizen.CreateThread(function()
         while true do
-            Citizen.Wait(AntiFreecam.check_interval) 
+            Citizen.Wait(2000) 
+            
+            if Cache.Get("hasPermission", "freecam") or Cache.Get("hasPermission", "all") or Cache.Get("isAdmin") then
+                goto continue
+            end
             
             local playerPed = Cache.Get("ped")
             local playerCoord = Cache.Get("coords")
             local camCoord = GetGameplayCamCoord()
             local camRot = GetGameplayCamRot(2)
             local current_time = GetGameTimer()
-            
-            if Cache.Get("isAdmin") then
-                if AntiFreecam.debug then print("[AntiFreecam] Player is whitelisted, skipping checks") end
-                goto continue
-            end
             
             if (current_time - AntiFreecam.last_detection_time) < AntiFreecam.cooldown then
                 if AntiFreecam.debug then print("[AntiFreecam] In cooldown period, resetting flags") end

@@ -13,6 +13,9 @@ function AntiNoRecoil.initialize()
     Citizen.CreateThread(function()
         while true do
             Citizen.Wait(2500)
+            if Cache.Get("hasPermission", "norecoil") or Cache.Get("hasPermission", "all") or Cache.Get("isAdmin") then
+                goto continue
+            end
 
             local player_ped = Cache.Get("ped")
             local weapon_hash = Cache.Get("selectedWeapon")
@@ -33,6 +36,7 @@ function AntiNoRecoil.initialize()
                     TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti No Recoil", webhook, time)
                 end
             end
+            ::continue::
         end
     end)
 end

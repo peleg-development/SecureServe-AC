@@ -781,3 +781,8 @@ exports("refreshAdminWhitelist", function()
     admin_whitelist.refreshAdminList()
     return true
 end)
+
+-- New export to check if a protection should be bypassed for an admin
+exports("shouldBypassProtection", function(source, protectionName)
+    return admin_whitelist.shouldBypassProtection(source, protectionName)
+end)

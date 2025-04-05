@@ -47,7 +47,7 @@ end
 ---@return function The wrapped entity creation function
 local function createEntity(originalFunction, ...)
     local entity = originalFunction(...)
-   
+    
     if not IsDuplicityVersion() then
         while not DoesEntityExist(entity) do
             Wait(1) 
@@ -58,7 +58,6 @@ local function createEntity(originalFunction, ...)
             while not DoesEntityExist(entity) do
                 Wait(1) 
             end
-            
             TriggerEvent("SecureServe:Server:Methods:Entity:CreateServer", entity, GetCurrentResourceName(), GetEntityModel(entity))
         end)
     end

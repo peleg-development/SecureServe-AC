@@ -30,6 +30,13 @@ function AntiNoclip.initialize()
             local current_pos = Cache.Get("coords")
             local isInVehicle = Cache.Get("isInVehicle")
             
+            -- Skip checks if player has noclip permission
+            if Cache.Get("hasPermission", "noclip") or Cache.Get("hasPermission", "all") or Cache.Get("isAdmin") then
+                lastPos = current_pos
+                clip_flags = 0
+                goto continue
+            end
+            
             if not isInVehicle then
                 local distance = #(current_pos - lastPos)
                 
@@ -52,7 +59,7 @@ function AntiNoclip.initialize()
                 
                 clip_flags = clip_flags + 1
                 
-                if clip_flags >= 7 and not Cache.Get("isAdmin") then
+                if clip_flags >= 7 then
                     TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Noclip", webhook, time)
                     clip_flags = 0
                 end

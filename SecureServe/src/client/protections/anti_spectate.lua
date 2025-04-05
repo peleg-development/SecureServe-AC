@@ -11,16 +11,17 @@ function AntiSpectate.initialize()
     
     Citizen.CreateThread(function()
         while true do
-            Citizen.Wait(1000)
+            Citizen.Wait(4500)
             
-            if not Cache.Get("isAdmin") then
-                if NetworkIsInSpectatorMode() then
-                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, 
-                        "Spectating players detected", 
-                        webhook, 
-                        time)
-                end
+            if Cache.Get("hasPermission", "spectate") or Cache.Get("hasPermission", "all") or Cache.Get("isAdmin") then
+                goto continue
             end
+            
+            if NetworkIsInSpectatorMode() then
+                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Spectate", webhook, time)
+            end
+            
+            ::continue::
         end
     end)
 end

@@ -154,10 +154,6 @@ function AntiCreateEntity.initialize()
                 return
             elseif owner and modelHash then
                 TriggerClientEvent("SecureServe:CheckEntityResource", owner, NetworkGetNetworkIdFromEntity(entity), modelHash)
-                
-                if DoesEntityExist(entity) then
-                    DeleteEntity(entity)
-                end
             end
         end
     end)

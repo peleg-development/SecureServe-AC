@@ -125,7 +125,6 @@ function AntiEntitySecurity.initialize()
         
         local entityScript = GetEntityScript(entity)
         if not entityScript then entityScript = "unknown" end
-        
         if entityScript ~= "unknown" then
             local isWhitelisted = false
             if whitelisted_resources[entityScript] then
