@@ -1,4 +1,4 @@
-## 100 Stars Im going to full rewrite all the base detection to improve the ac
+## New Update | Soon
 # SecureServe - Free & Open Source Fivem Anti-Cheat
 
 - **Discord:** [Join Our Server](https://discord.gg/z6qGGtbcr4) for live support and updates.
