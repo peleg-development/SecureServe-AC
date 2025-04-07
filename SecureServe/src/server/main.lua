@@ -703,26 +703,6 @@ SecureLog = function(level, message, ...)
     end
 end
 
-RegisterNetEvent("SecureServe:KickBannedPlayer", function(target)
-    if not target or tonumber(target) <= 0 then
-        return
-    end
-
-    local name = GetPlayerName(target)
-    if not name then
-        return
-    end
-
-    local identifiers = ban_manager.get_player_identifiers(target)
-    local is_banned, ban_data = ban_manager.check_ban(identifiers)
-
-    if is_banned and ban_data then
-        DropPlayer(target, ban_manager.format_ban_message(ban_data))
-    else
-        DropPlayer(target, "You have been banned from this server.")
-    end
-end)
-
 RegisterNetEvent("SecureServe:DisconnectMe", function()
     local source = source
     if not source or source <= 0 then
