@@ -19,10 +19,7 @@ function AntiVisions.initialize()
                 goto continue
             end
 
-            if GetUsingseethrough() then
-                local webhook = ConfigLoader.get_protection_setting("Anti Thermal Vision", "webhook") or ""
-                local time = ConfigLoader.get_protection_setting("Anti Thermal Vision", "time") or 0
-                
+            if GetUsingseethrough() then                
                 TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Thermal Vision", webhook, time)
             end
             
