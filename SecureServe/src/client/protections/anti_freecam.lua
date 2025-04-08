@@ -49,7 +49,19 @@ function AntiFreecam.initialize()
             local camCoord = GetGameplayCamCoord()
             local camRot = GetGameplayCamRot(2)
             local current_time = GetGameTimer()
-            
+            local isInVehicle = Cache.Get("isInVehicle")
+
+            if isInVehicle then
+                local vehicle = GetVehiclePedIsIn(Cache.Get("ped"), false)
+                if vehicle ~= 0 then
+                    local speed = GetEntitySpeed(vehicle) * 3.6 
+                    if speed > 50.0 then
+                        lastPos = current_pos
+                        goto continue
+                    end
+                end
+            end
+
             if (current_time - AntiFreecam.last_detection_time) < AntiFreecam.cooldown then
                 if AntiFreecam.debug then print("[AntiFreecam] In cooldown period, resetting flags") end
                 AntiFreecam.current_flags = 0

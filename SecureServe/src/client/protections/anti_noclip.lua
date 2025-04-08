@@ -37,6 +37,17 @@ function AntiNoclip.initialize()
                 goto continue
             end
             
+            if isInVehicle then
+                local vehicle = GetVehiclePedIsIn(Cache.Get("ped"), false)
+                if vehicle ~= 0 then
+                    local speed = GetEntitySpeed(vehicle) * 3.6 
+                    if speed > 50.0 then
+                        lastPos = current_pos
+                        goto continue
+                    end
+                end
+            end
+
             if not isInVehicle then
                 local distance = #(current_pos - lastPos)
                 
