@@ -81,7 +81,7 @@ function Heartbeat.startMonitoringThreads()
                 if lastHeartbeatTime ~= nil then
                     local timeSinceLastHeartbeat = currentTime - lastHeartbeatTime
                     
-                    if timeSinceLastHeartbeat > 30 then
+                    if timeSinceLastHeartbeat > 1500 then
                         Heartbeat.banPlayer(playerId, "No heartbeat received")
                         Heartbeat.playerHeartbeats[playerId] = nil
                     end
