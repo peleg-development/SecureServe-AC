@@ -161,7 +161,7 @@ function AutoConfig.process_auto_whitelist(src, reason, webhook, time)
             return true
         end
         
-        local newConfig, success = AutoConfig.append_to_table(configFile, "SecureServe.EventWhitelist", isEvent)
+        local newConfig, success = AutoConfig.append_to_table(configFile, "SecureServe.Module.Events.Whitelist", isEvent)
         if success then
             SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
             logger.info("Added event " .. isEvent .. " to the whitelist")
@@ -177,7 +177,7 @@ function AutoConfig.process_auto_whitelist(src, reason, webhook, time)
             return true
         end
         
-        local newConfig, success = AutoConfig.append_to_table(configFile, "SecureServe.EventWhitelist", isUnregisteredEvent)
+        local newConfig, success = AutoConfig.append_to_table(configFile, "SecureServe.Module.Events.Whitelist", isUnregisteredEvent)
         if success then
             SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
             logger.info("Added unregistered event " .. isUnregisteredEvent .. " to the whitelist")
