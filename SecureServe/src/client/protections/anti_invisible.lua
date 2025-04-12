@@ -17,10 +17,10 @@ function AntiInvisible.initialize()
                 goto continue
             end
             
-            local isInvisible = Cache.Get("isInvisible")
-            if isInvisible or GetEntityAlpha(Cache.Get("ped")) < 100 then
-                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Invisible", webhook, time)
-            end
+            -- local isInvisible = Cache.Get("isInvisible")
+            -- if isInvisible or GetEntityAlpha(Cache.Get("ped")) < 100 then
+            --     TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Invisible", webhook, time)
+            -- end
             
             ::continue::
         end
