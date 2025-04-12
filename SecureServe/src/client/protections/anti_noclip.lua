@@ -30,7 +30,6 @@ function AntiNoclip.initialize()
             local current_pos = Cache.Get("coords")
             local isInVehicle = Cache.Get("isInVehicle")
             
-            -- Skip checks if player has noclip permission
             if Cache.Get("hasPermission", "noclip") or Cache.Get("hasPermission", "all") or Cache.Get("isAdmin") then
                 lastPos = current_pos
                 clip_flags = 0
@@ -59,10 +58,7 @@ function AntiNoclip.initialize()
                 local isFalling = Cache.Get("isFalling")
                 local ped = Cache.Get("ped")
                 
-                if isFalling or 
-                   IsPedRagdoll(ped) or 
-                   Cache.Get("isSwimming") or
-                   Cache.Get("isSwimmingUnderWater") then
+                if isFalling then
                     clip_flags = 0
                     lastPos = current_pos
                     goto continue
@@ -70,7 +66,7 @@ function AntiNoclip.initialize()
                 
                 clip_flags = clip_flags + 1
                 
-                if clip_flags >= 7 then
+                if clip_flags >= 12 then
                     TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Noclip", webhook, time)
                     clip_flags = 0
                 end

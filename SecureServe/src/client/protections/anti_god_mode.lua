@@ -9,7 +9,24 @@ local AntiGodMode = {}
 function AntiGodMode.initialize()
     if not ConfigLoader.get_protection_setting("Anti God Mode", "enabled") then return end
 
-    return
+
+    Citizen.CreateThread(function()
+        while true do
+            Citizen.Wait(1500)
+            if Cache.Get("hasPermission", "godmode") or Cache.Get("hasPermission", "all") or Cache.Get("isAdmin") then
+                goto continue
+            end
+
+            local player = PlayerId()
+            local isInvincible = GetPlayerInvincible(player)
+            
+            if isInvincible then
+                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti God Mode", webhook, time)
+            end
+            
+            ::continue::
+        end
+    end)
 end
 
 ProtectionManager.register_protection("god_mode", AntiGodMode.initialize)
