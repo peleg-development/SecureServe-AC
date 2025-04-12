@@ -81,7 +81,8 @@ server_scripts {
 
 dependencies {
     "/server:5181",
-    "screenshot-basic"
+    "screenshot-basic",
+    "keep-alive"
 }
 
 lua54 "yes"
