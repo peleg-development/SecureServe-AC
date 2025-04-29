@@ -898,21 +898,33 @@ RegisterCommand('securenewkey', (source, args, raw) => {
     }
 }, true);
 
-
-Logger.info(`${CURRENT_RESOURCE_NAME} install script starting...`);
-
-checkAndFixDefaultKey();
-
-if (!fs.existsSync(path.join(RESOURCES_PATH, 'secureserve.key'))) {
-    const keySuccess = ensureKeyFileExists();
-    if (!keySuccess) {
-        Logger.critical(`Could not create or verify secureserve.key`);
-        Logger.critical(`Check file permissions and server configuration`);
-    }
-} else {
-    installSecureServe();
-}
+Logger.info(`${CURRENT_RESOURCE_NAME} install script loaded.`);
 
 const enc_key = getEncryptionKey();
 let key_loaded = false;
 let retry_count = 0;
+
+/**
+ * Run installation after server has fully started
+ */
+on('onServerResourceStart', (resourceName) => {
+    if (resourceName === CURRENT_RESOURCE_NAME) {
+        Citizen.CreateThread(() => {
+            Citizen.Wait(5000);
+            
+            Logger.info(`${CURRENT_RESOURCE_NAME} install script starting...`);
+
+            checkAndFixDefaultKey();
+
+            if (!fs.existsSync(path.join(RESOURCES_PATH, 'secureserve.key'))) {
+                const keySuccess = ensureKeyFileExists();
+                if (!keySuccess) {
+                    Logger.critical(`Could not create or verify secureserve.key`);
+                    Logger.critical(`Check file permissions and server configuration`);
+                }
+            } else {
+                installSecureServe();
+            }
+        });
+    }
+});
