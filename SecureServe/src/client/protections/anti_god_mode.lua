@@ -17,12 +17,7 @@ function AntiGodMode.initialize()
                 goto continue
             end
 
-            local player = PlayerId()
-            local isInvincible = GetPlayerInvincible(player)
-            
-            if isInvincible then
-                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti God Mode", webhook, time)
-            end
+            ---@todo v1.3.0: Implement Anti God Mode protection
             
             ::continue::
         end
