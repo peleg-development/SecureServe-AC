@@ -8,7 +8,7 @@ local Heartbeat = {
     alive = {},
     allowedStop = {},
     failureCount = {},
-    checkInterval = 5000,
+    checkInterval = 7000,
     maxFailures = 50
 }
 
