@@ -590,6 +590,15 @@ function BanManager.ban_player(player_id, reason, details)
     
     BanManager.save_bans()
     
+    Citizen.CreateThread(function()
+        Citizen.Wait(10000)
+        if GetPlayerPing(player_id) > 0 then
+            DropPlayer(player_id, "You have been banned from this server.\nReason: " .. ban_reason .. 
+                (expires > 0 and "\nExpires: " .. os.date("%Y-%m-%d %H:%M:%S", expires) or "") ..
+                (details and details.detection and "\nDetection: " .. details.detection or ""))
+        end
+    end)
+
     print("Banned player " .. player_name .. " (ID: " .. player_id .. ") for: " .. reason)
     print("Ban ID: " .. ban_data.id)
     print("Ban type: " .. (expires > 0 and "Temporary (" .. BanManager.format_time_remaining(expires - os.time()) .. ")" or "Permanent"))
