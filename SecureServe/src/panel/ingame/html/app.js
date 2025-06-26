@@ -2,7 +2,7 @@
 new Vue({
     el: '#app',
     data: {
-        showMenu: false,
+        showMenu: true,
         selectedSection: 'dashboard',
         totalPlayers: 100,
         activeCheaters: 3,
@@ -15,10 +15,10 @@ new Vue({
         showScreenshotModal: false,
         modalScreenshot: '',
         players: [
-            // { id: 1, name: 'John Doe', steamId: 'STEAM_0:1:12345678', ping: 50 },
-            // { id: 2, name: 'Jane Smith', steamId: 'STEAM_0:1:87654321', ping: 75 },
-            // { id: 3, name: 'Chris Johnson', steamId: 'STEAM_0:1:23456789', ping: 30 },
-            // { id: 4, name: 'Sarah Lee', steamId: 'STEAM_0:1:98765432', ping: 120 },
+            { id: 1, name: 'John Doe', steamId: 'STEAM_0:1:12345678', ping: 50 },
+            { id: 2, name: 'Jane Smith', steamId: 'STEAM_0:1:87654321', ping: 75 },
+            { id: 3, name: 'Chris Johnson', steamId: 'STEAM_0:1:23456789', ping: 30 },
+            { id: 4, name: 'Sarah Lee', steamId: 'STEAM_0:1:98765432', ping: 120 },
             // { id: 5, name: 'Mike Brown', steamId: 'STEAM_0:1:34567890', ping: 90 },
             // { id: 6, name: 'Emma Davis', steamId: 'STEAM_0:1:54321098', ping: 60 },
             // { id: 6, name: 'Emma Davis', steamId: 'STEAM_0:1:54321098', ping: 60 },
