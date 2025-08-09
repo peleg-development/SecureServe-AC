@@ -40,17 +40,19 @@ local function saveBans(bans)
     SaveResourceFile(GetCurrentResourceName(), 'bans.json', bansContent, -1)
 end
 
+---@type BanManagerModule
+local BanManager = require("server/core/ban_manager")
+
 RegisterNetEvent('unbanPlayer', function(banId)
     local src = source
-    local bans = loadBans()
-    for i, ban in ipairs(bans) do
-        if ban.id == banId then
-            table.remove(bans, i)
-            break
-        end
+    if not IsMenuAdmin(src) then return end
+    if not banId or banId == '' then return end
+    local ok = BanManager.unban_player(tostring(banId))
+    if ok then
+        TriggerClientEvent('anticheat:notify', src, 'Player unbanned successfully')
+    else
+        TriggerClientEvent('anticheat:notify', src, 'Unban failed')
     end
-    saveBans(bans)
-    TriggerClientEvent('notification', src, 'Player unbanned successfully', 'success')
 end)
 
 AddEventHandler('onResourceStart', function(resourceName)
@@ -61,21 +63,24 @@ end)
 
 
 
-RegisterNetEvent('getPlayers', function()
+RegisterNetEvent('getPlayers', function(requestId)
     local _source = source
+    if not IsMenuAdmin(_source) then return end
     local players = GetPlayers()
     local playerList = {}
 
     for _, playerId in ipairs(players) do
         local playerName = GetPlayerName(playerId)
+        local ping = GetPlayerPing(playerId) or 0
         table.insert(playerList, {
-            id = playerId,
+            id = tonumber(playerId),
             name = playerName,
-            steamId = GetPlayerIdentifiers(playerId)[1] 
+            steamId = GetPlayerIdentifiers(playerId)[1],
+            ping = ping
         })
     end
 
-    TriggerClientEvent('receivePlayers', _source, playerList)
+    TriggerClientEvent('receivePlayers', _source, playerList, requestId)
 end)
 
 RegisterNetEvent('kickPlayer', function(targetId)
@@ -97,11 +102,36 @@ RegisterNetEvent('banPlayer', function(targetId)
         return
     end
     if targetId then
-        local identifiers = GetPlayerIdentifiers(targetId)
-        punish_player(src, "You have been banned by an admin.", webhook, time) 
-        DropPlayer(targetId, "You have been banned by an admin.")
-        print(("Player %s was banned by admin %s"):format(GetPlayerName(targetId), GetPlayerName(src)))
+        local reason = "Manual ban"
+        local details = { admin = GetPlayerName(src), time = 0 }
+        local ok = BanManager.ban_player(tonumber(targetId), reason, details)
+        if ok then
+            print(("Player %s was banned by admin %s"):format(GetPlayerName(targetId), GetPlayerName(src)))
+        end
     end
+end)
+
+RegisterNetEvent('SecureServe:Panel:RequestBans', function(requestId)
+    local src = source
+    if not IsMenuAdmin(src) then return end
+    local bans = BanManager.get_all_bans() or {}
+    local mapped = {}
+    for _, ban in ipairs(bans) do
+        local ids = ban.identifiers or {}
+        local expires = tonumber(ban.expires or 0) or 0
+        local expireText = expires > 0 and os.date("%Y-%m-%d %H:%M:%S", expires) or "Permanent"
+        table.insert(mapped, {
+            id = tostring(ban.id or ""),
+            name = ban.player_name or "Unknown",
+            reason = ban.reason or ban.detection or "",
+            steam = ids.steam or "",
+            discord = ids.discord or "",
+            ip = ids.ip or ids.endpoint or "",
+            hwid1 = ids.fivem or ids.guid or "",
+            expire = expireText
+        })
+    end
+    TriggerClientEvent('SecureServe:Panel:SendBans', src, mapped, requestId)
 end)
 
 

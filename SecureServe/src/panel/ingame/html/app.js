@@ -87,10 +87,7 @@ new Vue({
                 this.serverUptime   = data.serverUptime;
                 this.peakPlayers    = data.peakPlayers;
               })
-              .catch(error => {
-                console.error('Error fetching dashboard stats:', error);
-              });
-
+              .catch(() => {})
         },
         fetchPlayers() {
             fetch(`https://${GetParentResourceName()}/getPlayers`, {
@@ -100,11 +97,11 @@ new Vue({
             })
             .then(response => response.json())
             .then(data => {
-                this.players = data.players;
+                if (data && data.players) {
+                  this.players = data.players;
+                }
             })
-            .catch(error => {
-                console.error('Error fetching players:', error);
-            });
+            .catch(() => {})
         },
         kickPlayer(playerId) {
             fetch(`https://${GetParentResourceName()}/kickPlayer`, {
@@ -166,14 +163,18 @@ new Vue({
             });
         },
         fetchBans() {
-            fetch('/bans.json')
-                .then(response => response.json())
-                .then(data => {
-                    this.bans = data;
-                })
-                .catch(error => {
-                    console.error('Error fetching bans:', error);
-                });
+            fetch(`https://${GetParentResourceName()}/getBans`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.bans) {
+                  this.bans = data.bans;
+                }
+            })
+            .catch(() => {})
         },
         unbanPlayer(banId) {
             fetch(`https://${GetParentResourceName()}/unbanPlayer`, {
@@ -391,9 +392,19 @@ new Vue({
                     this.fetchPlayers(); 
                     this.fetchDashboardStats();
                     this.showMenu = true;
+                    this.refresh = event.data.refresh || { players: 5000, bans: 15000, stats: 10000 };
+                    if (this._playersTimer) clearInterval(this._playersTimer);
+                    if (this._bansTimer) clearInterval(this._bansTimer);
+                    if (this._statsTimer) clearInterval(this._statsTimer);
+                    this._playersTimer = setInterval(() => this.fetchPlayers(), this.refresh.players);
+                    this._bansTimer = setInterval(() => this.fetchBans(), this.refresh.bans);
+                    this._statsTimer = setInterval(() => this.fetchDashboardStats(), this.refresh.stats);
                     break;
                 case "close":
                     this.showMenu = false;
+                    if (this._playersTimer) clearInterval(this._playersTimer);
+                    if (this._bansTimer) clearInterval(this._bansTimer);
+                    if (this._statsTimer) clearInterval(this._statsTimer);
                     break;
                 case "dashboardStats":
                     this.updateStats(event.data);
@@ -401,6 +412,11 @@ new Vue({
                 case "players":
                     console.log(event.data.players)
                     this.players = event.data.players
+                    break;
+                case "bans":
+                    if (event.data && event.data.bans) {
+                      this.bans = event.data.bans
+                    }
                     break;
                 case "displayScreenshot":
                     this.showScreenshot(event.data);

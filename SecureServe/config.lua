@@ -23,6 +23,22 @@ SecureServe.Setup = {}
 SecureServe.Webhooks = {}
 SecureServe.Protection = {}
 
+---@class AdminMenuConfig
+---@field Webhook string
+---@field Licenses string[]
+---@field AutoRefresh { players: number, bans: number, stats: number }
+SecureServe.AdminMenu = {
+    Webhook = "",
+    Licenses = {
+        -- "license:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    AutoRefresh = {
+        players = 5000,
+        bans = 15000,
+        stats = 10000
+    }
+}
+
 --  ______ _______ __   _ _______  ______ _______       
 -- |  ____ |______ | \  | |______ |_____/ |_____| |     
 -- |_____| |______ |  \_| |______ |    \_ |     | |_____
@@ -262,7 +278,10 @@ SecureServe.Protection.Simple = {
 	{ protection = "Anti Thermal Vision",         time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player is using thermal vision.
 	{ protection = "Anti God Mode",               time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player has god mode.
 	{ protection = "Anti Infinite Ammo",          time = "Ban", webhook = "",       enabled = true },                     -- Disables infinite ammo for the player every couple of seconds.
-	{ protection = "Anti Teleport",               time = "Ban", webhook = "",       enabled = true },                     -- Takes action if the player teleported.
+	{ protection = "Anti Teleport",               time = "Ban", webhook = "",       enabled = true, whitelisted_coords = {
+		-- { x = -1037.62, y = -2737.86, z = 20.17, radius = 100.0 },
+		-- { x = 200.0, y = -900.0, z = 30.0, radius = 60.0 }
+	} },                     -- Takes action if the player teleported.
 	{ protection = "Anti Invisible",              time = "Ban", webhook = "",       enabled = true },                     -- Takes action if the player is invisible
 	{ protection = "Anti Resource Stopper",       time = "Ban", webhook = "",       enabled = true },                     -- Takes action if a resouce is stopped (Do not stop any resource if this feature is enabled).
 	{ protection = "Anti Resource Starter",       time = "Ban", webhook = "",       enabled = true },                     -- Takes action if a resouce is started (Do not start any resource if this feature is enabled).
@@ -307,7 +326,7 @@ SecureServe.OCR = { -- Words on scrren that will get player banned
 	"Give Single Weapon","Airstrike Player","Taze Player","Razer Menu","Swagamine","Visual Options","d0pamine","Infinite Stamina","Blackout","Delete Vehicles Within Radius","Engine Power Boost",
 	"Teleport Into Player's Vehicle","fivesense","menu keybind","nospread","transparent props","bullet tracers","model chams","reload images","fade out in speed","cursor size","custom weapons texture",
 	"Inyection","Inyected","Dumper","LUA Executor","Executor","Lux Menu","Event Blocker","Spectate","Wallhack","triggers","crosshair","Alokas66","Hacking System!","Destroy Menu","Server IP","Teleport To",
-	"Butan Premium", "RAIDEN", "Give All Weapons", "Miscellaneous", "World Menu", "Sex Adanc", "Tapatio®"
+	"Butan Premium", "RAIDEN", "Give All Weapons", "Miscellaneous", "World Menu", "Sex Adanc", "Tapatio®", "Rico", "Rico Menu"
 }
 
 SecureServe.Weapons = { -- Add all your weapons to here most of the weapons should arlready be here make sure u added all of them if you are using qbcore if not u can delete this

@@ -1,8 +1,12 @@
+local ConfigLoader = require("client/core/config_loader")
+
 RegisterCommand('ssm', function()
     local Perms = Perms or require("client/core/perms")
     if Perms.IsMenuAdmin(GetPlayerServerId(PlayerId())) then
         SetNuiFocus(true, true)
-        SendNUIMessage({ action = 'open' })
+        local defaults = { players = 5000, bans = 15000, stats = 10000 }
+        local refresh = ConfigLoader.get("AdminMenu.AutoRefresh", defaults) or defaults
+        SendNUIMessage({ action = 'open', refresh = refresh })
     end
 end, false)
 
@@ -434,21 +438,41 @@ RegisterNUICallback('unbanPlayer', function(data, cb)
 end)
 
 
+local pendingPlayersPromise = nil
+RegisterNetEvent('receivePlayers', function(playerList, requestId)
+    SendNUIMessage({
+        action = 'players',
+        players = playerList
+    })
+    if pendingPlayersPromise and pendingPlayersPromise.id == requestId then
+        pendingPlayersPromise.resolve(playerList)
+        pendingPlayersPromise = nil
+    end
+end)
+
 RegisterNUICallback('getPlayers', function(data, cb)
-    TriggerServerEvent('getPlayers')
-    cb('ok')
+    local reqId = math.random(100000, 999999)
+    local p = promise.new()
+    pendingPlayersPromise = { id = reqId, resolve = function(result) p:resolve(result) end }
+    TriggerServerEvent('getPlayers', reqId)
+    local ok, result = pcall(function() return Citizen.Await(p) end)
+    if ok then
+        cb({ players = result })
+    else
+        cb({ players = {} })
+    end
 end)
 
 RegisterNUICallback('kickPlayer', function(data, cb)
     local playerId = data.playerId
     TriggerServerEvent('kickPlayer', playerId)
-    cb('ok')
+    cb({ success = true })
 end)
 
 RegisterNUICallback('banPlayer', function(data, cb)
     local playerId = data.playerId
     TriggerServerEvent('banPlayer', playerId)
-    cb('ok')
+    cb({ success = true })
 end)
 
 RegisterNUICallback('spectatePlayer', function(data, cb)
@@ -481,20 +505,13 @@ RegisterNUICallback('spectatePlayer', function(data, cb)
     end
 end)
 
+-- old receivePlayers kept for backward compatibility in case server doesn't send requestId
 RegisterNetEvent('receivePlayers', function(playerList)
-    SendNUIMessage({
-        action = 'players',
-        players = playerList
-    })
+    SendNUIMessage({ action = 'players', players = playerList })
 end)
 
 
-RegisterNUICallback("getDashboardStats", function(data, cb)
-    TriggerServerEvent("secureServe:requestStats")
-        
-    cb("ok")
-end)
-    
+local pendingStatsPromise = nil
 RegisterNetEvent("secureServe:returnStats", function(stats)
     SendNUIMessage({
         action = "dashboardStats",
@@ -502,6 +519,23 @@ RegisterNetEvent("secureServe:returnStats", function(stats)
         activeCheaters  = stats.activeCheaters,
         serverUptime    = stats.serverUptime,
         peakPlayers     = stats.peakPlayers
+    })
+    if pendingStatsPromise then
+        pendingStatsPromise:resolve(stats)
+        pendingStatsPromise = nil
+    end
+end)
+
+RegisterNUICallback("getDashboardStats", function(data, cb)
+    local p = promise.new()
+    pendingStatsPromise = p
+    TriggerServerEvent("secureServe:requestStats")
+    local stats = Citizen.Await(p)
+    cb({
+        totalPlayers    = stats.totalPlayers or 0,
+        activeCheaters  = stats.activeCheaters or 0,
+        serverUptime    = stats.serverUptime or "0 minutes",
+        peakPlayers     = stats.peakPlayers or 0
     })
 end)
     
@@ -538,4 +572,23 @@ RegisterNUICallback('executeServerOption', function(data, cb)
     end
 
     cb({ success = true })
+end)
+
+local pendingBansPromiseMap = {}
+RegisterNetEvent('SecureServe:Panel:SendBans', function(bans, requestId)
+    local entry = pendingBansPromiseMap[requestId]
+    if entry then
+        entry:resolve(bans)
+        pendingBansPromiseMap[requestId] = nil
+    end
+    SendNUIMessage({ action = 'bans', bans = bans })
+end)
+
+RegisterNUICallback('getBans', function(data, cb)
+    local reqId = math.random(100000, 999999)
+    local p = promise.new()
+    pendingBansPromiseMap[reqId] = p
+    TriggerServerEvent('SecureServe:Panel:RequestBans', reqId)
+    local bans = Citizen.Await(p)
+    cb({ bans = bans })
 end)

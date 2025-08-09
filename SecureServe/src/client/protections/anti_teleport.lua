@@ -9,16 +9,40 @@ local AntiTeleport = {}
 function AntiTeleport.initialize()
     if not ConfigLoader.get_protection_setting("Anti Teleport", "enabled") then return end
     
-    ---@todo v1.3.0: Implement Anti Teleport whitelisting
-    -- This will allow certain coordinates to be exempt from teleport detection.
+    ---@description Resolve Anti Teleport whitelisting with radius support
 
     if Cache.Get("hasPermission", "teleport") or Cache.Get("hasPermission", "all") or Cache.Get("isAdmin") then
         return
     end
 
-    local whitelisted = ConfigLoader.get_protection_setting("Anti Teleport", "whitelisted_coords") or {}
+    local function get_whitelist()
+        local cfg = ConfigLoader.get_secureserve()
+        if not cfg or not cfg.Protection or not cfg.Protection.Simple then return {} end
+        for _, v in pairs(cfg.Protection.Simple) do
+            if v.protection == "Anti Teleport" then
+                return v.whitelisted_coords or {}
+            end
+        end
+        return {}
+    end
+
+    local function is_whitelisted(coords)
+        local list = get_whitelist()
+        for _, entry in ipairs(list) do
+            local ex, ey, ez = entry.x, entry.y, entry.z
+            local radius = tonumber(entry.radius) or 0.0
+            if ex and ey and ez and radius > 0 then
+                local dist = #(coords - vector3(ex, ey, ez))
+                if dist <= radius then
+                    return true
+                end
+            end
+        end
+        return false
+    end
 
     Citizen.CreateThread(function()
+        local last_pos = nil
         while true do
             Citizen.Wait(1000)
 
@@ -29,9 +53,8 @@ function AntiTeleport.initialize()
                 goto continue
             end
 
-            if IsPedFalling(ped) then
-                local last_pos = Cache.Get("lastCoords")
-                if last_pos and #(current_pos - last_pos) > 150.0 and not whitelisted[current_pos] then
+            if not IsPedFalling(ped) then
+                if last_pos and #(current_pos - last_pos) > 150.0 and not is_whitelisted(current_pos) then
                     local webhook = ConfigLoader.get_protection_setting("Anti Teleport", "webhook") or ""
                     local time = ConfigLoader.get_protection_setting("Anti Teleport", "time") or 0
                     
@@ -39,6 +62,7 @@ function AntiTeleport.initialize()
                 end
             end
 
+            last_pos = current_pos
             ::continue::
         end
     end)

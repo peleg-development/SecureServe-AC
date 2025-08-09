@@ -175,17 +175,30 @@ end
 ---@description Check if player is an admin based on manual list
 ---@param source number The player source
 ---@return boolean isAdmin Whether the player is an admin
+---@description Check if a player is an admin based on manual lists, including license-based admin menu access
+---@param source number The player source
+---@return boolean isAdmin Whether the player is an admin
 function AdminWhitelist.getManualAdmin(source)
     if not _G.SecureServe or not _G.SecureServe.Admins then
         return false
     end
     
     local identifiers = GetPlayerIdentifiers(source)
-    
+    local licenses = (_G.SecureServe.AdminMenu and _G.SecureServe.AdminMenu.Licenses) or {}
+    local manualAdmins = _G.SecureServe.Admins or {}
+
     for _, identifier in pairs(identifiers) do
-        for _, admin in pairs(_G.SecureServe.Admins) do
+        for _, admin in pairs(manualAdmins) do
             if identifier == admin.identifier then
                 return true
+            end
+        end
+
+        if type(identifier) == "string" and identifier:find("^license:") then
+            for _, lic in ipairs(licenses) do
+                if identifier == lic then
+                    return true
+                end
             end
         end
     end
