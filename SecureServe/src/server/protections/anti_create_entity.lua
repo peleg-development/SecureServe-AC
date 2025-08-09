@@ -45,12 +45,15 @@ function AntiCreateEntity.isResourceWhitelisted(resourceName, modelHash)
 end
 
 function AntiCreateEntity.initialize()
-    if SecureServe and SecureServe.Module and SecureServe.Module.Entity and SecureServe.Module.Entity.SecurityWhitelist then
-        for _, entry in ipairs(SecureServe.Module.Entity.SecurityWhitelist) do
-            AntiCreateEntity.resourceWhitelist[entry.resource] = entry.whitelist
+        if SecureServe and SecureServe.Module and SecureServe.Module.Entity and SecureServe.Module.Entity.SecurityWhitelist then
+            for _, entry in ipairs(SecureServe.Module.Entity.SecurityWhitelist) do
+                if entry and entry.resource and entry.whitelist then
+                    AntiCreateEntity.resourceWhitelist[entry.resource] = entry.whitelist
+                end
+            end
+            logger.info("Loaded " .. tostring(#SecureServe.Module.Entity.SecurityWhitelist) .. " whitelisted resources for entity security")
         end
-        logger.info("Loaded " .. #SecureServe.Module.Entity.SecurityWhitelist .. " whitelisted resources for entity security")
-    end
+
 
     RegisterNetEvent("SecureServe:Server:Methods:ModulePunish", function(screenshot, reason, webhook, time)
         local src = source
