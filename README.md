@@ -1,4 +1,3 @@
-## New Update | Soon
 # SecureServe - Free & Open Source Fivem Anti-Cheat
 
 - **Discord:** [Join Our Server](https://discord.gg/z6qGGtbcr4) for live support and updates.
