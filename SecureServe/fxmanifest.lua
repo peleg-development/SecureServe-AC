@@ -58,7 +58,8 @@ client_scripts {
     "src/client/protections/anti_no_recoil.lua",
     "src/client/protections/anti_visions.lua",
     "src/client/protections/anti_weapon_pickup.lua",
-    "src/client/main.lua"
+    "src/client/main.lua",
+    "src/panel/ingame/client.lua"
 }
 server_scripts {
     "config.lua",
@@ -80,7 +81,8 @@ server_scripts {
     "src/server/protections/anti_explosions.lua",
     "src/server/protections/anti_particle_effects.lua",
     "src/server/protections/heartbeat.lua",
-    "src/server/core/install.js"
+    "src/server/core/install.js",
+    "src/panel/ingame/server.lua"
 }
 
 dependencies {

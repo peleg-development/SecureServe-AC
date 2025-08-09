@@ -9,8 +9,16 @@ local AntiEntitySecurity = {
     entity_cache = {},
     cleanup_interval = 120000, 
     last_cache_cleanup = 0,
-    entity_check_count = 0 
+    entity_check_count = 0,
+    playerLoaded = false
 }
+
+AddEventHandler('playerSpawned', function()
+    Citizen.CreateThread(function()
+        Citizen.Wait(4500)
+        AntiEntitySecurity.playerLoaded = true
+    end)
+end)
 
 ---@description Initialize Entity Security protection
 function AntiEntitySecurity.initialize()
@@ -58,7 +66,7 @@ function AntiEntitySecurity.initialize()
             return 
         end
         
-        if DoesEntityExist(entity) then
+        if DoesEntityExist(entity) and AntiEntitySecurity.playerLoaded then
             SetEntityAsMissionEntity(entity, true, true)
             if IsEntityAVehicle(entity) then
                 DeleteVehicle(entity)
@@ -132,7 +140,7 @@ function AntiEntitySecurity.initialize()
                 return 
             end
             
-            if not isWhitelisted then
+            if not isWhitelisted and AntiEntitySecurity.playerLoaded then
                 if DoesEntityExist(entity) then
                     SetEntityAsMissionEntity(entity, true, true)
                     if IsEntityAVehicle(entity) then

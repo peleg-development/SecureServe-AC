@@ -154,7 +154,6 @@ function AdminWhitelist.isAdmin(source)
         end
     end
     
-    -- Check txAdmin permission as a fallback
     if not isAdmin then
         isAdmin = AdminWhitelist.getTxAdminPerm(source)
     end

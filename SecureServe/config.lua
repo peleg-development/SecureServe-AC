@@ -140,8 +140,8 @@ SecureServe.Module = {
 									 -- 'inactive': Entity security disabled.
 
 		SecurityWhitelist = { -- Resource exceptions allowing entity creation without triggering security measures.
-			{ resource = "bob74_ipl", whitelist = true },
-			{ resource = "6x_houserobbery", whitelist = true },
+			-- { resource = "bob74_ipl", whitelist = true },
+			-- { resource = "6x_houserobbery", whitelist = true },
 		},
 
 		Limits = { -- Defines maximum number of entities each player can spawn before triggering bans.

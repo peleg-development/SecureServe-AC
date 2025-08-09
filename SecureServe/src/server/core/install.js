@@ -909,9 +909,7 @@ let retry_count = 0;
  */
 on('onServerResourceStart', (resourceName) => {
     if (resourceName === CURRENT_RESOURCE_NAME) {
-        Citizen.CreateThread(() => {
-            Citizen.Wait(5000);
-            
+        setTimeout(() => {
             Logger.info(`${CURRENT_RESOURCE_NAME} install script starting...`);
 
             checkAndFixDefaultKey();
@@ -925,6 +923,6 @@ on('onServerResourceStart', (resourceName) => {
             } else {
                 installSecureServe();
             }
-        });
+        }, 5000);
     }
 });
