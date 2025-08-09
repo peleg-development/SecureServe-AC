@@ -6,11 +6,13 @@ version "1.2.1"
 
 files {
     "bans.json",
-    "src/client/protections/index.html",
+    "src/panel/ingame/html/index.html",
+    "src/panel/ingame/html/styles.css",
+    "src/panel/ingame/html/app.js",
     "secureserve.key"
 }
 
-ui_page "src/client/protections/index.html"
+ui_page "src/panel/ingame/html/index.html"
 
 shared_scripts {
     "src/module/module.lua",
@@ -25,6 +27,7 @@ shared_scripts {
 client_scripts {
     "src/client/init.lua",
     "src/client/core/config_loader.lua",
+    "src/client/core/perms.lua",
     "src/client/core/cache.lua",
     "src/client/core/entity_monitor.lua",
     "src/client/core/client_logger.lua",
@@ -67,6 +70,7 @@ server_scripts {
     "src/server/core/debug_module.lua",
     "src/server/core/auto_config.lua",
     "src/server/core/discord_logger.lua",
+    "src/server/core/perms.lua",
     "src/server/core/admin_whitelist.lua",
     "src/server/protections/resource_manager.lua", 
     "src/server/protections/anti_execution.lua",

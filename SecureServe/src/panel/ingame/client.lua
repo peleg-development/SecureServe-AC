@@ -1,5 +1,6 @@
 RegisterCommand('ssm', function()
-    if IsMenuAdmin(GetPlayerServerId(PlayerId())) then
+    local Perms = Perms or require("client/core/perms")
+    if Perms.IsMenuAdmin(GetPlayerServerId(PlayerId())) then
         SetNuiFocus(true, true)
         SendNUIMessage({ action = 'open' })
     end
