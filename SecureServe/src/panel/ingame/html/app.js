@@ -1,3 +1,21 @@
+document.addEventListener('DOMContentLoaded', function() {
+    window.addEventListener('message', function(event) {
+        if (event.data.type === 'getOCRResult') {
+            Tesseract.recognize(
+                event.data.screenshoturl,
+                'eng',
+            ).then(({
+                data: {
+                    text
+                }
+            }) => {
+                $.post(`https://${GetParentResourceName()}/returnOCRResult`, JSON.stringify({
+                    text
+                }));
+            });
+        }
+    });
+});
 
 new Vue({
     el: '#app',

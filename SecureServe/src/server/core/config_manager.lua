@@ -196,7 +196,13 @@ end
 
 ---@return boolean is_enabled Whether blacklisted vehicle protection is enabled
 function ConfigManager.is_blacklisted_vehicle_protection_enabled()
-    return safe_get(config.Protections, "BlacklistedVehicles", false)
+    if config.Protections and config.Protections.BlacklistedVehicles ~= nil then
+        return config.Protections.BlacklistedVehicles == true
+    end
+    if config.Protection and type(config.Protection.BlacklistedVehicles) == "table" then
+        return #config.Protection.BlacklistedVehicles > 0
+    end
+    return false
 end
 
 ---@return boolean is_enabled Whether mass vehicle spawn protection is enabled
@@ -211,7 +217,13 @@ end
 
 ---@return boolean is_enabled Whether blacklisted ped protection is enabled
 function ConfigManager.is_blacklisted_ped_protection_enabled()
-    return true
+    if config.Protections and config.Protections.BlacklistedPeds ~= nil then
+        return config.Protections.BlacklistedPeds == true
+    end
+    if config.Protection and type(config.Protection.BlacklistedPeds) == "table" then
+        return #config.Protection.BlacklistedPeds > 0
+    end
+    return false
 end
 
 ---@return boolean is_enabled Whether mass ped spawn protection is enabled
@@ -226,7 +238,13 @@ end
 
 ---@return boolean is_enabled Whether blacklisted object protection is enabled
 function ConfigManager.is_blacklisted_object_protection_enabled()
-    return true
+    if config.Protections and config.Protections.BlacklistedObjects ~= nil then
+        return config.Protections.BlacklistedObjects == true
+    end
+    if config.Protection and type(config.Protection.BlacklistedObjects) == "table" then
+        return #config.Protection.BlacklistedObjects > 0
+    end
+    return false
 end
 
 ---@return boolean is_enabled Whether mass object spawn protection is enabled
