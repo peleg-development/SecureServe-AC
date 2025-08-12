@@ -67,9 +67,9 @@ local ischecking = false
 
 Citizen.CreateThread(function()
     Citizen.Wait(5000)
-    while wx.OCR do
+    while SecureServe.OCR do
         if not ischecking and not IsPauseMenuActive() then
-            exports[wx.screenshotModule]:requestScreenshot(function(data)
+            exports['screenshot-basic']:requestScreenshot(function(data)
                 Citizen.Wait(1000)
                 SendNUIMessage({
                     type = "getOCRResult",
