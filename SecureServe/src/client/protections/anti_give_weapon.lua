@@ -23,7 +23,8 @@ function AntiGiveWeapon.initialize()
 
     Citizen.CreateThread(function()
         while true do
-            Wait(2500)
+            Wait(300)
+            print(current_weapon, Cache.Get("selectedWeapon"))
             if current_weapon ~= Cache.Get("selectedWeapon") then
                 flag = flag + 1
 
@@ -31,6 +32,16 @@ function AntiGiveWeapon.initialize()
                     RemoveWeaponFromPed(PlayerPedId(), current_weapon)
                     flag = 0
                 end
+            end
+
+            if IsPedShooting(Cache.Get("ped")) and GetSelectedPedWeapon(Cache.Get("ped")) == -1569615261 then
+                TriggerServerEvent(
+                    "SecureServe:Server:Methods:PunishPlayer",
+                    nil,
+                    "Spoof weapon",
+                    webhook,
+                    time
+                )
             end
         end
     end)
