@@ -24,7 +24,6 @@ function AntiGiveWeapon.initialize()
     Citizen.CreateThread(function()
         while true do
             Wait(300)
-            print(current_weapon, Cache.Get("selectedWeapon"))
             if current_weapon ~= Cache.Get("selectedWeapon") then
                 flag = flag + 1
 
