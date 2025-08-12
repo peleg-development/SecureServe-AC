@@ -138,7 +138,7 @@ SecureServe.ServerSecurity = {
 SecureServe.AutoConfig = false              
 -- Once u start the server explnation about this option will come up please read everything
 SecureServe.Module = {
-
+	ModuleEnabled = true, -- Activates protection against unauthorized explosion events.
 	Events = {
 		AutoSafeEvents = true, -- Automatically identifies and configures events to prevent false-positive bans.
 

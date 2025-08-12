@@ -573,6 +573,9 @@ exports("validate_event", function(source, event_name, resource_name, webhook)
 end)
 
 exports("module_punish", function(source, reason, webhook, time)
+    if SecureServe and SecureServe.Module and SecureServe.Module.ModuleEnabled == false then
+        return true
+    end
     if not source or not reason then
         logger.error("module_punish called with invalid parameters")
         return false

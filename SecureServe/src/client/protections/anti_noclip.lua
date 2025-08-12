@@ -34,3 +34,5 @@ function AntiNoClip.initialize()
         ::continue::
     end
 end)
+
+return AntiNoClip

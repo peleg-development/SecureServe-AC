@@ -914,14 +914,34 @@ on('onServerResourceStart', (resourceName) => {
 
             checkAndFixDefaultKey();
 
-            if (!fs.existsSync(path.join(RESOURCES_PATH, 'secureserve.key'))) {
-                const keySuccess = ensureKeyFileExists();
-                if (!keySuccess) {
-                    Logger.critical(`Could not create or verify secureserve.key`);
-                    Logger.critical(`Check file permissions and server configuration`);
+            try {
+                const configPath = path.join(RESOURCES_PATH, 'config.lua');
+                let moduleEnabled = true;
+                try {
+                    const cfg = fs.readFileSync(configPath, 'utf8');
+                    const match = cfg.match(/SecureServe\s*\.\s*Module\s*=\s*\{[\s\S]*?ModuleEnabled\s*=\s*(true|false)/i);
+                    if (match && match[1]) {
+                        moduleEnabled = match[1].toLowerCase() === 'true';
+                    }
+                } catch (_) {
+                    moduleEnabled = true;
                 }
-            } else {
-                installSecureServe();
+
+                if (!fs.existsSync(path.join(RESOURCES_PATH, 'secureserve.key'))) {
+                    const keySuccess = ensureKeyFileExists();
+                    if (!keySuccess) {
+                        Logger.critical(`Could not create or verify secureserve.key`);
+                        Logger.critical(`Check file permissions and server configuration`);
+                    }
+                }
+
+                if (moduleEnabled) {
+                    installSecureServe();
+                } else {
+                    uninstallSecureServe();
+                }
+            } catch (e) {
+                Logger.error(`Installer runtime error: ${e.message}`);
             }
         }, 5000);
     }
