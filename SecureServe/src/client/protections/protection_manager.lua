@@ -294,7 +294,7 @@ function ProtectionManager.initialize_heartbeat()
     
     Citizen.CreateThread(function()
         while true do
-            Citizen.Wait(15 * 1000)
+            Citizen.Wait(1000)
             heartbeat_token = Utils.random_key(math.random(15, 35))
             TriggerServerEvent('mMkHcvct3uIg04STT16I:cbnF2cR9ZTt8NmNx2jQS', heartbeat_token)
         end

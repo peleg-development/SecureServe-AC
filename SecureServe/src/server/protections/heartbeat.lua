@@ -8,8 +8,8 @@ local Heartbeat = {
     alive = {},
     allowedStop = {},
     failureCount = {},
-    checkInterval = 7000,
-    maxFailures = 50
+    checkInterval = 3000,
+    maxFailures = 7
 }
 
 ---@description Initialize heartbeat protection
@@ -42,7 +42,7 @@ function Heartbeat.setupEventHandlers()
         local playerId = source
         
         if string.len(key) < 15 or string.len(key) > 35 or key == nil then
-            Heartbeat.banPlayer(playerId, "Invalid heartbeat key")
+            DropPlayer(playerId, "Invalid heartbeat key")
         else
             Heartbeat.playerHeartbeats[playerId] = os.time()
         end
@@ -73,7 +73,7 @@ end
 function Heartbeat.startMonitoringThreads()
     Citizen.CreateThread(function()
         while true do
-            Citizen.Wait(10 * 1000)
+            Citizen.Wait(5000)
             
             local currentTime = os.time()
             
@@ -82,7 +82,7 @@ function Heartbeat.startMonitoringThreads()
                     local timeSinceLastHeartbeat = currentTime - lastHeartbeatTime
                     
                     if timeSinceLastHeartbeat > 1500 then
-                        Heartbeat.banPlayer(playerId, "No heartbeat received")
+                        DropPlayer(playerId, "No heartbeat received")
                         Heartbeat.playerHeartbeats[playerId] = nil
                     end
                 end
@@ -108,7 +108,7 @@ function Heartbeat.startMonitoringThreads()
                     Heartbeat.failureCount[numPlayerId] = (Heartbeat.failureCount[numPlayerId] or 0) + 1
                     
                     if Heartbeat.failureCount[numPlayerId] >= Heartbeat.maxFailures then
-                        Heartbeat.banPlayer(numPlayerId, "Failed to respond to alive checks")
+                        DropPlayer(numPlayerId, "Failed to respond to alive checks")
                     end
                 else
                     Heartbeat.failureCount[numPlayerId] = 0
