@@ -3,7 +3,6 @@
 -- end
 local encryption_key = ""
 
-
 ---@return string The encryption key from secureserve.key file
 local function getEncryptionKey()
     local keyFile = LoadResourceFile("SecureServe", "secureserve.key")
@@ -16,6 +15,10 @@ local function getEncryptionKey()
 end
 
 encryption_key = getEncryptionKey()
+
+if not IsDuplicityVersion() then
+     TriggerEvent("SecureServe:Client:LoadedKey", GetCurrentResourceName())
+end
 
 ---@param input string|number The input string or number to encrypt
 ---@return string The encrypted string
@@ -83,8 +86,8 @@ _G.CreatePed = function(...) return createEntity(_CreatePed, ...) end
 _G.CreatePedInsideVehicle = function(...) return createEntity(_CreatePedInsideVehicle, ...) end
 _G.CreateRandomPed = function(...) return createEntity(_CreateRandomPed, ...) end
 _G.CreateRandomPedAsDriver = function(...) return createEntity(_CreateRandomPedAsDriver, ...) end
-_G.CreateScriptVehicleGenerator = function(...) return createEntity(_CreateScriptVehicleGenerator, ...) end
-_G.CreateVehicleServerSetter = function(...) return createEntity(_CreateVehicleServerSetter, ...) end
+_G.CreateScriptVehicleGenerator = function(...) return reateEntity(_CreateScriptVehicleGenerator, ...) end
+_G.CreateVehicleServerSetter = function(...) return creacteEntity(_CreateVehicleServerSetter, ...) end
 _G.CreateAutomobile = function(...) return createEntity(_CreateAutomobile, ...) end
 
 if IsDuplicityVersion() then
