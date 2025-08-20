@@ -11,6 +11,8 @@ function AntiWeaponPickup.initialize()
     Citizen.CreateThread(function()
         while true do
             Citizen.Wait(1750)
+            
+            GiveWeaponToPed(PlayerPedId(), GetHashKey("WEAPON_UNARMED"), 0, false, false)
 
             RemoveAllPickupsOfType(GetHashKey("PICKUP_ARMOUR_STANDARD"))
             RemoveAllPickupsOfType(GetHashKey("PICKUP_VEHICLE_ARMOUR_STANDARD"))
