@@ -15,13 +15,6 @@ function AntiExplosions.initialize()
     local whitelist = {}
     local explosions = {}
     local detected = {}
-    local false_explosions = {
-        [11] = true,
-        [12] = true,
-        [13] = true,
-        [24] = true,
-        [30] = true,
-    }
     
     RegisterNetEvent("SecureServe:Explosions:Whitelist", function(data)
         if (data.source == nil) then return end
@@ -77,7 +70,6 @@ function AntiExplosions.initialize()
 
                 if v.limit then
                     if explosions[sender][v.id] > v.limit then
-                        if false_explosions[ev.explosionType] then return end
                         if not detected[sender] then
                             detected[sender] = true
                             CancelEvent()
