@@ -1,5 +1,5 @@
 local ProtectionManager = require("client/protections/protection_manager")
-
+local ConfigLoader = require("client/core/config_loader")
 ---@class AntiNoClipModule
 local AntiNoClip = {
     is_busy = false
