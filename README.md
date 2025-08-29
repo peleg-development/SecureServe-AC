@@ -1,6 +1,6 @@
 # SecureServe - Free & Open Source Fivem Anti-Cheat
 
-- **Discord:** [Join Our Server](https://discord.gg/z6qGGtbcr4) for live support and updates.
+- **Discord:** [Join Our Server](https://discord.gg/9AuTeZPgrX) for live support and updates.
 - **Docs:** [SecureServe Documentation](https://peleg.gitbook.io/secureserve/)
 - **Support the anticheat for future updates:** [KOFI](https://ko-fi.com/peleg)
 - **Please use the release beta or v versions only unless u want to the test latest version (might be bugged)!**
