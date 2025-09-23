@@ -1,5 +1,11 @@
 # SecureServe - Free & Open Source Fivem Anti-Cheat
 ## Outdated! Update will be posted in 1/10/2025 | DD/MM/YYYY 
+<div align="center">
+
+[![Support Discord](https://img.shields.io/badge/Support%20Discord-5865F2?logo=discord&logoColor=white)](https://discord.gg/ZVWbpqfYj5)
+[![Tebex Store](https://img.shields.io/badge/Tebex%20Store-111111)](https://peleg-development.tebex.io/)
+
+</div>
 - **Discord:** [Join Our Server](https://discord.gg/9AuTeZPgrX) for live support and updates.
 - **Docs:** [SecureServe Documentation](https://peleg.gitbook.io/secureserve/)
 - **Support the anticheat for future updates:** [KOFI](https://ko-fi.com/peleg)
