@@ -6,6 +6,7 @@
 [![Tebex Store](https://img.shields.io/badge/Tebex%20Store-111111)](https://peleg-development.tebex.io/)
 
 </div>
+
 - **Discord:** [Join Our Server](https://discord.gg/9AuTeZPgrX) for live support and updates.
 - **Docs:** [SecureServe Documentation](https://peleg.gitbook.io/secureserve/)
 - **Support the anticheat for future updates:** [KOFI](https://ko-fi.com/peleg)
