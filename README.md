@@ -1,5 +1,4 @@
 # SecureServe - Free & Open Source Fivem Anti-Cheat
-## Outdated! Update will be posted in 1/10/2025 | DD/MM/YYYY 
 <div align="center">
 
 [![Support Discord](https://img.shields.io/badge/Support%20Discord-5865F2?logo=discord&logoColor=white)](https://discord.gg/ZVWbpqfYj5)
