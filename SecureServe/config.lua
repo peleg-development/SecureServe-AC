@@ -260,56 +260,89 @@ SecureServe.BanTimes = { -- Preset ban times, preset name can be used in the pro
 	["Warn"] = 0,         -- Warn
 }
 
-
-
-SecureServe.Webhooks.Simple = ""
-SecureServe.Protection.Simple = {     
-	{ protection = "Anti Give Weapon",            time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player used excutor to spawn a weapon.                                                         
-	{ protection = "Anti Player Blips",           time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player has player blips enabled.
-	{ protection = "Anti Car Fly",                time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player uses car fly in the server
-	{ protection = "Anti Particles",              time = "Ban", webhook = "",       enabled = true, limit = 5 },          -- Takes action if particles are spawning.
-	{ protection = "Anti Damage Modifier",        time = "Ban", webhook = "",       enabled = true, default = 1.5, },     -- Takes action if weapon does more damage than it should.
-	{ protection = "Anti Weapon Pickup",          time = "Ban", webhook = "",       enabled = true },                     -- Removes all weapons from the floor every couple of seconds.
-	{ protection = "Anti Remove From Car",        time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player has been removed from the car.
-	{ protection = "Anti Spectate",               time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player is spectating
-	{ protection = "Anti Freecam",                time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player is using freecam
-	{ protection = "Anti Explosion Bullet",       time = "Ban", webhook = "",       enabled = true },                     -- Takes action if weapon has explosive bullets
-	{ protection = "Anti Night Vision",           time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player is using night vision.
-	{ protection = "Anti Thermal Vision",         time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player is using thermal vision.
-	{ protection = "Anti God Mode",               time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player has god mode.
-	{ protection = "Anti Infinite Ammo",          time = "Ban", webhook = "",       enabled = true },                     -- Disables infinite ammo for the player every couple of seconds.
-	{ protection = "Anti Teleport",               time = "Ban", webhook = "",       enabled = true, whitelisted_coords = {
-		-- { x = -1037.62, y = -2737.86, z = 20.17, radius = 100.0 },
-		-- { x = 200.0, y = -900.0, z = 30.0, radius = 60.0 }
-	} },                     -- Takes action if the player teleported.
-	{ protection = "Anti Invisible",              time = "Ban", webhook = "",       enabled = true },                     -- Takes action if the player is invisible
-	{ protection = "Anti Resource Stopper",       time = "Ban", webhook = "",       enabled = true },                     -- Takes action if a resouce is stopped (Do not stop any resource if this feature is enabled).
-	{ protection = "Anti Resource Starter",       time = "Ban", webhook = "",       enabled = true },                     -- Takes action if a resouce is started (Do not start any resource if this feature is enabled).
-	{ protection = "Anti Vehicle God Mode",       time = "Ban", webhook = "",       enabled = true },                     -- Takes action if vehicle has god mode.
-	{ protection = "Anti Vehicle Power Increase", time = "Ban", webhook = "",       enabled = true },                     -- Takes action if torque power changed.
-	{ protection = "Anti Speed Hack",             time = "Ban", webhook = "",       enabled = true, defaultr = 8, defaults = 4.5, }, -- Takes action if a vehicle is using speedhack.
-	{ protection = "Anti Plate Changer",          time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player changed his plate.
-	{ protection = "Anti Cheat Engine",           time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player stopped values from changing (Expiremental).
-	{ protection = "Anti Rage",                   time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player killed someone that is not on their screen.
-	{ protection = "Anti Aim Assist",             time = "Ban", webhook = "",       enabled = true },                     -- Disables aim assist for the player every millisecond.
-	{ protection = "Anti Kill All",               time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player tried to kill everyone.
-	{ protection = "Anti Solo Session",           time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player is in solo session.
-	{ protection = "Anti AI",                     time = "Ban", webhook = "",       enabled = true, default = 1.5, },     -- Takes action if player has modified his ai files (Expiremental).
-	{ protection = "Anti No Reload",              time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player uses no reload.
-	{ protection = "Anti Rapid Fire",             time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player has modified his fire rate .
-	{ protection = "Anti Bigger Hitbox",          time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player has bigger hitbox.
-	{ protection = "Anti No Recoil",              time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player has no recoil on.
-	{ protection = "Anti State Bag Overflow",     time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player has modified his state bag (Expiremental).
-	{ protection = "Anti Extended NUI Devtools",  time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player opened dev tools and extends the anti-cheat (Expiremental).
-	{ protection = "Anti No Ragdoll",             time = "Ban", webhook = "",       enabled = true },                     -- Takes action if a disabled ragdolls.
-	{ protection = "Anti Super Jump",             time = "Ban", webhook = "",       enabled = true },                     -- Takes action if a player is super jumping.
-	{ protection = "Anti Noclip",                 time = "Ban", webhook = "",       enabled = true },                     -- Takes action if a player is using noclip.
-	{ protection = "Anti Infinite Stamina",       time = "Ban", webhook = "",       enabled = true },                     -- Takes action if a has infinite stamina.
-	{ protection = "Anti Play Sound",             time = "Ban", webhook = "",       enabled = true },                     -- Disables Sound Routing Event
-	{ protection = "Anti AFK Injection",          time = "Ban", webhook = "",       enabled = true },                     -- Takes action if player uses afk injection usally used while dumping
-	{ protection = "Anti Car Ram",                time = "Ban", webhook = "",       enabled = false },                    -- Takes action if player tries to ram player with a mod menu
-	{ protection = "Anti Magic Bullet",           time = "Ban", webhook = "",       enabled = true, tolerance = 3 },      -- If the player kills more than the number of times you set and does not see it, they will be banned from the server
+SecureServe.Detections = {
+    -- Central webhook for all detections (can be overridden per category)
+    Webhook = "",
+    
+    -- Core client-side protections
+    ClientProtections = {
+        -- Movement & Position
+        ["Anti Teleport"] = { enabled = true, action = "Ban", whitelisted_coords = {
+            -- { x = -1037.62, y = -2737.86, z = 20.17, radius = 100.0 },
+            -- { x = 200.0, y = -900.0, z = 30.0, radius = 60.0 }
+        }},
+        ["Anti Speed Hack"] = { enabled = true, action = "Ban", max_speed = 8.0, tolerance = 4.5 },
+        ["Anti Super Jump"] = { enabled = true, action = "Ban" },
+        ["Anti Noclip"] = { enabled = true, action = "Ban" },
+        ["Anti Freecam"] = { enabled = true, action = "Ban" },
+        ["Anti Spectate"] = { enabled = true, action = "Ban" },
+        
+        -- Combat & Weapons
+        ["Anti God Mode"] = { enabled = true, action = "Ban" },
+        ["Anti Invisible"] = { enabled = true, action = "Ban" },
+        ["Anti Give Weapon"] = { enabled = true, action = "Ban" },
+        ["Anti Weapon Pickup"] = { enabled = true, action = "Ban" },
+        ["Anti Damage Modifier"] = { enabled = true, action = "Ban", multiplier = 1.5 },
+        ["Anti No Recoil"] = { enabled = true, action = "Ban" },
+        ["Anti No Reload"] = { enabled = true, action = "Ban" },
+        ["Anti Rapid Fire"] = { enabled = true, action = "Ban" },
+        ["Anti Infinite Ammo"] = { enabled = true, action = "Ban" },
+        ["Anti Explosion Bullet"] = { enabled = true, action = "Ban" },
+        ["Anti Magic Bullet"] = { enabled = true, action = "Ban", tolerance = 3 },
+        ["Anti Aim Assist"] = { enabled = true, action = "Ban" },
+        ["Anti Bigger Hitbox"] = { enabled = true, action = "Ban" },
+        
+        -- Visual & Effects
+        ["Anti Night Vision"] = { enabled = true, action = "Ban" },
+        ["Anti Thermal Vision"] = { enabled = true, action = "Ban" },
+        ["Anti Player Blips"] = { enabled = true, action = "Ban" },
+        ["Anti Particles"] = { enabled = true, action = "Ban", limit = 5 },
+        
+        -- Player State
+        ["Anti Infinite Stamina"] = { enabled = true, action = "Ban" },
+        ["Anti No Ragdoll"] = { enabled = true, action = "Ban" },
+        ["Anti Remove From Car"] = { enabled = true, action = "Ban" },
+        
+        -- Vehicle Modifications
+        ["Anti Vehicle God Mode"] = { enabled = true, action = "Ban" },
+        ["Anti Vehicle Power Increase"] = { enabled = true, action = "Ban" },
+        ["Anti Plate Changer"] = { enabled = true, action = "Ban" },
+        ["Anti Car Fly"] = { enabled = true, action = "Ban" },
+        ["Anti Car Ram"] = { enabled = false, action = "Ban" }, -- Disabled by default
+        
+        -- Advanced Detection
+        ["Anti AI"] = { enabled = true, action = "Ban", sensitivity = 1.5 },
+        ["Anti Cheat Engine"] = { enabled = true, action = "Ban" },
+        ["Anti State Bag Overflow"] = { enabled = true, action = "Ban" },
+        ["Anti Extended NUI Devtools"] = { enabled = true, action = "Ban" },
+        ["Anti AFK Injection"] = { enabled = true, action = "Ban" },
+        ["Anti Play Sound"] = { enabled = true, action = "Ban" },
+        ["Anti Solo Session"] = { enabled = true, action = "Ban" },
+        ["Anti Kill All"] = { enabled = true, action = "Ban" },
+        ["Anti Rage"] = { enabled = true, action = "Ban" },
+        
+        -- Resource Management
+        ["Anti Resource Stopper"] = { enabled = true, action = "Ban" },
+        ["Anti Resource Starter"] = { enabled = true, action = "Ban" }
+    }
 }
+
+SecureServe.Webhooks.Simple = SecureServe.Detections.Webhook
+SecureServe.Protection.Simple = {}
+for name, settings in pairs(SecureServe.Detections.ClientProtections) do
+    table.insert(SecureServe.Protection.Simple, {
+        protection = name,
+        enabled = settings.enabled,
+        time = settings.action,
+        webhook = "",
+        limit = settings.limit,
+        default = settings.multiplier or settings.sensitivity,
+        defaultr = settings.max_speed,
+        defaults = settings.tolerance,
+        tolerance = settings.tolerance,
+        whitelisted_coords = settings.whitelisted_coords
+    })
+end
 
 SecureServe.OCR = { -- Words on scrren that will get player banned
 	"FlexSkazaMenu","SidMenu","Lynx8","LynxEvo","Maestro Menu","redEngine","HamMafia","HamHaxia","Dopameme","redMENU","Desudo","explode","gamesense","Anticheat","Tapatio","Malossi","RedStonia","Chocohax",

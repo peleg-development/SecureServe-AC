@@ -40,11 +40,10 @@ local AntiGodmode = {
     -- Detection parameters
     max_health = 200,
     max_armor = 100,
-    healing_threshold = 20, -- Suspicious if healed more than this instantly
-    damage_immunity_threshold = 3, -- Number of damage events to ignore before flagging
+    healing_threshold = 20,
+    damage_immunity_threshold = 3,
 }
 
----@description Track damage events
 local function track_damage_event(damage_amount, health_before, armor_before)
     local current_time = GetGameTimer()
     
@@ -55,7 +54,6 @@ local function track_damage_event(damage_amount, health_before, armor_before)
         armor_before = armor_before
     })
     
-    -- Clean old events (older than 10 seconds)
     for i = #AntiGodmode.damage_events, 1, -1 do
         if current_time - AntiGodmode.damage_events[i].time > 10000 then
             table.remove(AntiGodmode.damage_events, i)
@@ -63,17 +61,14 @@ local function track_damage_event(damage_amount, health_before, armor_before)
     end
 end
 
----@description Check health-related flags
 local function check_health_flags(current_health, previous_health)
     local flags = 0
     
-    -- Track health history
     table.insert(AntiGodmode.health_history, {health = current_health, time = GetGameTimer()})
     if #AntiGodmode.health_history > AntiGodmode.history_size then
         table.remove(AntiGodmode.health_history, 1)
     end
     
-    -- Check for suspicious health increases
     if current_health > previous_health then
         local increase = current_health - previous_health
         
@@ -84,11 +79,9 @@ local function check_health_flags(current_health, previous_health)
             end
         end
         
-        -- General health increase flag
         flags = flags | AntiGodmode.flags.HEALTH_INCREASE
     end
     
-    -- Check if damage was taken but health didn't decrease
     if Cache.Get("damageTaken") and current_health >= previous_health and previous_health > 0 then
         flags = flags | AntiGodmode.flags.NO_HEALTH_DECREASE
         if AntiGodmode.debug then
@@ -96,7 +89,6 @@ local function check_health_flags(current_health, previous_health)
         end
     end
     
-    -- Check for health values above maximum
     if current_health > AntiGodmode.max_health then
         flags = flags | AntiGodmode.flags.HEALTH_INCREASE
         if AntiGodmode.debug then
@@ -107,17 +99,14 @@ local function check_health_flags(current_health, previous_health)
     return flags
 end
 
----@description Check armor-related flags
 local function check_armor_flags(current_armor, previous_armor)
     local flags = 0
     
-    -- Track armor history
     table.insert(AntiGodmode.armor_history, {armor = current_armor, time = GetGameTimer()})
     if #AntiGodmode.armor_history > AntiGodmode.history_size then
         table.remove(AntiGodmode.armor_history, 1)
     end
     
-    -- Check for suspicious armor increases
     if current_armor > previous_armor then
         local increase = current_armor - previous_armor
         
@@ -128,7 +117,6 @@ local function check_armor_flags(current_armor, previous_armor)
         flags = flags | AntiGodmode.flags.ARMOR_INCREASE
     end
     
-    -- Check if damage was taken but armor didn't decrease (when armor should take damage first)
     if Cache.Get("damageTaken") and current_armor >= previous_armor and previous_armor > 0 then
         flags = flags | AntiGodmode.flags.NO_ARMOR_DECREASE
         if AntiGodmode.debug then
@@ -136,7 +124,6 @@ local function check_armor_flags(current_armor, previous_armor)
         end
     end
     
-    -- Check for armor values above maximum
     if current_armor > AntiGodmode.max_armor then
         flags = flags | AntiGodmode.flags.ARMOR_INCREASE
     end
@@ -144,20 +131,17 @@ local function check_armor_flags(current_armor, previous_armor)
     return flags
 end
 
----@description Check damage immunity patterns
 local function check_damage_immunity()
     local flags = 0
     local recent_damage_events = 0
     local current_time = GetGameTimer()
     
-    -- Count recent damage events
     for _, event in ipairs(AntiGodmode.damage_events) do
-        if current_time - event.time <= 5000 then -- Last 5 seconds
+        if current_time - event.time <= 5000 then
             recent_damage_events = recent_damage_events + 1
         end
     end
     
-    -- If multiple damage events occurred but no health/armor loss
     if recent_damage_events >= AntiGodmode.damage_immunity_threshold then
         flags = flags | AntiGodmode.flags.DAMAGE_IMMUNITY
         if AntiGodmode.debug then
@@ -168,7 +152,6 @@ local function check_damage_immunity()
     return flags
 end
 
----@description Calculate total flag weight
 local function calculate_flag_weight(flags)
     local total_weight = 0
     for flag, weight in pairs(AntiGodmode.flag_weight) do
@@ -179,11 +162,9 @@ local function calculate_flag_weight(flags)
     return total_weight
 end
 
----@description Main godmode detection logic
 local function detect_godmode()
     local current_time = GetGameTimer()
     
-    -- Cooldown check
     if current_time - AntiGodmode.last_detection_time < AntiGodmode.cooldown then
         return
     end
@@ -193,7 +174,6 @@ local function detect_godmode()
     local previous_health = AntiGodmode.last_health
     local previous_armor = AntiGodmode.last_armor
     
-    -- Skip first check (no previous values)
     if previous_health == 0 then
         AntiGodmode.last_health = current_health
         AntiGodmode.last_armor = current_armor
@@ -202,12 +182,10 @@ local function detect_godmode()
     
     AntiGodmode.current_flags = 0
     
-    -- Run all detection checks
     AntiGodmode.current_flags = AntiGodmode.current_flags | check_health_flags(current_health, previous_health)
     AntiGodmode.current_flags = AntiGodmode.current_flags | check_armor_flags(current_armor, previous_armor)
     AntiGodmode.current_flags = AntiGodmode.current_flags | check_damage_immunity()
     
-    -- Calculate weighted score
     local flag_weight = calculate_flag_weight(AntiGodmode.current_flags)
     
     if flag_weight >= AntiGodmode.flag_threshold then
@@ -242,19 +220,17 @@ local function detect_godmode()
     end
 end
 
----@description Initialize Anti Godmode protection
 function AntiGodmode.initialize()
     if not ConfigLoader.get_protection_setting("Anti Godmode", "enabled") then return end
     
     if AntiGodmode.debug then print("[AntiGodmode] Protection initialized with damage tracking") end
     
-    -- Initialize values
     AntiGodmode.last_health = Cache.Get("health")
     AntiGodmode.last_armor = Cache.Get("armor")
     
     Citizen.CreateThread(function()
         while true do
-            Citizen.Wait(1000) -- Check every second for godmode
+            Citizen.Wait(1000)
             
             if Cache.Get("hasPermission", "godmode") or Cache.Get("hasPermission", "all") or Cache.Get("isAdmin") then
                 goto continue

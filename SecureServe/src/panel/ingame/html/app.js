@@ -32,23 +32,8 @@ new Vue({
         modalBan: {},
         showScreenshotModal: false,
         modalScreenshot: '',
-        players: [
-            { id: 1, name: 'John Doe', steamId: 'STEAM_0:1:12345678', ping: 50 },
-            { id: 2, name: 'Jane Smith', steamId: 'STEAM_0:1:87654321', ping: 75 },
-            { id: 3, name: 'Chris Johnson', steamId: 'STEAM_0:1:23456789', ping: 30 },
-            { id: 4, name: 'Sarah Lee', steamId: 'STEAM_0:1:98765432', ping: 120 },
-            // { id: 5, name: 'Mike Brown', steamId: 'STEAM_0:1:34567890', ping: 90 },
-            // { id: 6, name: 'Emma Davis', steamId: 'STEAM_0:1:54321098', ping: 60 },
-            // { id: 6, name: 'Emma Davis', steamId: 'STEAM_0:1:54321098', ping: 60 },
-            // { id: 6, name: 'Emma Davis', steamId: 'STEAM_0:1:54321098', ping: 60 },
-            // { id: 6, name: 'Emma Davis', steamId: 'STEAM_0:1:54321098', ping: 60 },
-            // { id: 6, name: 'Emma Davis', steamId: 'STEAM_0:1:54321098', ping: 60 },
-        ],
-        bans: [
-            // { id: 1, name: "Jane Smith", reason: "Abusive language", steam: "STEAM_0:1:87654321", discord: "Jane#1234", hwid1: "HWID123456", ip: "192.168.1.100", expire: "Permanent" },
-            // { id: 2, name: "Chris Johnson", reason: "Cheating", steam: "STEAM_0:1:23456789", discord: "Chris#5678", hwid1: "HWID987654", ip: "192.168.1.101", expire: "2025-01-07" },
-            // { id: 3, name: "Mike Brown", reason: "Using exploits", steam: "STEAM_0:1:34567890", discord: "Mike#4321", hwid1: "HWID765432", ip: "192.168.1.102", expire: "2025-01-10" },
-        ],
+        players: [],
+        bans: [],
         selectedPlayer: null,
         playerOptions: [
             { name: 'ESP', enabled: false, type: 'toggle', category: 'misc' },
@@ -60,11 +45,7 @@ new Vue({
             { name: 'Repair Vehicle', enabled: false, type: 'button', category: 'admin' },
             { name: 'Teleport', enabled: false, type: 'button', category: 'admin' }
         ],
-        lastUpdates: [
-            { id: 1, title: "Update 1", description: "Resolved server lag issues to enhance performance.", date: "2025-01-01" },
-            { id: 2, title: "Update 2", description: "Implemented fixes to improve the admin panel's functionality.", date: "2025-01-03" },
-            { id: 3, title: "Update 3", description: "Redesigned the admin panel interface and resolved existing issues for a better user experience.", date: "2025-01-04" },
-        ],
+        lastUpdates: [],
         serverOptions: [
             { name: 'Restart Server', action: 'restart' },
             { name: 'Shutdown Server', action: 'shutdown' },
@@ -72,13 +53,7 @@ new Vue({
             { name: 'Update Scripts', action: 'update_scripts' },
             { name: 'Backup Database', action: 'backup_database' },
         ],
-        logs: [
-            // { timestamp: "2025-01-01 14:30:00", message: "Player John Doe kicked for cheating." },
-            // { timestamp: "2025-01-01 15:00:00", message: "Server restarted by Admin." },
-            // { timestamp: "2025-01-01 15:15:00", message: "Player Jane Smith banned for abusive language." },
-            // { timestamp: "2025-01-01 16:00:00", message: "Server cache cleared successfully." },
-            // { timestamp: "2025-01-01 16:30:00", message: "Screenshot taken for Player Chris Johnson." },
-        ],
+        logs: [],
         settings: {
             notifications: true,
             darkMode: false
