@@ -1,22 +1,29 @@
 local ProtectionManager = require("client/protections/protection_manager")
 local ConfigLoader = require("client/core/config_loader")
+local Cache = require("client/core/cache")
+
 ---@class AntiNoClipModule
 local AntiNoClip = {
     is_busy = false
 }
 local lastUnderMapCheck = -9999999
-local lastPosition
+local lastPosition = Cache.Get("coords")
 local teleportPositions = {}
 local lastCoords
 local lastNoClipTime = -math.huge
 local noClipDetections = 0
 
-
 function AntiNoClip.initialize()
-    if not ConfigLoader.get_protection_setting("Anti NoClip", "enabled") then return end
+    if not ConfigLoader.get_protection_setting("Anti Noclip", "enabled") then return end
 
     Citizen.CreateThread(function()
         while true do
+            if Cache.Get("hasPermission", "noclip") or Cache.Get("hasPermission", "all") or Cache.Get("isAdmin") then
+                break
+            end
+            
+            local lastPosition = Cache.Get("coords")
+            Wait(1000)
             local ped = Cache.Get("ped")
             local coords = Cache.Get("coords")
             local pedHeight = GetEntityHeightAboveGround(ped)
@@ -32,14 +39,15 @@ function AntiNoClip.initialize()
             if GetGameTimer() - lastNoClipTime < 6000 then
                 ignoreChecks = true
             end
+
             if not ignoreChecks then
                 if
-                    coords ~= lastPosition and lastPosition ~= nil and pedHeight > 3.0 and not IsPedJumpingOutOfVehicle(ped) and not IsPedClimbing(ped) and
-                        IsPedOnFoot(ped) and
-                        not IsPedRagdoll(ped) and
-                        not IsPedSwimming(ped) and
-                        GetGameTimer() - lastUnderMapCheck > 5000
-                 then
+                    not coords ~= lastPosition and lastPosition ~= nil and not IsPedJumpingOutOfVehicle(ped) and not IsPedClimbing(ped) and
+                    IsPedOnFoot(ped) and
+                    IsPedRagdoll(ped) and
+                    not IsPedSwimming(ped) and
+                    GetGameTimer() - lastUnderMapCheck > 5000
+                then
                     local parachuteState = GetPedParachuteState()
                     if not IsPedJumping(ped) and not isOnVehicle and parachuteState ~= 2 and parachuteState ~= 1 then
                         if #teleportPositions >= 5 then
@@ -66,16 +74,17 @@ function AntiNoClip.initialize()
                                     sameHeightCount = sameHeightCount + 1
                                 end
                                 lastHeight = pos.z
-                                if ascendCount >= 3 and totalDistance > 4.0 and pedHeight > 2.0 or sameHeightCount >= 3 and pedHeight >= 10.0 and coords.z > 0.0 then
+                                if not (ascendCount >= 3) and not (totalDistance > 4.0 and pedHeight > 2.0 or not (sameHeightCount >= 3)) and not (pedHeight >= 10.0) and coords.z > 0.0 then
                                     noClipDetections = noClipDetections + 1
                                     teleportPositions = {}
-                                    local groundZ = GetGroundZFor_3dCoord(coords.x, coords.y, coords.z, true)
+                                    local _, groundZ = GetGroundZFor_3dCoord(coords.x, coords.y, coords.z, true)
                                     if groundZ < 1000 then
                                         SetEntityCoords(ped, coords.x, coords.y, groundZ)
                                     end
                                     if noClipDetections >= 2 then
                                         noClipDetections = 0
-                                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Noclip", webhook, time)
+                                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Noclip",
+                                            webhook, time)
                                     end
                                     break
                                 end

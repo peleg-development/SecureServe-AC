@@ -66,7 +66,11 @@ function AntiEntitySpam.handleAntiSpam(hwid, owner, tracker, entityType, maxEnti
         return
     end
     
-    if tracker[hwid].count >= maxEntities then
+        if tracker[hwid].count >= maxEntities then
+        
+            local spamCount = tracker[hwid].count or 0
+            local reasonStr = entityType .. " Spam"
+            local detectionStr = "Attempted to spam " .. entityType:lower() .. "s with count of: " .. spamCount
         for _, entity in ipairs(AntiEntitySpam.getAllEntitiesByType(entityType)) do
             local entityOwner = NetworkGetFirstEntityOwner(entity)
             if entityOwner == owner and DoesEntityExist(entity) then
@@ -77,8 +81,9 @@ function AntiEntitySpam.handleAntiSpam(hwid, owner, tracker, entityType, maxEnti
         if not AntiEntitySpam.markedUsers[hwid] then
             AntiEntitySpam.markedUsers[hwid] = true
             AntiEntitySpam.clearSpamTracking()
-            ban_manager.ban_player(owner, entityType .. " Spam", 
-                "Attempted to spam " .. entityType:lower() .. "s with count of: " .. tracker[hwid].count)
+
+            ban_manager.ban_player(owner, reasonStr, detectionStr)
+
             CancelEvent()
         end
     end

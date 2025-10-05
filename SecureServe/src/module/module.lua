@@ -126,14 +126,6 @@ if IsDuplicityVersion() then
                         exports["SecureServe"]:module_punish(src, banMessage)
                     end
                 end)
-        
-                -- _AddEventHandler(enc_event_name, function ()
-                --     local src = source 
-                    
-                --     if GetPlayerPing(src) > 0 and decrypt(enc_event_name) ~= "add_to_trigger_list" and decrypt(enc_event_name) ~= "check_trigger_list" and spawned[src] then
-                --         TriggerEvent(encryptDecrypt("check_trigger_list"), src, decrypt(enc_event_name), GetCurrentResourceName())
-                --     end
-                -- end)
             end
         end
     end)

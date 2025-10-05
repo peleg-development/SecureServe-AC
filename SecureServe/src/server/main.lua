@@ -3,7 +3,6 @@ local ban_manager = require("server/core/ban_manager")
 local player_manager = require("server/core/player_manager")
 local logger = require("server/core/logger")
 local debug_module = require("server/core/debug_module")
-local auto_config = require("server/core/auto_config")
 local admin_whitelist = require("server/core/admin_whitelist")
 local discord_logger = require("server/core/discord_logger")
 
@@ -359,9 +358,6 @@ local function main()
     player_manager.initialize()
     print("^2│ ^2✓^7 Player Manager^7 initialized")
 
-    print("^2│ ^5⏳^7 Auto Config^7")
-    auto_config.initialize()
-    print("^2│ ^2✓^7 Auto Config^7 initialized")
 
     print("^2│ ^5⏳^7 Admin Whitelist^7")
     admin_whitelist.initialize()
@@ -425,9 +421,6 @@ local function main()
     end)
 
     AddEventHandler("eventTriggered", function(event_name, source, ...)
-        if SecureServe.AutoConfig and auto_config and auto_config.process_auto_whitelist then
-            auto_config.process_auto_whitelist(source, "Event triggered: " .. event_name, nil, nil)
-        end
 
         if event_name and SecureServe.SafeEvents then
             local safe_events = SecureServe.SafeEvents
@@ -530,9 +523,6 @@ exports("get_debug_module", function()
     return debug_module
 end)
 
-exports("get_auto_config", function()
-    return auto_config
-end)
 
 exports("get_admin_whitelist", function()
     return admin_whitelist
@@ -566,9 +556,6 @@ exports("whitelist_event", function(event_name)
 end)
 
 exports("validate_event", function(source, event_name, resource_name, webhook)
-    if auto_config and auto_config.validate_event then
-        return auto_config.validate_event(source, event_name, resource_name, webhook)
-    end
     return false
 end)
 
@@ -611,10 +598,6 @@ exports("module_punish", function(source, reason, webhook, time)
         ", Entity Resource: " .. (entity_resource or "none"))
 
     if event_name then
-        if auto_config and auto_config.fx_events and auto_config.fx_events[event_name] then
-            logger.debug("Event " .. event_name .. " is a native FiveM event, ignoring detection")
-            return true
-        end
 
         if config_manager.is_event_whitelisted(event_name) then
             logger.debug("Event " .. event_name .. " is whitelisted in config, ignoring detection")
@@ -637,21 +620,8 @@ exports("module_punish", function(source, reason, webhook, time)
             end
         end
 
-        if entity_resource and auto_config and auto_config.is_entity_resource_whitelisted then
-            if auto_config.is_entity_resource_whitelisted(entity_resource) then
-                logger.debug("Resource " .. entity_resource .. " is whitelisted for entities, ignoring detection")
-                return true
-            end
-        end
     end
 
-    if config_manager.get("AutoConfig") and auto_config and auto_config.process_auto_whitelist then
-        local handled = auto_config.process_auto_whitelist(source, reason, webhook, time)
-        if handled then
-            logger.info("Auto-config handled detection: " .. reason)
-            return true
-        end
-    end
 
     if event_name and config_manager.get("SafeEvents") then
         local safe_events = config_manager.get("SafeEvents")
@@ -746,14 +716,6 @@ RegisterNetEvent("check_trigger_list", function(source, event_name, resource_nam
         return
     end
 
-    if auto_config and auto_config.validate_event then
-        local is_valid = auto_config.validate_event(source, event_name, resource_name)
-
-        if not is_valid then
-            local reason = "Tried triggering a restricted event: " .. event_name .. " in resource: " .. resource_name
-            exports[GetCurrentResourceName()].module_punish(source, reason)
-        end
-    end
 end)
 
 exports("isPlayerWhitelisted", function(source)

@@ -3,241 +3,57 @@ local ConfigLoader = require("client/core/config_loader")
 local Cache = require("client/core/cache")
 
 ---@class AntiGodmodeModule
-local AntiGodmode = {
-    debug = false,
-    flags = {
-        NO_HEALTH_DECREASE = 1,
-        HEALTH_INCREASE = 2,
-        NO_ARMOR_DECREASE = 4,
-        ARMOR_INCREASE = 8,
-        DAMAGE_IMMUNITY = 16,
-        SUSPICIOUS_HEALING = 32,
-        INSTANT_RECOVERY = 64
-    },
-    current_flags = 0,
-    flag_threshold = 8,
-    flag_weight = {
-        [1] = 4,   -- No health decrease (high weight)
-        [2] = 2,   -- Health increase
-        [4] = 3,   -- No armor decrease
-        [8] = 2,   -- Armor increase
-        [16] = 5,  -- Damage immunity (highest weight)
-        [32] = 3,  -- Suspicious healing
-        [64] = 4   -- Instant recovery
-    },
-    cooldown = 10000,
-    last_detection_time = 0,
-    
-    -- Health tracking
-    health_history = {},
-    armor_history = {},
-    history_size = 10,
-    expected_damage = 0,
-    damage_events = {},
-    last_health = 0,
-    last_armor = 0,
-    
-    -- Detection parameters
-    max_health = 200,
-    max_armor = 100,
-    healing_threshold = 20,
-    damage_immunity_threshold = 3,
-}
+local AntiGodmode = {}
 
-local function track_damage_event(damage_amount, health_before, armor_before)
-    local current_time = GetGameTimer()
-    
-    table.insert(AntiGodmode.damage_events, {
-        time = current_time,
-        damage = damage_amount,
-        health_before = health_before,
-        armor_before = armor_before
-    })
-    
-    for i = #AntiGodmode.damage_events, 1, -1 do
-        if current_time - AntiGodmode.damage_events[i].time > 10000 then
-            table.remove(AntiGodmode.damage_events, i)
-        end
-    end
-end
-
-local function check_health_flags(current_health, previous_health)
-    local flags = 0
-    
-    table.insert(AntiGodmode.health_history, {health = current_health, time = GetGameTimer()})
-    if #AntiGodmode.health_history > AntiGodmode.history_size then
-        table.remove(AntiGodmode.health_history, 1)
-    end
-    
-    if current_health > previous_health then
-        local increase = current_health - previous_health
-        
-        if increase >= AntiGodmode.healing_threshold then
-            flags = flags | AntiGodmode.flags.INSTANT_RECOVERY
-            if AntiGodmode.debug then
-                print(string.format("[AntiGodmode] Instant recovery detected: +%d health", increase))
-            end
-        end
-        
-        flags = flags | AntiGodmode.flags.HEALTH_INCREASE
-    end
-    
-    if Cache.Get("damageTaken") and current_health >= previous_health and previous_health > 0 then
-        flags = flags | AntiGodmode.flags.NO_HEALTH_DECREASE
-        if AntiGodmode.debug then
-            print("[AntiGodmode] No health decrease despite damage taken")
-        end
-    end
-    
-    if current_health > AntiGodmode.max_health then
-        flags = flags | AntiGodmode.flags.HEALTH_INCREASE
-        if AntiGodmode.debug then
-            print(string.format("[AntiGodmode] Health above maximum: %d > %d", current_health, AntiGodmode.max_health))
-        end
-    end
-    
-    return flags
-end
-
-local function check_armor_flags(current_armor, previous_armor)
-    local flags = 0
-    
-    table.insert(AntiGodmode.armor_history, {armor = current_armor, time = GetGameTimer()})
-    if #AntiGodmode.armor_history > AntiGodmode.history_size then
-        table.remove(AntiGodmode.armor_history, 1)
-    end
-    
-    if current_armor > previous_armor then
-        local increase = current_armor - previous_armor
-        
-        if increase >= AntiGodmode.healing_threshold then
-            flags = flags | AntiGodmode.flags.INSTANT_RECOVERY
-        end
-        
-        flags = flags | AntiGodmode.flags.ARMOR_INCREASE
-    end
-    
-    if Cache.Get("damageTaken") and current_armor >= previous_armor and previous_armor > 0 then
-        flags = flags | AntiGodmode.flags.NO_ARMOR_DECREASE
-        if AntiGodmode.debug then
-            print("[AntiGodmode] No armor decrease despite damage taken")
-        end
-    end
-    
-    if current_armor > AntiGodmode.max_armor then
-        flags = flags | AntiGodmode.flags.ARMOR_INCREASE
-    end
-    
-    return flags
-end
-
-local function check_damage_immunity()
-    local flags = 0
-    local recent_damage_events = 0
-    local current_time = GetGameTimer()
-    
-    for _, event in ipairs(AntiGodmode.damage_events) do
-        if current_time - event.time <= 5000 then
-            recent_damage_events = recent_damage_events + 1
-        end
-    end
-    
-    if recent_damage_events >= AntiGodmode.damage_immunity_threshold then
-        flags = flags | AntiGodmode.flags.DAMAGE_IMMUNITY
-        if AntiGodmode.debug then
-            print(string.format("[AntiGodmode] Damage immunity detected: %d events ignored", recent_damage_events))
-        end
-    end
-    
-    return flags
-end
-
-local function calculate_flag_weight(flags)
-    local total_weight = 0
-    for flag, weight in pairs(AntiGodmode.flag_weight) do
-        if (flags & flag) ~= 0 then
-            total_weight = total_weight + weight
-        end
-    end
-    return total_weight
-end
-
-local function detect_godmode()
-    local current_time = GetGameTimer()
-    
-    if current_time - AntiGodmode.last_detection_time < AntiGodmode.cooldown then
-        return
-    end
-    
-    local current_health = Cache.Get("health")
-    local current_armor = Cache.Get("armor")
-    local previous_health = AntiGodmode.last_health
-    local previous_armor = AntiGodmode.last_armor
-    
-    if previous_health == 0 then
-        AntiGodmode.last_health = current_health
-        AntiGodmode.last_armor = current_armor
-        return
-    end
-    
-    AntiGodmode.current_flags = 0
-    
-    AntiGodmode.current_flags = AntiGodmode.current_flags | check_health_flags(current_health, previous_health)
-    AntiGodmode.current_flags = AntiGodmode.current_flags | check_armor_flags(current_armor, previous_armor)
-    AntiGodmode.current_flags = AntiGodmode.current_flags | check_damage_immunity()
-    
-    local flag_weight = calculate_flag_weight(AntiGodmode.current_flags)
-    
-    if flag_weight >= AntiGodmode.flag_threshold then
-        AntiGodmode.last_detection_time = current_time
-        
-        local violation_data = {
-            type = "godmode",
-            flags = AntiGodmode.current_flags,
-            weight = flag_weight,
-            current_health = current_health,
-            previous_health = previous_health,
-            current_armor = current_armor,
-            previous_armor = previous_armor,
-            damage_events = #AntiGodmode.damage_events
-        }
-        
-        TriggerServerEvent("SecureServe:ViolationDetected", violation_data)
-        
-        if AntiGodmode.debug then
-            print(string.format("[AntiGodmode] VIOLATION DETECTED - Flags: %d, Weight: %d", 
-                  AntiGodmode.current_flags, flag_weight))
-        end
-    end
-    
-    -- Update previous values
-    AntiGodmode.last_health = current_health
-    AntiGodmode.last_armor = current_armor
-    
-    -- Reset damage taken flag after check
-    if Cache.Values.damageTaken then
-        Cache.Values.damageTaken = false
-    end
-end
+local detectedTimes = 0
 
 function AntiGodmode.initialize()
     if not ConfigLoader.get_protection_setting("Anti Godmode", "enabled") then return end
-    
-    if AntiGodmode.debug then print("[AntiGodmode] Protection initialized with damage tracking") end
-    
-    AntiGodmode.last_health = Cache.Get("health")
-    AntiGodmode.last_armor = Cache.Get("armor")
-    
+
     Citizen.CreateThread(function()
         while true do
             Citizen.Wait(1000)
-            
+
             if Cache.Get("hasPermission", "godmode") or Cache.Get("hasPermission", "all") or Cache.Get("isAdmin") then
                 goto continue
             end
+
+            local ped = Cache.Get("ped")
+            local vehicle = Cache.Get("vehicle")
+
+            if vehicle then
+                if not GetEntityCanBeDamaged(vehicle) then
+                    SetEntityCanBeDamaged(vehicle, true)
+                end
+            end
+
+            if not GetEntityCanBeDamaged(ped) then
+                SetEntityCanBeDamaged(ped, true)
+                detectedTimes = detectedTimes + 1
+                if detectedTimes > 3 then
+                    detectedTimes = 0
+                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Godmode", webhook, time)
+                end
+            end
+
+            if (GetPlayerInvincible(PlayerId()) or GetPlayerInvincible_2(PlayerId())) and not IsEntityPositionFrozen(ped) then
+                SetEntityInvincible(ped, false)
+                SetEntityCanBeDamaged(ped, true)
+                detectedTimes = detectedTimes + 1
+                if detectedTimes > 3 then
+                    detectedTimes = 0
+                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Godmode", webhook, time)
+                end
+            end
+
+
             
-            detect_godmode()
-            
+            local bulletProof, fireProof, explosionProof, collisionProof, meleeProof, steamProof, p7, drownProof =
+            GetEntityProofs(ped)
+            if fireProof == 1 or explosionProof == 1 or steamProof == 1 or p7 == 1 or drownProof == 1 then
+                SetEntityProofs(ped, false, false, false, false, false, false, false, false)
+            end
+
             ::continue::
         end
     end)

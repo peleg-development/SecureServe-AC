@@ -251,7 +251,7 @@ function ProtectionManager.take_screenshot(reason, id, webhook, time)
 end
 
 function ProtectionManager.initialize_heartbeat()
-    local player_spawned = false
+    player_spawned = false
     
     AddEventHandler('playerSpawned', function()
         if player_spawned then return end

@@ -718,7 +718,7 @@ function uninstallSecureServe() {
         }
         
         if (!hasOldSecureServe(content) && !hasNewSecureServe(content) && !hasKeyFile(content)) {
-            Logger.debug(`${resource.name} doesn't have ${CURRENT_RESOURCE_NAME} protection.`);
+            // Logger.debug(`${resource.name} doesn't have ${CURRENT_RESOURCE_NAME} protection.`);
             successCount++;
             continue;
         }
@@ -726,7 +726,7 @@ function uninstallSecureServe() {
         const updatedContent = removeSecureServe(content);
         
         if (writeManifestFile(manifestPath, updatedContent)) {
-            Logger.success(`Removed ${CURRENT_RESOURCE_NAME} from ${resource.name}`);
+            // Logger.success(`Removed ${CURRENT_RESOURCE_NAME} from ${resource.name}`);
             successCount++;
         } else {
             Logger.error(`Failed to remove ${CURRENT_RESOURCE_NAME} from ${resource.name}`);
@@ -765,7 +765,7 @@ function updateSecureServe() {
         }
         
         if (hasNewSecureServe(content) && hasKeyFile(content)) {
-            Logger.debug(`${resource.name} already has updated ${CURRENT_RESOURCE_NAME} protection.`);
+            // Logger.debug(`${resource.name} already has updated ${CURRENT_RESOURCE_NAME} protection.`);
             alreadyUpdatedCount++;
             continue;
         }
@@ -922,8 +922,12 @@ on('onServerResourceStart', (resourceName) => {
                     const match = cfg.match(/SecureServe\s*\.\s*Module\s*=\s*\{[\s\S]*?ModuleEnabled\s*=\s*(true|false)/i);
                     if (match && match[1]) {
                         moduleEnabled = match[1].toLowerCase() === 'true';
+                        Logger.info(`ModuleEnabled detected as: ${match[1]}`);
+                    } else {
+                        Logger.warning(`Could not find ModuleEnabled setting, defaulting to: ${moduleEnabled}`);
                     }
-                } catch (_) {
+                } catch (e) {
+                    Logger.error(`Error reading config: ${e.message}`);
                     moduleEnabled = true;
                 }
 
@@ -935,9 +939,12 @@ on('onServerResourceStart', (resourceName) => {
                     }
                 }
 
+                Logger.info(`ModuleEnabled setting: ${moduleEnabled}`);
                 if (moduleEnabled) {
+                    Logger.info(`Installing SecureServe protections...`);
                     installSecureServe();
                 } else {
+                    Logger.info(`Uninstalling SecureServe protections...`);
                     uninstallSecureServe();
                 }
             } catch (e) {

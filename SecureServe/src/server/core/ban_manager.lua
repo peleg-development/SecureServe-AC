@@ -581,7 +581,8 @@ function BanManager.ban_player(player_id, reason, details)
         timestamp = os.time(),
         expires = expires,
         admin = admin,
-        detection = details and details.detection or reason
+        detection = details and details.detection or reason,
+        screenshot = details and details.screenshot or nil
     }
     
     BanManager.next_ban_id = BanManager.next_ban_id + 1
@@ -603,7 +604,24 @@ function BanManager.ban_player(player_id, reason, details)
     print("Ban ID: " .. ban_data.id)
     print("Ban type: " .. (expires > 0 and "Temporary (" .. BanManager.format_time_remaining(expires - os.time()) .. ")" or "Permanent"))
     
-    discord_logger.log_ban(player_id, reason, ban_data, details and details.screenshot)
+    if not ban_data.screenshot and _G.exports and _G.exports['screenshot-basic'] then
+        local ok, _ = pcall(function()
+            _G.exports['screenshot-basic']:requestClientScreenshot(player_id, {
+                quality = 0.9,
+                encoding = 'jpg'
+            }, function(err, data)
+                if not err and data then
+                    ban_data.screenshot = data
+                end
+                discord_logger.log_ban(player_id, reason, ban_data, ban_data.screenshot)
+            end)
+        end)
+        if not ok then
+            discord_logger.log_ban(player_id, reason, ban_data, nil)
+        end
+    else
+        discord_logger.log_ban(player_id, reason, ban_data, ban_data.screenshot)
+    end
     
     TriggerEvent("playerBanned", player_id, ban_reason, admin)
     
@@ -756,36 +774,6 @@ function BanManager.get_recent_bans(count)
     end
     
     return result
-end
-
----@description Get a specific ban by ID
----@param ban_id string The ban ID to get
----@return table|nil ban_data The ban data or nil if not found
-function BanManager.get_ban_by_id(ban_id)
-    for _, ban in ipairs(BanManager.bans) do
-        if ban.id == ban_id then
-            return ban
-        end
-    end
-    
-    return nil
-end
-
----@description Get a ban by player ID
----@param player_id number The player ID
----@return table|nil ban_data The ban data or nil if not found
-function BanManager.get_ban_data(player_id)
-    local identifiers = BanManager.get_player_identifiers(player_id)
-    if not identifiers or not next(identifiers) then
-        return nil
-    end
-    
-    local is_banned, ban_data = BanManager.check_ban(identifiers)
-    if is_banned then
-        return ban_data
-    end
-    
-    return nil
 end
 
 ---@description Remove expired bans from the ban list

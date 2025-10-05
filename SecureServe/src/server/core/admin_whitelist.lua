@@ -141,19 +141,10 @@ function AdminWhitelist.isAdmin(source)
     
     local isAdmin = false
     
-    if SecureServe.Permissions.Enabled then
-        if AdminWhitelist.hasAcePermission(source, SecureServe.Permissions.DefaultAce) then
-            isAdmin = true
-        else
-            for group, ace in pairs(SecureServe.Permissions.GroupAces) do
-                if AdminWhitelist.hasAcePermission(source, ace) then
-                    isAdmin = true
-                    break
-                end
-            end
-        end
+    if AdminWhitelist.hasAcePermission(source, "secure.bypass.all") then
+        isAdmin = true
     end
-    
+
     if not isAdmin then
         isAdmin = AdminWhitelist.getTxAdminPerm(source)
     end

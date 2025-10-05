@@ -22,6 +22,7 @@ function AntiGiveWeapon.initialize()
     end)
 
     Citizen.CreateThread(function()
+        if not SecureServe.Module.ModuleEnabled then return end
         while true do
             Wait(300)
             if current_weapon ~= Cache.Get("selectedWeapon") then

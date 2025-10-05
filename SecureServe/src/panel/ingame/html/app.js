@@ -41,23 +41,35 @@ new Vue({
             { name: 'God Mode', enabled: false, type: 'toggle', category: 'admin' },
             { name: 'No Clip', enabled: false, type: 'toggle', category: 'admin' },
             { name: 'Invisibility', enabled: false, type: 'toggle', category: 'misc' },
-            { name: 'Bones', enabled: false, type: 'toggle', category: 'misc' },
-            { name: 'Repair Vehicle', enabled: false, type: 'button', category: 'admin' },
-            { name: 'Teleport', enabled: false, type: 'button', category: 'admin' }
+            { name: 'Bones', enabled: false, type: 'toggle', category: 'misc' }
         ],
-        lastUpdates: [],
+        lastUpdates: [
+            {
+                id: 1,
+                title: "Client Detections Overhaul",
+                description: "Remade most of client-side detection systems for improved accuracy",
+                date: "10/4/2025"
+            },
+            {
+                id: 2,
+                title: "Module System Fixed",
+                description: "Fixed module functionality to work properly across all components",
+                date: "10/4/2025"
+                },
+            {
+                id: 3,
+                title: "Anti Give Weapon Protection",
+                description: "Fixed anti give weapon detection and prevention system",
+                date: "10/4/2025"
+            }
+        ],
         serverOptions: [
-            { name: 'Restart Server', action: 'restart' },
-            { name: 'Shutdown Server', action: 'shutdown' },
-            { name: 'Clear Cache', action: 'clear_cache' },
-            { name: 'Update Scripts', action: 'update_scripts' },
-            { name: 'Backup Database', action: 'backup_database' },
+            // { name: 'Restart Server', action: 'restart' },
+            // { name: 'Shutdown Server', action: 'shutdown' },
+            // { name: 'Clear Cache', action: 'clear_cache' },
+            // { name: 'Update Scripts', action: 'update_scripts' },
+            // { name: 'Backup Database', action: 'backup_database' },
         ],
-        logs: [],
-        settings: {
-            notifications: true,
-            darkMode: false
-        },
         vehicleName: '',
         showObjectSpawner: false,
         spawnObject: '',
@@ -177,13 +189,15 @@ new Vue({
             }).then(response => {
                 if (response.ok) {
                     this.bans = this.bans.filter(ban => ban.id !== banId);
-                    this.showNotification(`Player with ID ${banId} unbanned successfully`, 'success');
+                    this.showNotification(`Player unbanned successfully`, 'success');
+                    this.closeModal();
+                    this.fetchBans();
                 } else {
-                    this.showNotification(`Failed to unban player with ID ${banId}`, 'error');
+                    this.showNotification(`Failed to unban player`, 'error');
                 }
             }).catch(error => {
                 console.error('Error unbanning player:', error);
-                this.showNotification(`Error unbanning player with ID ${banId}`, 'error');
+                this.showNotification(`Error unbanning player`, 'error');
             });
         },
         selectSection(section) {
@@ -221,16 +235,58 @@ new Vue({
             this.modalBan = {};
         },
         objectSpawn() {
-            this.showNotification(`Spawning object: ${this.objectName}`, 'success');
-            this.objectName = '';
+            if (!this.objectName) {
+                this.showNotification('Please enter an object name', 'error');
+                return;
+            }
+            fetch(`https://${GetParentResourceName()}/spawnObject`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ objectName: this.objectName })
+            })
+            .then(() => {
+                this.showNotification(`Spawning object: ${this.objectName}`, 'success');
+                this.objectName = '';
+            })
+            .catch(() => {
+                this.showNotification('Failed to spawn object', 'error');
+            });
         },
         changePed() {
-            this.showNotification(`Changing ped model to: ${this.pedModel}`, 'success');
-            this.pedModel = '';
+            if (!this.pedModel) {
+                this.showNotification('Please enter a ped model', 'error');
+                return;
+            }
+            fetch(`https://${GetParentResourceName()}/changePed`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pedModel: this.pedModel })
+            })
+            .then(() => {
+                this.showNotification(`Changing ped model to: ${this.pedModel}`, 'success');
+                this.pedModel = '';
+            })
+            .catch(() => {
+                this.showNotification('Failed to change ped model', 'error');
+            });
         },
         spawnVehicle() {
-            this.showNotification(`Spawning vehicle: ${this.vehicleName}`, 'success');
-            this.vehicleName = '';
+            if (!this.vehicleName) {
+                this.showNotification('Please enter a vehicle name', 'error');
+                return;
+            }
+            fetch(`https://${GetParentResourceName()}/spawnVehicle`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ vehicleName: this.vehicleName })
+            })
+            .then(() => {
+                this.showNotification(`Spawning vehicle: ${this.vehicleName}`, 'success');
+                this.vehicleName = '';
+            })
+            .catch(() => {
+                this.showNotification('Failed to spawn vehicle', 'error');
+            });
         },
         openObjectSpawner() {
             this.showObjectSpawner = true;
@@ -320,18 +376,6 @@ new Vue({
                 body: JSON.stringify({})
             });
         },
-        getLogIcon(type) {
-            switch (type) {
-                case 'error':
-                    return 'fa-times-circle log-icon error';
-                case 'warning':
-                    return 'fa-exclamation-circle log-icon warning';
-                case 'success':
-                    return 'fa-check-circle log-icon success';
-                default:
-                    return 'fa-info-circle log-icon';
-            }
-        },
         getOptionIcon(optionName) {
             const icons = {
                 'Restart Server': 'fas fa-sync',
@@ -403,7 +447,6 @@ new Vue({
                     this.updateStats(event.data);
                     break;
                 case "players":
-                    console.log(event.data.players)
                     this.players = event.data.players
                     break;
                 case "bans":

@@ -45,9 +45,7 @@
                         <li @click="selectSection('player-options')"><i class="fas fa-user"></i> Player Options</li>
                         <li @click="selectSection('player-list')"><i class="fas fa-users"></i> Player List</li>
                         <li @click="selectSection('server-options')"><i class="fas fa-server"></i> Server Options</li>
-                        <li @click="selectSection('logs')"><i class="fas fa-file-alt"></i> Logs</li>
                         <li @click="selectSection('bans')"><i class="fas fa-ban"></i> Bans</li>
-                        <li @click="selectSection('settings')"><i class="fas fa-cog"></i> Settings</li>
                     </ul>
                 </div>
                 <div class="content">
@@ -78,7 +76,8 @@
                                     <div class="update-card" v-for="update in lastUpdates" :key="update.id">
                                         <i class="fas fa-info-circle update-icon"></i>
                                         <div class="update-content">
-                                            <strong>{{ update.title }}</strong> - {{ update.description }}
+                                            <strong>{{ update.title }}</strong>
+                                            <div class="update-description">{{ update.description }}</div>
                                             <em>{{ update.date }}</em>
                                         </div>
                                     </div>
@@ -319,40 +318,6 @@
                             </div>
                         </div>
 
-                        <div v-if="selectedSection === 'logs'" class="section" key="logs">
-                            <h2 class="section-title">Logs</h2>
-                            <div class="logs-list">
-                                <div v-for="log in logs" :key="log.timestamp" class="log-item">
-                                    <div class="log-icon">
-                                        <i class="fas" :class="getLogIcon(log.type)"></i>
-                                    </div>
-                                    <div class="log-content">
-                                        <div class="log-header">
-                                            <span class="log-timestamp">
-                                                <i class="fas fa-clock"></i> {{ log.timestamp }}
-                                            </span>
-                                        </div>
-                                        <div class="log-body">
-                                            <p class="log-message">{{ log.message }}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div v-if="selectedSection === 'settings'" class="section" key="settings">
-                            <h2>Settings</h2>
-                            <div class="settings-container">
-                                <div class="setting">
-                                    <label for="notification">Enable Notifications</label>
-                                    <input type="checkbox" v-model="settings.notifications" id="notification">
-                                </div>
-                                <div class="setting">
-                                    <label for="darkMode">Enable Dark Mode</label>
-                                    <input type="checkbox" v-model="settings.darkMode" id="darkMode">
-                                </div>
-                            </div>
-                        </div>
                         <div v-if="selectedSection === 'player-options'" class="section" key="player-options">
                             <h2>Player Options</h2>
                             <div class="player-options-content">

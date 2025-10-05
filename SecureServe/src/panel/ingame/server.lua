@@ -42,6 +42,7 @@ end
 
 ---@type BanManagerModule
 local BanManager = require("server/core/ban_manager")
+local DiscordLogger = require("server/core/discord_logger")
 
 RegisterNetEvent('unbanPlayer', function(banId)
     local src = source
@@ -104,17 +105,58 @@ RegisterNetEvent('banPlayer', function(targetId)
     if targetId then
         local reason = "Manual ban"
         local details = { admin = GetPlayerName(src), time = 0 }
-        local ok = BanManager.ban_player(tonumber(targetId), reason, details)
-        if ok then
-            print(("Player %s was banned by admin %s"):format(GetPlayerName(targetId), GetPlayerName(src)))
+
+        if _G.exports and _G.exports['screenshot-basic'] then
+            DiscordLogger.request_screenshot(tonumber(targetId), "Ban: Manual ban", function(image)
+                if image then
+                    details.screenshot = image
+                end
+                local ok = BanManager.ban_player(tonumber(targetId), reason, details)
+                if ok then
+                    print(("Player %s was banned by admin %s"):format(GetPlayerName(targetId), GetPlayerName(src)))
+                end
+            end)
+        else
+            local ok = BanManager.ban_player(tonumber(targetId), reason, details)
+            if ok then
+                print(("Player %s was banned by admin %s"):format(GetPlayerName(targetId), GetPlayerName(src)))
+            end
         end
     end
+end)
+
+---@param targetId number
+RegisterNetEvent('SecureServe:screenshotPlayer', function(targetId)
+    local src = source
+    if not IsMenuAdmin(src) then return end
+    if not targetId or targetId <= 0 then return end
+    if not _G.exports or not _G.exports['screenshot-basic'] then
+        TriggerClientEvent('anticheat:notify', src, 'Screenshot system unavailable')
+        return
+    end
+
+    _G.exports['screenshot-basic']:requestClientScreenshot(targetId, {
+        quality = 0.95,
+        encoding = 'jpg'
+    }, function(err, data)
+        if err or not data then
+            TriggerClientEvent('anticheat:notify', src, 'Failed to take screenshot')
+            return
+        end
+        TriggerClientEvent('SecureServe:Panel:DisplayScreenshot', src, data)
+    end)
 end)
 
 RegisterNetEvent('SecureServe:Panel:RequestBans', function(requestId)
     local src = source
     if not IsMenuAdmin(src) then return end
     local bans = BanManager.get_all_bans() or {}
+    if not bans or #bans == 0 then
+        local fileBans = loadBans()
+        if type(fileBans) == "table" then
+            bans = fileBans
+        end
+    end
     local mapped = {}
     for _, ban in ipairs(bans) do
         local ids = ban.identifiers or {}

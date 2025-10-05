@@ -23,10 +23,7 @@ SecureServe.Setup = {}
 SecureServe.Webhooks = {}
 SecureServe.Protection = {}
 
----@class AdminMenuConfig
----@field Webhook string
----@field Licenses string[]
----@field AutoRefresh { players: number, bans: number, stats: number }
+---@!!!!!IMPORTANT!!! ADMIN PANEL COMMAND: /ssm
 SecureServe.AdminMenu = {
     Webhook = "",
     Licenses = {
@@ -125,23 +122,11 @@ SecureServe.ServerSecurity = {
     }
 }
 
-
--- This will auto config safe events and entity security as well as explosions but when u use this u must follow the instructions!
--- 1) Make sure that first the ac loads up with no errors if it does follow docs and make sure u installed correctly
--- 2) Enable the option below ( set SecureServe.AutoConfig to true and not false as follows 'SecureServe.AutoConfig = true' )
--- 3) Restart the server and check the console for any errors 
--- 4) If no errors are found u can get into the server and play normally
--- Important!!!!!!!! - now when this is enabled u shouldnt try any cheets in your server and make sure that u are the only one in there u can do this with more people but make sure they are not using any cheats
--- This option will auto config the ac for u only in safe events and in explosions and in entityn security
--- Now after u played for some time in your server disable this option then restart it and then u can let other players play normmaly this option is important to be disabled since it prevents any bans
--- Meaning no one can be bnnaed while this is active
-SecureServe.AutoConfig = false              
--- Once u start the server explnation about this option will come up please read everything
+---@!!!IMPORTANT!!!
+-- If you wish to enjoy everything secureserve has to offer and want secureserve to work properly enable the option: EnableModule
 SecureServe.Module = {
-	ModuleEnabled = true, -- Activates protection against unauthorized explosion events.
+	ModuleEnabled = false, -- Activates protection against unauthorized explosion events.
 	Events = {
-		AutoSafeEvents = true, -- Automatically identifies and configures events to prevent false-positive bans.
-
 		Whitelist = { -- Events explicitly allowed even if detected as potential threats (prevents false bans).
 			-- Add event names here that trigger false bans (check console for exact event names).
 			"TestEvent",
@@ -204,52 +189,6 @@ SecureServe.Logs = {
     resource = ""           -- Resource start/stop logs
 }
 
-SecureServe.Permissions = {
-	-- ACE Permission System Configuration
-	Enabled = true,
-	
-	-- Permission levels (you can add/modify as needed)
-	Groups = {
-		["admin"] = true,     -- Full admin access
-		["moderator"] = true, -- Moderator access
-		["staff"] = true      -- Staff access
-	},
-	
-	-- Default ACE permission to check (no need to modify this in most cases)
-	DefaultAce = "secure.admin",
-	
-	-- Group-specific ACE permissions
-	GroupAces = {
-		["admin"] = "secure.admin",
-		["moderator"] = "secure.moderator",
-		["staff"] = "secure.staff"
-	},
-	
-	-- Protection-specific bypass permissions
-	-- These are the ACE permissions that allow bypassing specific protections
-	BypassPermissions = {
-		["teleport"] = "secure.bypass.teleport",         -- Bypass teleport detection
-		["visions"] = "secure.bypass.visions",           -- Bypass night/thermal vision detection
-		["speedhack"] = "secure.bypass.speedhack",       -- Bypass speed hack detection
-		["spectate"] = "secure.bypass.spectate",         -- Bypass spectate detection
-		["noclip"] = "secure.bypass.noclip",             -- Bypass noclip detection
-		["ocr"] = "secure.bypass.ocr",                   -- Bypass OCR detection
-		["playerblips"] = "secure.bypass.playerblips",   -- Bypass player blips detection
-		["invisible"] = "secure.bypass.invisible",       -- Bypass invisible player detection
-		["godmode"] = "secure.bypass.godmode",           -- Bypass god mode detection
-		["freecam"] = "secure.bypass.freecam",           -- Bypass freecam detection
-		["superjump"] = "secure.bypass.superjump",       -- Bypass super jump detection
-		["noragdoll"] = "secure.bypass.noragdoll",       -- Bypass no ragdoll detection
-		["infinitestamina"] = "secure.bypass.infinitestamina", -- Bypass infinite stamina detection
-		["magicbullet"] = "secure.bypass.magicbullet",   -- Bypass magic bullet detection
-		["norecoil"] = "secure.bypass.norecoil",         -- Bypass no recoil detection
-		["aimassist"] = "secure.bypass.aimassist",       -- Bypass aim assist detection
-		
-		-- Master bypass permission (overrides all others)
-		["all"] = "secure.bypass.all"                    -- Bypass all client-side detections
-	}
-}
-
 
 -- _____   ______   _____  _______ _______ _______ _______ _____  _____  __   _
 -- |_____] |_____/ |     |    |    |______ |          |      |   |     | | \  |
@@ -278,7 +217,7 @@ SecureServe.Detections = {
         ["Anti Spectate"] = { enabled = true, action = "Ban" },
         
         -- Combat & Weapons
-        ["Anti God Mode"] = { enabled = true, action = "Ban" },
+        ["Anti Godmode"] = { enabled = true, action = "Ban" },
         ["Anti Invisible"] = { enabled = true, action = "Ban" },
         ["Anti Give Weapon"] = { enabled = true, action = "Ban" },
         ["Anti Weapon Pickup"] = { enabled = true, action = "Ban" },
@@ -327,22 +266,8 @@ SecureServe.Detections = {
     }
 }
 
-SecureServe.Webhooks.Simple = SecureServe.Detections.Webhook
-SecureServe.Protection.Simple = {}
-for name, settings in pairs(SecureServe.Detections.ClientProtections) do
-    table.insert(SecureServe.Protection.Simple, {
-        protection = name,
-        enabled = settings.enabled,
-        time = settings.action,
-        webhook = "",
-        limit = settings.limit,
-        default = settings.multiplier or settings.sensitivity,
-        defaultr = settings.max_speed,
-        defaults = settings.tolerance,
-        tolerance = settings.tolerance,
-        whitelisted_coords = settings.whitelisted_coords
-    })
-end
+
+
 
 SecureServe.OCR = { -- Words on scrren that will get player banned
 	"FlexSkazaMenu","SidMenu","Lynx8","LynxEvo","Maestro Menu","redEngine","HamMafia","HamHaxia","Dopameme","redMENU","Desudo","explode","gamesense","Anticheat","Tapatio","Malossi","RedStonia","Chocohax",
@@ -459,238 +384,238 @@ SecureServe.Protection.BlacklistedExplosions = {
     { id = 5, time = "Ban",  webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Tank Shells
     { id = 6, time = "Ban",  webhook = "", limit = 4, audio = true, scale = 1.0, invisible = false }, -- Hi Octane
     { id = 7, time = "Ban",  webhook = "", limit = 5, audio = true, scale = 1.0, invisible = false }, -- Car Explosions
-    { id = 18, time = "Ban", webhook = "", limit = 8, audio = true, scale = 1.0, invisible = false }, -- Bullet Explosions
-    { id = 19, time = "Ban", webhook = "", limit = 8, audio = true, scale = 1.0, invisible = false }, -- Smoke Grenade Launcher
-    { id = 20, time = "Ban", webhook = "", limit = 5, audio = true, scale = 1.0, invisible = false }, -- Smoke Grenades
-    { id = 21, time = "Ban", webhook = "", limit = 5, audio = true, scale = 1.0, invisible = false }, -- BZ Gas
-    { id = 22, time = "Ban", webhook = "", limit = 5, audio = true, scale = 1.0, invisible = false }, -- Flares
-    { id = 25, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Programmable AR
-    { id = 36, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Railgun
-    { id = 37, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Blimp 2
-    { id = 38, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Fireworks
-    { id = 40, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Proximity Mines
-    { id = 43, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Pipe Bombs
-    { id = 44, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Vehicle Mines
-    { id = 45, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Explosive Ammo
-    { id = 46, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- APC Shells
-    { id = 47, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Cluster Bombs
-    { id = 48, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Gas Bombs
-    { id = 49, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Incendiary Bombs
-    { id = 50, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Standard Bombs
-    { id = 51, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Torpedoes
-    { id = 52, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Underwater Torpedoes
-    { id = 53, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Bombushka Cannon
-    { id = 54, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Cluster Bomb Secondary Explosions
-    { id = 55, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Hunter Barrage
-    { id = 56, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Hunter Cannon
-    { id = 57, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Rogue Cannon
-    { id = 58, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Underwater Mines
-    { id = 59, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Orbital Cannon
-    { id = 60, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Wide Standard Bombs
-    { id = 61, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Explosive Shotgun Ammo
-    { id = 62, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Oppressor 2 Cannon
-    { id = 63, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Kinetic Mortar
-    { id = 64, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Kinetic Vehicle Mine
-    { id = 65, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- EMP Vehicle Mine
-    { id = 66, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Spike Vehicle Mine
-    { id = 67, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Slick Vehicle Mine
-    { id = 68, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Tar Vehicle Mine
-    { id = 69, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Script Drone
-    { id = 70, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Raygun
-	{ id = 71, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Buried Mine
-	{ id = 72, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Script Missle
-	{ id = 82, time = "Ban", webhook = "", limit = 1, audio = true, scale = 1.0, invisible = false }, -- Submarine
+    { id = 18, time = "Ban",  limit = 8, audio = true, scale = 1.0, invisible = false }, -- Bullet Explosions
+    { id = 19, time = "Ban",  limit = 8, audio = true, scale = 1.0, invisible = false }, -- Smoke Grenade Launcher
+    { id = 20, time = "Ban",  limit = 5, audio = true, scale = 1.0, invisible = false }, -- Smoke Grenades
+    { id = 21, time = "Ban",  limit = 5, audio = true, scale = 1.0, invisible = false }, -- BZ Gas
+    { id = 22, time = "Ban",  limit = 5, audio = true, scale = 1.0, invisible = false }, -- Flares
+    { id = 25, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Programmable AR
+    { id = 36, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Railgun
+    { id = 37, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Blimp 2
+    { id = 38, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Fireworks
+    { id = 40, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Proximity Mines
+    { id = 43, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Pipe Bombs
+    { id = 44, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Vehicle Mines
+    { id = 45, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Explosive Ammo
+    { id = 46, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- APC Shells
+    { id = 47, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Cluster Bombs
+    { id = 48, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Gas Bombs
+    { id = 49, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Incendiary Bombs
+    { id = 50, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Standard Bombs
+    { id = 51, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Torpedoes
+    { id = 52, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Underwater Torpedoes
+    { id = 53, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Bombushka Cannon
+    { id = 54, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Cluster Bomb Secondary Explosions
+    { id = 55, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Hunter Barrage
+    { id = 56, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Hunter Cannon
+    { id = 57, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Rogue Cannon
+    { id = 58, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Underwater Mines
+    { id = 59, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Orbital Cannon
+    { id = 60, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Wide Standard Bombs
+    { id = 61, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Explosive Shotgun Ammo
+    { id = 62, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Oppressor 2 Cannon
+    { id = 63, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Kinetic Mortar
+    { id = 64, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Kinetic Vehicle Mine
+    { id = 65, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- EMP Vehicle Mine
+    { id = 66, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Spike Vehicle Mine
+    { id = 67, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Slick Vehicle Mine
+    { id = 68, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Tar Vehicle Mine
+    { id = 69, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Script Drone
+    { id = 70, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Raygun
+	{ id = 71, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Buried Mine
+	{ id = 72, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Script Missle
+	{ id = 82, time = "Ban",  limit = 1, audio = true, scale = 1.0, invisible = false }, -- Submarine
 }
 
 SecureServe.Webhooks.BlacklistedCommands = ""
 SecureServe.Protection.BlacklistedCommands = { -- Takes action if a blacklisted command is registered.
-	{ command = "jd",                        time = "Ban", webhook = "" },
-	{ command = "KP",                        time = "Ban", webhook = "" },
-	{ command = "opk",                       time = "Ban", webhook = "" },
-	{ command = "ham",                       time = "Ban", webhook = "" },
-	{ command = "lol",                       time = "Ban", webhook = "" },
-	{ command = "hoax",                      time = "Ban", webhook = "" },
-	{ command = "vibes",                     time = "Ban", webhook = "" },
-	{ command = "haha",                      time = "Ban", webhook = "" },
-	{ command = "panik",                     time = "Ban", webhook = "" },
-	{ command = "brutan",                    time = "Ban", webhook = "" },
-	{ command = "panic",                     time = "Ban", webhook = "" },
-	{ command = "hyra",                      time = "Ban", webhook = "" },
-	{ command = "hydro",                     time = "Ban", webhook = "" },
-	{ command = "lynx",                      time = "Ban", webhook = "" },
-	{ command = "tiago",                     time = "Ban", webhook = "" },
-	{ command = "desudo",                    time = "Ban", webhook = "" },
-	{ command = "ssssss",                    time = "Ban", webhook = "" },
-	{ command = "redstonia",                 time = "Ban", webhook = "" },
-	{ command = "dopamine",                  time = "Ban", webhook = "" },
-	{ command = "dopamina",                  time = "Ban", webhook = "" },
-	{ command = "purgemenu",                 time = "Ban", webhook = "" },
-	{ command = "WarMenu",                   time = "Ban", webhook = "" },
-	{ command = "lynx9_fixed",               time = "Ban", webhook = "" },
-	{ command = "injected",                  time = "Ban", webhook = "" },
-	{ command = "hammafia",                  time = "Ban", webhook = "" },
-	{ command = "hamhaxia",                  time = "Ban", webhook = "" },
-	{ command = "chocolate",                 time = "Ban", webhook = "" },
-	{ command = "Information",               time = "Ban", webhook = "" },
-	{ command = "Maestro",                   time = "Ban", webhook = "" },
-	{ command = "FunCtionOk",                time = "Ban", webhook = "" },
-	{ command = "TiagoModz",                 time = "Ban", webhook = "" },
-	{ command = "jolmany",                   time = "Ban", webhook = "" },
-	{ command = "SovietH4X",                 time = "Ban", webhook = "" },
-	{ command = "killmenu",                  time = "Ban", webhook = "" },
-	{ command = "panickey",                  time = "Ban", webhook = "" },
-	{ command = "d0pamine",                  time = "Ban", webhook = "" },
-	{ command = "[dopamine]",                time = "Ban", webhook = "" },
-	{ command = "brutanpremium",             time = "Ban", webhook = "" },
-	{ command = "www.d0pamine.xyz",          time = "Ban", webhook = "" },
-	{ command = "d0pamine v1.1 by Nertigel", time = "Ban", webhook = "" },
-	{ command = "TiagoModz#1478",            time = "Ban", webhook = "" },
+	{ command = "jd",                        time = "Ban" },
+	{ command = "KP",                        time = "Ban" },
+	{ command = "opk",                       time = "Ban" },
+	{ command = "ham",                       time = "Ban" },
+	{ command = "lol",                       time = "Ban" },
+	{ command = "hoax",                      time = "Ban" },
+	{ command = "vibes",                     time = "Ban" },
+	{ command = "haha",                      time = "Ban" },
+	{ command = "panik",                     time = "Ban" },
+	{ command = "brutan",                    time = "Ban" },
+	{ command = "panic",                     time = "Ban" },
+	{ command = "hyra",                      time = "Ban" },
+	{ command = "hydro",                     time = "Ban" },
+	{ command = "lynx",                      time = "Ban" },
+	{ command = "tiago",                     time = "Ban" },
+	{ command = "desudo",                    time = "Ban" },
+	{ command = "ssssss",                    time = "Ban" },
+	{ command = "redstonia",                 time = "Ban" },
+	{ command = "dopamine",                  time = "Ban" },
+	{ command = "dopamina",                  time = "Ban" },
+	{ command = "purgemenu",                 time = "Ban" },
+	{ command = "WarMenu",                   time = "Ban" },
+	{ command = "lynx9_fixed",               time = "Ban" },
+	{ command = "injected",                  time = "Ban" },
+	{ command = "hammafia",                  time = "Ban" },
+	{ command = "hamhaxia",                  time = "Ban" },
+	{ command = "chocolate",                 time = "Ban" },
+	{ command = "Information",               time = "Ban" },
+	{ command = "Maestro",                   time = "Ban" },
+	{ command = "FunCtionOk",                time = "Ban" },
+	{ command = "TiagoModz",                 time = "Ban" },
+	{ command = "jolmany",                   time = "Ban" },
+	{ command = "SovietH4X",                 time = "Ban" },
+	{ command = "killmenu",                  time = "Ban" },
+	{ command = "panickey",                  time = "Ban" },
+	{ command = "d0pamine",                  time = "Ban" },
+	{ command = "[dopamine]",                time = "Ban" },
+	{ command = "brutanpremium",             time = "Ban" },
+	{ command = "www.d0pamine.xyz",          time = "Ban" },
+	{ command = "d0pamine v1.1 by Nertigel", time = "Ban" },
+	{ command = "TiagoModz#1478",            time = "Ban" },
 }
 
 SecureServe.Webhooks.BlacklistedSprites = ""
 SecureServe.Protection.BlacklistedSprites = { -- Takes action if a blacklisted sprite is detected.
-	{ sprite = "deadline",           name = "Dopamine",            time = "Ban", webhook = "" },
-	{ sprite = "Dopameme",           name = "Dopamine Menu",       time = "Ban", webhook = "" },
-	{ sprite = "dopamine",           name = "Dopamine Menu",       time = "Ban", webhook = "" },
-	{ sprite = "dopamemes",          name = "Dopameme Menu",       time = "Ban", webhook = "" },
-	{ sprite = "wm2",                name = "WM Menu",             time = "Ban", webhook = "" },
-	{ sprite = "KentasCheckboxDict", name = "Kentas Menu Synapse", time = "Ban", webhook = "" },
-	{ sprite = "KentasMenu",         name = "Kentas Menu Synapse", time = "Ban", webhook = "" },
-	{ sprite = "HydroMenuHeader",    name = "HydroMenu",           time = "Ban", webhook = "" },
-	{ sprite = "godmenu",            name = "God Menu",            time = "Ban", webhook = "" },
-	{ sprite = "redrum",             name = "Redrum Menu",         time = "Ban", webhook = "" },
-	{ sprite = "beautiful",          name = "Beautiful Menu",      time = "Ban", webhook = "" },
-	{ sprite = "Absolut",            name = "Absolute Menu",       time = "Ban", webhook = "" },
-	{ sprite = "hoaxmenu",           name = "Hoax Menu",           time = "Ban", webhook = "" },
-	{ sprite = "fendin",             name = "Fendinx Menu",        time = "Ban", webhook = "" },
-	{ sprite = "Ham",                name = "Ham Menu",            time = "Ban", webhook = "" },
-	{ sprite = "hammafia",           name = "Ham Mafia Menu",      time = "Ban", webhook = "" },
-	{ sprite = "Fallout",            name = "Fallout",             time = "Ban", webhook = "" },
-	{ sprite = "menu_bg",            name = "Fallout Menu",        time = "Ban", webhook = "" },
-	{ sprite = "DefaultMenu",        name = "Default Menu",        time = "Ban", webhook = "" },
-	{ sprite = "ISMMENUHeader",      name = "ISMMENU",             time = "Ban", webhook = "" },
-	{ sprite = "fivesense",          name = "Fivesense Menu",      time = "Ban", webhook = "" },
-	{ sprite = "maestro",            name = "Maestro Menu",        time = "Ban", webhook = "" },
-	{ sprite = "kekhack",            name = "KekHack Menu",        time = "Ban", webhook = "" },
-	{ sprite = "trolling",           name = "Trolling Menu",       time = "Ban", webhook = "" },
-	{ sprite = "mm",                 name = "MM Menu",             time = "Ban", webhook = "" },
-	{ sprite = "MmPremium",          name = "MM Premium Menu",     time = "Ban", webhook = "" },
-	{ sprite = "Fallout",            name = "Fallout",             time = "Ban", webhook = "" },
-	{ sprite = "dopatest",           name = "Dopa Menu",           time = "Ban", webhook = "" },
-	{ sprite = "deadline",           name = "Dopamine",            time = "Ban", webhook = "" },
-	{ sprite = "dopamine",           name = "Dopamine Menu",       time = "Ban", webhook = "" },
-	{ sprite = "cat",                name = "Cat Menu",            time = "Ban", webhook = "" },
-	{ sprite = "John2",              name = "SugarMenu",           time = "Ban", webhook = "" },
-	{ sprite = "bartowmenu",         name = "Bartow Menu",         time = "Ban", webhook = "" },
-	{ sprite = "duiTex",             name = "Copypaste Menu",      time = "Ban", webhook = "" },
-	{ sprite = "Mafins",             name = "Mafins Menu",         time = "Ban", webhook = "" },
-	{ sprite = "__REAPER24__",       name = "Repear Menu",         time = "Ban", webhook = "" },
-	{ sprite = "__REAPER5__",        name = "Repear Menu",         time = "Ban", webhook = "" },
-	{ sprite = "__REAPER7__",        name = "Repear Menu",         time = "Ban", webhook = "" },
-	{ sprite = "__REAPER8__",        name = "Repear Menu",         time = "Ban", webhook = "" },
-	{ sprite = "__REAPER10__",       name = "Repear Menu",         time = "Ban", webhook = "" },
-	{ sprite = "__REAPER3__",        name = "Repear Menu",         time = "Ban", webhook = "" },
-	{ sprite = "__REAPER2__",        name = "Repear Menu",         time = "Ban", webhook = "" },
-	{ sprite = "__REAPER1__",        name = "Repear Menu",         time = "Ban", webhook = "" },
-	{ sprite = "__REAPER23__",       name = "Repear Menu",         time = "Ban", webhook = "" },
-	{ sprite = "__REAPER17__",       name = "Repear Menu",         time = "Ban", webhook = "" },
-	{ sprite = "skidmenu",           name = "Skid Menu",           time = "Ban", webhook = "" },
-	{ sprite = "skidmenu",           name = "Skid Menu",           time = "Ban", webhook = "" },
-	{ sprite = "Urubu3",             name = "Urubu Menu",          time = "Ban", webhook = "" },
-	{ sprite = "Urubu",              name = "Urubu Menu",          time = "Ban", webhook = "" },
-	{ sprite = "love",               name = "Love Menu",           time = "Ban", webhook = "" },
-	{ sprite = "brutan",             name = "Brutan Menu",         time = "Ban", webhook = "" },
-	{ sprite = "auttaja",            name = "Auttaja Menu",        time = "Ban", webhook = "" },
-	{ sprite = "oblivious",          name = "Oblivious Menu",      time = "Ban", webhook = "" },
-	{ sprite = "malossimenu",        name = "Malossi Menu",        time = "Ban", webhook = "" },
-	{ sprite = "Memeeee",            name = "Memeeee Menu",        time = "Ban", webhook = "" },
-	{ sprite = "Tiago",              name = "Tiago Menu",          time = "Ban", webhook = "" },
-	{ sprite = "fantasy",            name = "Fantasy Menu",        time = "Ban", webhook = "" },
-	{ sprite = "Vagos",              name = "Vagos Menu",          time = "Ban", webhook = "" },
-	{ sprite = "simplicity",         name = "Simplicity Menu",     time = "Ban", webhook = "" },
-	{ sprite = "WarMenu",            name = "War Menu",            time = "Ban", webhook = "" },
-	{ sprite = "Darkside",           name = "Darkside Menu",       time = "Ban", webhook = "" },
-	{ sprite = "antario",            name = "Antario Menu",        time = "Ban", webhook = "" },
-	{ sprite = "kingpin",            name = "Kingpin Menu",        time = "Ban", webhook = "" },
-	{ sprite = "Wave (alt.)",        name = "Wave (alt.)",         time = "Ban", webhook = "" },
-	{ sprite = "Wave",               name = "Wave",                time = "Ban", webhook = "" },
-	{ sprite = "Alokas66",           name = "Alokas66",            time = "Ban", webhook = "" },
-	{ sprite = "Guest Menu",         name = "Guest Menu",          time = "Ban", webhook = "" },
+	{ sprite = "deadline",           name = "Dopamine",            time = "Ban" },
+	{ sprite = "Dopameme",           name = "Dopamine Menu",       time = "Ban" },
+	{ sprite = "dopamine",           name = "Dopamine Menu",       time = "Ban" },
+	{ sprite = "dopamemes",          name = "Dopameme Menu",       time = "Ban" },
+	{ sprite = "wm2",                name = "WM Menu",             time = "Ban" },
+	{ sprite = "KentasCheckboxDict", name = "Kentas Menu Synapse", time = "Ban" },
+	{ sprite = "KentasMenu",         name = "Kentas Menu Synapse", time = "Ban" },
+	{ sprite = "HydroMenuHeader",    name = "HydroMenu",           time = "Ban" },
+	{ sprite = "godmenu",            name = "God Menu",            time = "Ban" },
+	{ sprite = "redrum",             name = "Redrum Menu",         time = "Ban" },
+	{ sprite = "beautiful",          name = "Beautiful Menu",      time = "Ban" },
+	{ sprite = "Absolut",            name = "Absolute Menu",       time = "Ban" },
+	{ sprite = "hoaxmenu",           name = "Hoax Menu",           time = "Ban" },
+	{ sprite = "fendin",             name = "Fendinx Menu",        time = "Ban" },
+	{ sprite = "Ham",                name = "Ham Menu",            time = "Ban" },
+	{ sprite = "hammafia",           name = "Ham Mafia Menu",      time = "Ban" },
+	{ sprite = "Fallout",            name = "Fallout",             time = "Ban" },
+	{ sprite = "menu_bg",            name = "Fallout Menu",        time = "Ban" },
+	{ sprite = "DefaultMenu",        name = "Default Menu",        time = "Ban" },
+	{ sprite = "ISMMENUHeader",      name = "ISMMENU",             time = "Ban" },
+	{ sprite = "fivesense",          name = "Fivesense Menu",      time = "Ban" },
+	{ sprite = "maestro",            name = "Maestro Menu",        time = "Ban" },
+	{ sprite = "kekhack",            name = "KekHack Menu",        time = "Ban" },
+	{ sprite = "trolling",           name = "Trolling Menu",       time = "Ban" },
+	{ sprite = "mm",                 name = "MM Menu",             time = "Ban" },
+	{ sprite = "MmPremium",          name = "MM Premium Menu",     time = "Ban" },
+	{ sprite = "Fallout",            name = "Fallout",             time = "Ban" },
+	{ sprite = "dopatest",           name = "Dopa Menu",           time = "Ban" },
+	{ sprite = "deadline",           name = "Dopamine",            time = "Ban" },
+	{ sprite = "dopamine",           name = "Dopamine Menu",       time = "Ban" },
+	{ sprite = "cat",                name = "Cat Menu",            time = "Ban" },
+	{ sprite = "John2",              name = "SugarMenu",           time = "Ban" },
+	{ sprite = "bartowmenu",         name = "Bartow Menu",         time = "Ban" },
+	{ sprite = "duiTex",             name = "Copypaste Menu",      time = "Ban" },
+	{ sprite = "Mafins",             name = "Mafins Menu",         time = "Ban" },
+	{ sprite = "__REAPER24__",       name = "Repear Menu",         time = "Ban" },
+	{ sprite = "__REAPER5__",        name = "Repear Menu",         time = "Ban" },
+	{ sprite = "__REAPER7__",        name = "Repear Menu",         time = "Ban" },
+	{ sprite = "__REAPER8__",        name = "Repear Menu",         time = "Ban" },
+	{ sprite = "__REAPER10__",       name = "Repear Menu",         time = "Ban" },
+	{ sprite = "__REAPER3__",        name = "Repear Menu",         time = "Ban" },
+	{ sprite = "__REAPER2__",        name = "Repear Menu",         time = "Ban" },
+	{ sprite = "__REAPER1__",        name = "Repear Menu",         time = "Ban" },
+	{ sprite = "__REAPER23__",       name = "Repear Menu",         time = "Ban" },
+	{ sprite = "__REAPER17__",       name = "Repear Menu",         time = "Ban" },
+	{ sprite = "skidmenu",           name = "Skid Menu",           time = "Ban" },
+	{ sprite = "skidmenu",           name = "Skid Menu",           time = "Ban" },
+	{ sprite = "Urubu3",             name = "Urubu Menu",          time = "Ban" },
+	{ sprite = "Urubu",              name = "Urubu Menu",          time = "Ban" },
+	{ sprite = "love",               name = "Love Menu",           time = "Ban" },
+	{ sprite = "brutan",             name = "Brutan Menu",         time = "Ban" },
+	{ sprite = "auttaja",            name = "Auttaja Menu",        time = "Ban" },
+	{ sprite = "oblivious",          name = "Oblivious Menu",      time = "Ban" },
+	{ sprite = "malossimenu",        name = "Malossi Menu",        time = "Ban" },
+	{ sprite = "Memeeee",            name = "Memeeee Menu",        time = "Ban" },
+	{ sprite = "Tiago",              name = "Tiago Menu",          time = "Ban" },
+	{ sprite = "fantasy",            name = "Fantasy Menu",        time = "Ban" },
+	{ sprite = "Vagos",              name = "Vagos Menu",          time = "Ban" },
+	{ sprite = "simplicity",         name = "Simplicity Menu",     time = "Ban" },
+	{ sprite = "WarMenu",            name = "War Menu",            time = "Ban" },
+	{ sprite = "Darkside",           name = "Darkside Menu",       time = "Ban" },
+	{ sprite = "antario",            name = "Antario Menu",        time = "Ban" },
+	{ sprite = "kingpin",            name = "Kingpin Menu",        time = "Ban" },
+	{ sprite = "Wave (alt.)",        name = "Wave (alt.)",         time = "Ban" },
+	{ sprite = "Wave",               name = "Wave",                time = "Ban" },
+	{ sprite = "Alokas66",           name = "Alokas66",            time = "Ban" },
+	{ sprite = "Guest Menu",         name = "Guest Menu",          time = "Ban" },
 }
 
 SecureServe.Webhooks.BlacklistedAnimDicts = ""
 SecureServe.Protection.BlacklistedAnimDicts = { -- Takes action if a blacklisted anim dict got loaded.
-	{ dict = "rcmjosh2",       time = "Ban", webhook = "" },
-	{ dict = "rcmpaparazzo_2", time = "Ban", webhook = "" },
+	{ dict = "rcmjosh2",       time = "Ban" },
+	{ dict = "rcmpaparazzo_2", time = "Ban" },
 }
 
 SecureServe.Webhooks.BlacklistedWeapons = ""
 SecureServe.Protection.BlacklistedWeapons = { -- Weapons Names can be found here: https://gtahash.ru/weapons/
-	{ name = "weapon_rayminigun",      time = "Ban", webhook = "" },
-	{ name = "weapon_raycarbine",      time = "Ban", webhook = "" },
-	{ name = "weapon_rpg",             time = "Ban", webhook = "" },
-	{ name = "weapon_grenadelauncher", time = "Ban", webhook = "" },
-	{ name = "weapon_minigun",         time = "Ban", webhook = "" },
-	{ name = "weapon_railgun",         time = "Ban", webhook = "" },
-	{ name = "weapon_firework",        time = "Ban", webhook = "" },
-	{ name = "weapon_hominglauncher",  time = "Ban", webhook = "" },
-	{ name = "weapon_compactlauncher", time = "Ban", webhook = "" },
+	{ name = "weapon_rayminigun",      time = "Ban" },
+	{ name = "weapon_raycarbine",      time = "Ban" },
+	{ name = "weapon_rpg",             time = "Ban" },
+	{ name = "weapon_grenadelauncher", time = "Ban" },
+	{ name = "weapon_minigun",         time = "Ban" },
+	{ name = "weapon_railgun",         time = "Ban" },
+	{ name = "weapon_firework",        time = "Ban" },
+	{ name = "weapon_hominglauncher",  time = "Ban" },
+	{ name = "weapon_compactlauncher", time = "Ban" },
 }
 
 SecureServe.Webhooks.BlacklistedVehicles = ""
 SecureServe.Protection.BlacklistedVehicles = { -- Vehicles List can be found here: https://wiki.rage.mp/index.php?title=Vehicles
-	{ name = "dinghy5",       time = "Ban", webhook = "" },
-	{ name = "kosatka",       time = "Ban", webhook = "" },
-	{ name = "patrolboat",    time = "Ban", webhook = "" },
-	{ name = "cerberus",      time = "Ban", webhook = "" },
-	{ name = "cerberus2",     time = "Ban", webhook = "" },
-	{ name = "cerberus3",     time = "Ban", webhook = "" },
-	{ name = "phantom2",      time = "Ban", webhook = "" },
-	{ name = "akula",         time = "Ban", webhook = "" },
-	{ name = "annihilator",   time = "Ban", webhook = "" },
-	{ name = "buzzard",       time = "Ban", webhook = "" },
-	{ name = "savage",        time = "Ban", webhook = "" },
-	{ name = "annihilator2",  time = "Ban", webhook = "" },
-	{ name = "cutter",        time = "Ban", webhook = "" },
-	{ name = "apc",           time = "Ban", webhook = "" },
-	{ name = "barrage",       time = "Ban", webhook = "" },
-	{ name = "chernobog",     time = "Ban", webhook = "" },
-	{ name = "halftrack",     time = "Ban", webhook = "" },
-	{ name = "khanjali",      time = "Ban", webhook = "" },
-	{ name = "minitank",      time = "Ban", webhook = "" },
-	{ name = "rhino",         time = "Ban", webhook = "" },
-	{ name = "thruster",      time = "Ban", webhook = "" },
-	{ name = "trailersmall2", time = "Ban", webhook = "" },
-	{ name = "oppressor",     time = "Ban", webhook = "" },
-	{ name = "oppressor2",    time = "Ban", webhook = "" },
-	{ name = "dukes2",        time = "Ban", webhook = "" },
-	{ name = "ruiner2",       time = "Ban", webhook = "" },
-	{ name = "dune3",         time = "Ban", webhook = "" },
-	{ name = "dune4",         time = "Ban", webhook = "" },
-	{ name = "dune5",         time = "Ban", webhook = "" },
-	{ name = "insurgent",     time = "Ban", webhook = "" },
-	{ name = "insurgent3",    time = "Ban", webhook = "" },
-	{ name = "menacer",       time = "Ban", webhook = "" },
-	{ name = "rcbandito",     time = "Ban", webhook = "" },
-	{ name = "technical3",    time = "Ban", webhook = "" },
-	{ name = "technical2",    time = "Ban", webhook = "" },
-	{ name = "technical",     time = "Ban", webhook = "" },
-	{ name = "avenger",       time = "Ban", webhook = "" },
-	{ name = "avenger2",      time = "Ban", webhook = "" },
-	{ name = "bombushka",     time = "Ban", webhook = "" },
-	{ name = "cargoplane",    time = "Ban", webhook = "" },
-	{ name = "cargoplane2",   time = "Ban", webhook = "" },
-	{ name = "hydra",         time = "Ban", webhook = "" },
-	{ name = "lazer",         time = "Ban", webhook = "" },
-	{ name = "molotok",       time = "Ban", webhook = "" },
-	{ name = "nokota",        time = "Ban", webhook = "" },
-	{ name = "pyro",          time = "Ban", webhook = "" },
-	{ name = "rogue",         time = "Ban", webhook = "" },
-	{ name = "starling",      time = "Ban", webhook = "" },
-	{ name = "strikeforce",   time = "Ban", webhook = "" },
-	{ name = "limo2",         time = "Ban", webhook = "" },
-	{ name = "scramjet",      time = "Ban", webhook = "" },
-	{ name = "vigilante",     time = "Ban", webhook = "" },
+	{ name = "dinghy5",       time = "Ban" },
+	{ name = "kosatka",       time = "Ban" },
+	{ name = "patrolboat",    time = "Ban" },
+	{ name = "cerberus",      time = "Ban" },
+	{ name = "cerberus2",     time = "Ban" },
+	{ name = "cerberus3",     time = "Ban" },
+	{ name = "phantom2",      time = "Ban" },
+	{ name = "akula",         time = "Ban" },
+	{ name = "annihilator",   time = "Ban" },
+	{ name = "buzzard",       time = "Ban" },
+	{ name = "savage",        time = "Ban" },
+	{ name = "annihilator2",  time = "Ban" },
+	{ name = "cutter",        time = "Ban" },
+	{ name = "apc",           time = "Ban" },
+	{ name = "barrage",       time = "Ban" },
+	{ name = "chernobog",     time = "Ban" },
+	{ name = "halftrack",     time = "Ban" },
+	{ name = "khanjali",      time = "Ban" },
+	{ name = "minitank",      time = "Ban" },
+	{ name = "rhino",         time = "Ban" },
+	{ name = "thruster",      time = "Ban" },
+	{ name = "trailersmall2", time = "Ban" },
+	{ name = "oppressor",     time = "Ban" },
+	{ name = "oppressor2",    time = "Ban" },
+	{ name = "dukes2",        time = "Ban" },
+	{ name = "ruiner2",       time = "Ban" },
+	{ name = "dune3",         time = "Ban" },
+	{ name = "dune4",         time = "Ban" },
+	{ name = "dune5",         time = "Ban" },
+	{ name = "insurgent",     time = "Ban" },
+	{ name = "insurgent3",    time = "Ban" },
+	{ name = "menacer",       time = "Ban" },
+	{ name = "rcbandito",     time = "Ban" },
+	{ name = "technical3",    time = "Ban" },
+	{ name = "technical2",    time = "Ban" },
+	{ name = "technical",     time = "Ban" },
+	{ name = "avenger",       time = "Ban" },
+	{ name = "avenger2",      time = "Ban" },
+	{ name = "bombushka",     time = "Ban" },
+	{ name = "cargoplane",    time = "Ban" },
+	{ name = "cargoplane2",   time = "Ban" },
+	{ name = "hydra",         time = "Ban" },
+	{ name = "lazer",         time = "Ban" },
+	{ name = "molotok",       time = "Ban" },
+	{ name = "nokota",        time = "Ban" },
+	{ name = "pyro",          time = "Ban" },
+	{ name = "rogue",         time = "Ban" },
+	{ name = "starling",      time = "Ban" },
+	{ name = "strikeforce",   time = "Ban" },
+	{ name = "limo2",         time = "Ban" },
+	{ name = "scramjet",      time = "Ban" },
+	{ name = "vigilante",     time = "Ban" },
 }
 
 SecureServe.Protection.BlacklistedPeds = { -- Add blacklisted ped models here
@@ -701,94 +626,155 @@ SecureServe.Protection.BlacklistedPeds = { -- Add blacklisted ped models here
 
 SecureServe.Webhooks.BlacklistedObjects = ""
 SecureServe.Protection.BlacklistedObjects = {
-	{ name = "prop_logpile_07b",                                               webhook = "" },
-	{ name = "prop_logpile_07",                                                webhook = "" },
-	{ name = "prop_logpile_06b",                                               webhook = "" },
-	{ name = "prop_logpile_06",                                                webhook = "" },
-	{ name = "prop_logpile_05",                                                webhook = "" },
-	{ name = "prop_logpile_04",                                                webhook = "" },
-	{ name = "prop_logpile_03",                                                webhook = "" },
-	{ name = "prop_logpile_02",                                                webhook = "" },
-	{ name = "prop_logpile_01",                                                webhook = "" },
-	{ name = "hei_prop_carrier_radar_1_l1",                                    webhook = "" },
-	{ name = "v_res_mexball",                                                  webhook = "" },
-	{ name = "prop_rock_1_a",                                                  webhook = "" },
-	{ name = "prop_rock_1_b",                                                  webhook = "" },
-	{ name = "prop_rock_1_c",                                                  webhook = "" },
-	{ name = "prop_rock_1_d",                                                  webhook = "" },
-	{ name = "prop_player_gasmask",                                            webhook = "" },
-	{ name = "prop_rock_1_e",                                                  webhook = "" },
-	{ name = "prop_rock_1_f",                                                  webhook = "" },
-	{ name = "prop_rock_1_g",                                                  webhook = "" },
-	{ name = "prop_rock_1_h",                                                  webhook = "" },
-	{ name = "prop_test_boulder_01",                                           webhook = "" },
-	{ name = "prop_test_boulder_02",                                           webhook = "" },
-	{ name = "prop_test_boulder_03",                                           webhook = "" },
-	{ name = "prop_test_boulder_04",                                           webhook = "" },
-	{ name = "apa_mp_apa_crashed_usaf_01a",                                    webhook = "" },
-	{ name = "ex_prop_exec_crashdp",                                           webhook = "" },
-	{ name = "apa_mp_apa_yacht_o1_rail_a",                                     webhook = "" },
-	{ name = "apa_mp_apa_yacht_o1_rail_b",                                     webhook = "" },
-	{ name = "apa_mp_h_yacht_armchair_01",                                     webhook = "" },
-	{ name = "apa_mp_h_yacht_armchair_03",                                     webhook = "" },
-	{ name = "apa_mp_h_yacht_armchair_04",                                     webhook = "" },
-	{ name = "apa_mp_h_yacht_barstool_01",                                     webhook = "" },
-	{ name = "apa_mp_h_yacht_bed_01",                                          webhook = "" },
-	{ name = "apa_mp_h_yacht_bed_02",                                          webhook = "" },
-	{ name = "apa_mp_h_yacht_coffee_table_01",                                 webhook = "" },
-	{ name = "apa_mp_h_yacht_coffee_table_02",                                 webhook = "" },
-	{ name = "apa_mp_h_yacht_floor_lamp_01",                                   webhook = "" },
-	{ name = "apa_mp_h_yacht_side_table_01",                                   webhook = "" },
-	{ name = "apa_mp_h_yacht_side_table_02",                                   webhook = "" },
-	{ name = "apa_mp_h_yacht_sofa_01",                                         webhook = "" },
-	{ name = "apa_mp_h_yacht_sofa_02",                                         webhook = "" },
-	{ name = "apa_mp_h_yacht_stool_01",                                        webhook = "" },
-	{ name = "apa_mp_h_yacht_strip_chair_01",                                  webhook = "" },
-	{ name = "apa_mp_h_yacht_table_lamp_01",                                   webhook = "" },
-	{ name = "apa_mp_h_yacht_table_lamp_02",                                   webhook = "" },
-	{ name = "apa_mp_h_yacht_table_lamp_03",                                   webhook = "" },
-	{ name = "prop_flag_columbia",                                             webhook = "" },
-	{ name = "apa_mp_apa_yacht_o2_rail_a",                                     webhook = "" },
-	{ name = "apa_mp_apa_yacht_o2_rail_b",                                     webhook = "" },
-	{ name = "apa_mp_apa_yacht_o3_rail_a",                                     webhook = "" },
-	{ name = "apa_mp_apa_yacht_o3_rail_b",                                     webhook = "" },
-	{ name = "apa_mp_apa_yacht_option1",                                       webhook = "" },
-	{ name = "proc_searock_01",                                                webhook = "" },
-	{ name = "apa_mp_h_yacht_",                                                webhook = "" },
-	{ name = "apa_mp_apa_yacht_option1_cola",                                  webhook = "" },
-	{ name = "apa_mp_apa_yacht_option2",                                       webhook = "" },
-	{ name = "apa_mp_apa_yacht_option2_cola",                                  webhook = "" },
-	{ name = "apa_mp_apa_yacht_option2_colb",                                  webhook = "" },
-	{ name = "apa_mp_apa_yacht_option3",                                       webhook = "" },
-	{ name = "apa_mp_apa_yacht_option3_cola",                                  webhook = "" },
-	{ name = "apa_mp_apa_yacht_option3_colb",                                  webhook = "" },
-	{ name = "apa_mp_apa_yacht_option3_colc",                                  webhook = "" },
-	{ name = "apa_mp_apa_yacht_option3_cold",                                  webhook = "" },
-	{ name = "apa_mp_apa_yacht_option3_cole",                                  webhook = "" },
-	{ name = "apa_mp_apa_yacht_jacuzzi_cam",                                   webhook = "" },
-	{ name = "apa_mp_apa_yacht_jacuzzi_ripple003",                             webhook = "" },
-	{ name = "apa_mp_apa_yacht_jacuzzi_ripple1",                               webhook = "" },
-	{ name = "apa_mp_apa_yacht_jacuzzi_ripple2",                               webhook = "" },
-	{ name = "apa_mp_apa_yacht_radar_01a",                                     webhook = "" },
-	{ name = "apa_mp_apa_yacht_win",                                           webhook = "" },
-	{ name = "prop_crashed_heli",                                              webhook = "" },
-	{ name = "apa_mp_apa_yacht_door",                                          webhook = "" },
-	{ name = "prop_shamal_crash",                                              webhook = "" },
-	{ name = "xm_prop_x17_shamal_crash",                                       webhook = "" },
-	{ name = "apa_mp_apa_yacht_door2",                                         webhook = "" },
-	{ name = "apa_mp_apa_yacht",                                               webhook = "" },
-	{ name = "prop_flagpole_2b",                                               webhook = "" },
-	{ name = "prop_flagpole_2c",                                               webhook = "" },
-	{ name = "prop_flag_canada",                                               webhook = "" },
-	{ name = "apa_prop_yacht_float_1a",                                        webhook = "" },
-	{ name = "apa_prop_yacht_float_1b",                                        webhook = "" },
-	{ name = "apa_prop_yacht_glass_01",                                        webhook = "" },
-	{ name = "apa_prop_yacht_glass_02",                                        webhook = "" },
-	{ name = "apa_prop_yacht_glass_03",                                        webhook = "" },
-	{ name = "prop_beach_fire",                                                webhook = "" },
-	{ name = "prop_rock_4_big2",                                               webhook = "" },
-	{ name = "prop_beachflag_le",                                              webhook = "" },
-	{ name = "freight",                                                        webhook = "" },
-	{ name = "stt_prop_race_start_line_03b",                                   webhook = "" },
-	{ name = "stt_prop_stunt_soccer_sball",                                    webhook = "" }
+	{ name = "prop_logpile_07b",                         },
+	{ name = "prop_logpile_07",                          },
+	{ name = "prop_logpile_06b",                         },
+	{ name = "prop_logpile_06",                          },
+	{ name = "prop_logpile_05",                          },
+	{ name = "prop_logpile_04",                          },
+	{ name = "prop_logpile_03",                          },
+	{ name = "prop_logpile_02",                          },
+	{ name = "prop_logpile_01",                          },
+	{ name = "hei_prop_carrier_radar_1_l1",              },
+	{ name = "v_res_mexball",                            },
+	{ name = "prop_rock_1_a",                            },
+	{ name = "prop_rock_1_b",                            },
+	{ name = "prop_rock_1_c",                            },
+	{ name = "prop_rock_1_d",                            },
+	{ name = "prop_player_gasmask",                      },
+	{ name = "prop_rock_1_e",                            },
+	{ name = "prop_rock_1_f",                            },
+	{ name = "prop_rock_1_g",                            },
+	{ name = "prop_rock_1_h",                            },
+	{ name = "prop_test_boulder_01",                     },
+	{ name = "prop_test_boulder_02",                     },
+	{ name = "prop_test_boulder_03",                     },
+	{ name = "prop_test_boulder_04",                     },
+	{ name = "apa_mp_apa_crashed_usaf_01a",              },
+	{ name = "ex_prop_exec_crashdp",                     },
+	{ name = "apa_mp_apa_yacht_o1_rail_a",               },
+	{ name = "apa_mp_apa_yacht_o1_rail_b",               },
+	{ name = "apa_mp_h_yacht_armchair_01",               },
+	{ name = "apa_mp_h_yacht_armchair_03",               },
+	{ name = "apa_mp_h_yacht_armchair_04",               },
+	{ name = "apa_mp_h_yacht_barstool_01",               },
+	{ name = "apa_mp_h_yacht_bed_01",                    },
+	{ name = "apa_mp_h_yacht_bed_02",                    },
+	{ name = "apa_mp_h_yacht_coffee_table_01",           },
+	{ name = "apa_mp_h_yacht_coffee_table_02",           },
+	{ name = "apa_mp_h_yacht_floor_lamp_01",             },
+	{ name = "apa_mp_h_yacht_side_table_01",             },
+	{ name = "apa_mp_h_yacht_side_table_02",             },
+	{ name = "apa_mp_h_yacht_sofa_01",                   },
+	{ name = "apa_mp_h_yacht_sofa_02",                   },
+	{ name = "apa_mp_h_yacht_stool_01",                  },
+	{ name = "apa_mp_h_yacht_strip_chair_01",            },
+	{ name = "apa_mp_h_yacht_table_lamp_01",             },
+	{ name = "apa_mp_h_yacht_table_lamp_02",             },
+	{ name = "apa_mp_h_yacht_table_lamp_03",             },
+	{ name = "prop_flag_columbia",                       },
+	{ name = "apa_mp_apa_yacht_o2_rail_a",               },
+	{ name = "apa_mp_apa_yacht_o2_rail_b",               },
+	{ name = "apa_mp_apa_yacht_o3_rail_a",               },
+	{ name = "apa_mp_apa_yacht_o3_rail_b",               },
+	{ name = "apa_mp_apa_yacht_option1",                 },
+	{ name = "proc_searock_01",                          },
+	{ name = "apa_mp_h_yacht_",                          },
+	{ name = "apa_mp_apa_yacht_option1_cola",            },
+	{ name = "apa_mp_apa_yacht_option2",                 },
+	{ name = "apa_mp_apa_yacht_option2_cola",            },
+	{ name = "apa_mp_apa_yacht_option2_colb",            },
+	{ name = "apa_mp_apa_yacht_option3",                 },
+	{ name = "apa_mp_apa_yacht_option3_cola",            },
+	{ name = "apa_mp_apa_yacht_option3_colb",            },
+	{ name = "apa_mp_apa_yacht_option3_colc",            },
+	{ name = "apa_mp_apa_yacht_option3_cold",            },
+	{ name = "apa_mp_apa_yacht_option3_cole",            },
+	{ name = "apa_mp_apa_yacht_jacuzzi_cam",             },
+	{ name = "apa_mp_apa_yacht_jacuzzi_ripple003",       },
+	{ name = "apa_mp_apa_yacht_jacuzzi_ripple1",         },
+	{ name = "apa_mp_apa_yacht_jacuzzi_ripple2",         },
+	{ name = "apa_mp_apa_yacht_radar_01a",               },
+	{ name = "apa_mp_apa_yacht_win",                     },
+	{ name = "prop_crashed_heli",                        },
+	{ name = "apa_mp_apa_yacht_door",                    },
+	{ name = "prop_shamal_crash",                        },
+	{ name = "xm_prop_x17_shamal_crash",                 },
+	{ name = "apa_mp_apa_yacht_door2",                   },
+	{ name = "apa_mp_apa_yacht",                         },
+	{ name = "prop_flagpole_2b",                         },
+	{ name = "prop_flagpole_2c",                         },
+	{ name = "prop_flag_canada",                         },
+	{ name = "apa_prop_yacht_float_1a",                  },
+	{ name = "apa_prop_yacht_float_1b",                  },
+	{ name = "apa_prop_yacht_glass_01",                  },
+	{ name = "apa_prop_yacht_glass_02",                  },
+	{ name = "apa_prop_yacht_glass_03",                  },
+	{ name = "prop_beach_fire",                          },
+	{ name = "prop_rock_4_big2",                         },
+	{ name = "prop_beachflag_le",                        },
+	{ name = "freight",                                  },
+	{ name = "stt_prop_race_start_line_03b",             },
+	{ name = "stt_prop_stunt_soccer_sball",              }
 }
+
+
+---@DONT TOUCH THIS (BACKWARDS COMPATIBILITY INSTEAD OF MODIFYING THE ENTIRE LOADER)
+SecureServe.Webhooks.Simple = SecureServe.Detections.Webhook
+SecureServe.Protection.Simple = {}
+for name, settings in pairs(SecureServe.Detections.ClientProtections) do
+    table.insert(SecureServe.Protection.Simple, {
+        protection = name,
+        enabled = settings.enabled,
+        time = settings.action,
+        webhook = "",
+        limit = settings.limit,
+        default = settings.multiplier or settings.sensitivity,
+        defaultr = settings.max_speed,
+        defaults = settings.tolerance,
+        tolerance = settings.tolerance,
+        whitelisted_coords = settings.whitelisted_coords
+    })
+end
+
+for k, v in pairs(SecureServe.Protection.BlacklistedExplosions) do
+    if v.webhook == "" then
+        SecureServe.Protection.BlacklistedExplosions[k].webhook = SecureServe.Webhooks.BlacklistedExplosions
+    end
+end
+
+for k, v in pairs(SecureServe.Protection.BlacklistedCommands) do
+    if v.webhook == "" then
+        SecureServe.Protection.BlacklistedCommands[k].webhook = SecureServe.Webhooks.BlacklistedCommands
+    end
+end
+
+for k, v in pairs(SecureServe.Protection.BlacklistedSprites) do
+    if v.webhook == "" then
+        SecureServe.Protection.BlacklistedSprites[k].webhook = SecureServe.Webhooks.BlacklistedSprites
+    end
+end
+
+for k, v in pairs(SecureServe.Protection.BlacklistedAnimDicts) do
+    if v.webhook == "" then
+        SecureServe.Protection.BlacklistedAnimDicts[k].webhook = SecureServe.Webhooks.BlacklistedAnimDicts
+    end
+end
+
+for k, v in pairs(SecureServe.Protection.BlacklistedWeapons) do
+    if v.webhook == "" then
+        SecureServe.Protection.BlacklistedWeapons[k].webhook = SecureServe.Webhooks.BlacklistedWeapons
+    end
+end
+
+for k, v in pairs(SecureServe.Protection.BlacklistedVehicles) do
+    if v.webhook == "" then
+        SecureServe.Protection.BlacklistedVehicles[k].webhook = SecureServe.Webhooks.BlacklistedVehicles
+    end
+end
+
+for k, v in pairs(SecureServe.Protection.BlacklistedObjects) do
+    if v.webhook == "" then
+        SecureServe.Protection.BlacklistedObjects[k].webhook = SecureServe.Webhooks.BlacklistedObjects
+    end
+end

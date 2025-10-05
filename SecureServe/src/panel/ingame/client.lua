@@ -27,13 +27,11 @@ end)
 
 local playerOptions = {
     ESP = false,
-    PlayerNames = false,
-    GodMode = false,
-    NoClip = false,
+    ["Player Names"] = false,
+    ["God Mode"] = false,
+    ["No Clip"] = false,
     Invisibility = false,
-    Bones = false,
-    RepairVehicle = false,
-    Teleport = false
+    Bones = false
 }
 
 RegisterNUICallback('toggleOptiona', function(data, cb)
@@ -41,14 +39,13 @@ RegisterNUICallback('toggleOptiona', function(data, cb)
     local enabled = data.enabled
 
     playerOptions[option] = enabled
-    print(option, enabled)
     TriggerServerEvent('anticheat:toggleOption', option, enabled)
     
     if option == "ESP" then
         toggleESP(enabled)
-    elseif option == "PlayerNames" then
+    elseif option == "Player Names" then
         togglePlayerNames(enabled)
-    elseif option == "GodMode" then
+    elseif option == "God Mode" then
         toggleGodMode(enabled)
     elseif option == "No Clip" then
         toggleNoClip(enabled)
@@ -56,10 +53,6 @@ RegisterNUICallback('toggleOptiona', function(data, cb)
         toggleInvisibility(enabled)
     elseif option == "Bones" then
         toggleBones(enabled)
-    elseif option == "Repair Vehicle" then
-        if enabled then repairVehicle() end 
-    elseif option == "Teleport" then
-        if enabled then teleportToWaypoint() end 
     end
 
     cb('ok')
@@ -175,10 +168,20 @@ end
 local noclip = false
 function toggleNoClip(enable)
     noclip = enable
+    if not enable then
+        local me = PlayerPedId()
+        SetEntityVisible(me, true, false)
+        SetLocalPlayerVisibleLocally(true)
+        FreezeEntityPosition(me, false, false)
+        SetEntityInvincible(me, false)
+        SetEntityCollision(me, true, true)
+        return
+    end
+    
     Citizen.CreateThread(function()
         local me = PlayerPedId()
 
-        while noclip do
+        while noclip and playerOptions["No Clip"] do
             Citizen.Wait(0)
             local me = PlayerPedId()
             local lastVehicle = nil
@@ -386,32 +389,6 @@ function toggleBones(enable)
     end
 end
 
-function repairVehicle()
-    local playerPed = PlayerPedId()
-    local vehicle = GetVehiclePedIsIn(playerPed, false)
-    if vehicle then
-        SetVehicleFixed(vehicle)
-        SetVehicleDeformationFixed(vehicle)
-        SetVehicleUndriveable(vehicle, false)
-        SetVehicleEngineOn(vehicle, true, true, false)
-    end
-end
-
-function teleportToWaypoint()
-    local waypointBlip = GetFirstBlipInfoId(8)
-    if DoesBlipExist(waypointBlip) then
-        local waypointCoords = GetBlipInfoIdCoord(waypointBlip)
-        for height = 1, 1000 do
-            SetPedCoordsKeepVehicle(PlayerPedId(), waypointCoords.x, waypointCoords.y, height + 0.0)
-            local foundGround, zPos = GetGroundZFor_3dCoord(waypointCoords.x, waypointCoords.y, height + 0.0)
-            if foundGround then
-                SetPedCoordsKeepVehicle(PlayerPedId(), waypointCoords.x, waypointCoords.y, zPos + 0.0)
-                break
-            end
-            Citizen.Wait(5)
-        end
-    end
-end
 
 function DrawText3D(x, y, z, text)
     local onScreen, _x, _y = World3dToScreen2d(x, y, z)
@@ -434,6 +411,95 @@ end
 RegisterNUICallback('unbanPlayer', function(data, cb)
     local banId = data.banId
     TriggerServerEvent('unbanPlayer', banId)
+    cb('ok')
+end)
+
+RegisterNUICallback('spawnVehicle', function(data, cb)
+    local vehicleName = data.vehicleName
+    if not vehicleName or vehicleName == '' then
+        cb('ok')
+        return
+    end
+    
+    local vehicleHash = GetHashKey(vehicleName)
+    RequestModel(vehicleHash)
+    
+    local timeout = 0
+    while not HasModelLoaded(vehicleHash) and timeout < 1000 do
+        Citizen.Wait(10)
+        timeout = timeout + 10
+    end
+    
+    if HasModelLoaded(vehicleHash) then
+        local playerPed = PlayerPedId()
+        local coords = GetEntityCoords(playerPed)
+        local heading = GetEntityHeading(playerPed)
+        local vehicle = CreateVehicle(vehicleHash, coords.x + 3.0, coords.y, coords.z, heading, true, false)
+        SetPedIntoVehicle(playerPed, vehicle, -1)
+        SetModelAsNoLongerNeeded(vehicleHash)
+        ac_notify('Vehicle spawned: ' .. vehicleName)
+    else
+        ac_notify('Failed to spawn vehicle: ' .. vehicleName)
+    end
+    
+    cb('ok')
+end)
+
+RegisterNUICallback('spawnObject', function(data, cb)
+    local objectName = data.objectName
+    if not objectName or objectName == '' then
+        cb('ok')
+        return
+    end
+    
+    local objectHash = GetHashKey(objectName)
+    RequestModel(objectHash)
+    
+    local timeout = 0
+    while not HasModelLoaded(objectHash) and timeout < 1000 do
+        Citizen.Wait(10)
+        timeout = timeout + 10
+    end
+    
+    if HasModelLoaded(objectHash) then
+        local playerPed = PlayerPedId()
+        local coords = GetEntityCoords(playerPed)
+        local heading = GetEntityHeading(playerPed)
+        local obj = CreateObject(objectHash, coords.x + 2.0, coords.y, coords.z, true, true, true)
+        SetEntityHeading(obj, heading)
+        SetModelAsNoLongerNeeded(objectHash)
+        ac_notify('Object spawned: ' .. objectName)
+    else
+        ac_notify('Failed to spawn object: ' .. objectName)
+    end
+    
+    cb('ok')
+end)
+
+RegisterNUICallback('changePed', function(data, cb)
+    local pedModel = data.pedModel
+    if not pedModel or pedModel == '' then
+        cb('ok')
+        return
+    end
+    
+    local pedHash = GetHashKey(pedModel)
+    RequestModel(pedHash)
+    
+    local timeout = 0
+    while not HasModelLoaded(pedHash) and timeout < 1000 do
+        Citizen.Wait(10)
+        timeout = timeout + 10
+    end
+    
+    if HasModelLoaded(pedHash) then
+        SetPlayerModel(PlayerId(), pedHash)
+        SetModelAsNoLongerNeeded(pedHash)
+        ac_notify('Ped changed to: ' .. pedModel)
+    else
+        ac_notify('Failed to change ped: ' .. pedModel)
+    end
+    
     cb('ok')
 end)
 
@@ -542,28 +608,15 @@ end)
 
 RegisterNUICallback('screenshotPlayer', function(data, cb)
     local playerId = data.playerId
-
     TriggerServerEvent('SecureServe:screenshotPlayer', playerId)
-    exports['screenshot-basic']:requestScreenshotUpload(SecureServe.AdminMenu.Webhook, 'files[]', function(data)
-        local dataa = {}
-        local resp = json.decode(data)
-        if resp ~= nil and resp.attachments ~= nil and resp.attachments[1] ~= nil and resp.attachments[1].proxy_url ~= nil then
-            SCREENSHOT_URL = resp.attachments[1].proxy_url
-            dataa.image = SCREENSHOT_URL
-            SendNUIMessage({
-                action = 'displayScreenshot',
-                imageUrl = SCREENSHOT_URL
-            })
-        else
-            SendNUIMessage({
-                action = 'displayScreenshot',
-                imageUrl = "https://media.discordapp.net/attachments/1234504751173865595/1237372961263190106/screenshot.jpg?ex=663b68df&is=663a175f&hm=52ec8f2d1e6e012e7a8282674b7decbd32344d85ba57577b12a136d34469ee9a&=&format=webp&width=810&height=456"
-            })
-        end
-    end)
-
-
     cb({ success = true })
+end)
+
+RegisterNetEvent('SecureServe:Panel:DisplayScreenshot', function(imageData)
+    SendNUIMessage({
+        action = 'displayScreenshot',
+        imageUrl = imageData
+    })
 end)
 
 RegisterNUICallback('executeServerOption', function(data, cb)

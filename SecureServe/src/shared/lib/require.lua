@@ -99,7 +99,9 @@ function Require.load(module_name)
         return enhanced_error_handler("Error executing module: " .. tostring(result), module_name)
     end
     
-    local module_exports = result or module_env.exports
+    -- local module_exports = result or module_env.exports
+    local module_exports = result
+
     
     Require.loaded[module_name] = module_exports
     
