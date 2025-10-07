@@ -1,5 +1,5 @@
 ---@class DiscordLoggerModule
-local DiscordLogger = {
+DiscordLogger = {
     webhooks = {
         system = "",
         detection = "",
@@ -38,8 +38,8 @@ local DiscordLogger = {
 local logger = require("server/core/logger")
 
 ---@description Initialize the Discord logger
----@param config table Configuration settings
-function DiscordLogger.initialize(config)
+function DiscordLogger.initialize()
+    local config = SecureServe
     if config and config.Logs then
         for webhook_type, _ in pairs(DiscordLogger.webhooks) do
             if config.Logs and config.Logs[webhook_type] then
@@ -144,19 +144,10 @@ function DiscordLogger.process_queue()
                 DiscordLogger.processing = false
                 Citizen.Wait(100)
             else
-                logger.debug("Sending Discord webhook to: " .. webhook_url:sub(1, 30) .. "...")
                 
                 PerformHttpRequest(webhook_url, function(err, text, headers)
                     if err ~= 200 and err ~= 204 then
                         logger.error("Discord webhook failed with error code: " .. tostring(err) .. ", response: " .. tostring(text))
-                        
-                        local truncated_payload = payload
-                        if truncated_payload and #truncated_payload > 100 then
-                            truncated_payload = truncated_payload:sub(1, 100) .. "..."
-                        end
-                        logger.debug("Failed webhook payload (truncated): " .. tostring(truncated_payload))
-                    else
-                        logger.debug("Successfully sent Discord webhook: " .. webhook_type)
                     end
                     
                     DiscordLogger.processing = false
@@ -284,18 +275,14 @@ end
 ---@param thumbnail_url string Optional thumbnail URL
 function DiscordLogger.send(webhook_type, title, description, fields, image_url, footer_text, thumbnail_url)
     if not DiscordLogger.enabled then
-        logger.debug("Discord logger is disabled, not sending webhook")
         return
     end
     
     if not DiscordLogger.webhooks[webhook_type] or DiscordLogger.webhooks[webhook_type] == "" then
-        logger.debug("Webhook URL for type " .. webhook_type .. " is not configured")
         return
     end
     
     local webhook_url = DiscordLogger.webhooks[webhook_type]
-    
-    logger.debug("Preparing Discord webhook: " .. webhook_type)
     
     local currentDate = os.date("%d/%m/%Y")
     local currentTime = os.date("%H:%M:%S")
@@ -338,6 +325,17 @@ function DiscordLogger.send(webhook_type, title, description, fields, image_url,
     if not json_payload then
         logger.error("Failed to encode Discord webhook payload to JSON")
         return
+    end
+    
+    -- Check payload size (Discord limit is around 2000 characters for embeds)
+    if #json_payload > 7000 then
+        -- Remove screenshot from embed to reduce size
+        if embed.image then
+            embed.image = nil
+        end
+        
+        -- Re-encode without screenshot
+        json_payload = json.encode(payload)
     end
     
     DiscordLogger.queue_message(webhook_type, json_payload, webhook_url)
@@ -531,43 +529,33 @@ function DiscordLogger.request_screenshot(player_id, reason, callback)
     end
     
     local player_name = GetPlayerName(player_id) or "Unknown"
-    logger.debug("Requesting screenshot from " .. player_name .. " (ID: " .. player_id .. ")")
     
-    if not _G.exports or not _G.exports['screenshot-basic'] then
-        logger.error("Failed to take screenshot: screenshot-basic export not available")
+    -- Get the screenshot webhook URL
+    local screenshot_webhook = DiscordLogger.webhooks.screenshot
+    
+    if not screenshot_webhook or screenshot_webhook == "" then
         if callback then callback(nil) end
         return
     end
     
-    local success, err = pcall(function()
-        _G.exports['screenshot-basic']:requestClientScreenshot(player_id, {
-            quality = 0.95,
-            encoding = 'jpg'
-        }, function(err, data)
-            if err then
-                logger.error("Screenshot failed: " .. tostring(err))
-                if callback then callback(nil) end
-                return
-            end
-            
-            if data and data:sub(1, 23) == "data:image/jpeg;base64," then
-                local image_url = data
-                logger.debug("Screenshot received for " .. player_name)
-                
-                DiscordLogger.log_screenshot(player_id, reason, image_url)
-                
-                if callback then callback(image_url) end
+    -- Request screenshot upload from client
+    TriggerClientCallback({
+        source = player_id,
+        eventName = 'SecureServe:RequestScreenshotUpload',
+        args = {0.95, screenshot_webhook},
+        timeout = 15,
+        timedout = function(state)
+            if callback then callback(nil) end
+        end,
+        callback = function(screenshot_url)
+            if screenshot_url and screenshot_url ~= "" then
+                DiscordLogger.log_screenshot(player_id, reason, screenshot_url)
+                if callback then callback(screenshot_url) end
             else
-                logger.error("Screenshot data invalid")
                 if callback then callback(nil) end
             end
-        end)
-    end)
-    
-    if not success then
-        logger.error("Error taking screenshot: " .. tostring(err))
-        if callback then callback(nil) end
-    end
+        end
+    })
 end
 
 ---@description Log a player detection
@@ -879,5 +867,3 @@ function DiscordLogger.log_debug(title, description, fields)
         fields
     )
 end
-
-return DiscordLogger 

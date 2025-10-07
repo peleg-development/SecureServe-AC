@@ -8,7 +8,6 @@ local AntiCreateEntity = {
 local config_manager = require("server/core/config_manager")
 local ban_manager = require("server/core/ban_manager")
 local logger = require("server/core/logger")
-local DiscordLogger = require("server/core/discord_logger")
 
 ---@param modelHash number Hash of the model to check
 ---@return boolean isAllowed Whether the model hash is allowed

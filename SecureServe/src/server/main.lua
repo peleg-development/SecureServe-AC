@@ -4,7 +4,6 @@ local player_manager = require("server/core/player_manager")
 local logger = require("server/core/logger")
 local debug_module = require("server/core/debug_module")
 local admin_whitelist = require("server/core/admin_whitelist")
-local discord_logger = require("server/core/discord_logger")
 
 local resource_manager = require("server/protections/resource_manager")
 local anti_execution = require("server/protections/anti_execution")
@@ -93,7 +92,7 @@ local function registerServerCommands()
             logger.info("Reason: " .. reason)
             logger.info("Duration: " .. (duration > 0 and duration .. " minutes" or "Permanent"))
 
-            discord_logger.log_admin(0, "Ban", player_name, {
+            DiscordLogger.log_admin(0, "Ban", player_name, {
                 ["Player ID"] = target_id,
                 ["Reason"] = reason,
                 ["Duration"] = (duration > 0 and duration .. " minutes" or "Permanent")
@@ -118,7 +117,7 @@ local function registerServerCommands()
 
         if success then
             print("Unbanned player with identifier: " .. identifier)
-            discord_logger.log_admin(0, "Unban", identifier)
+            DiscordLogger.log_admin(0, "Unban", identifier)
         else
             print("Failed to unban player or player not found: " .. identifier)
         end
@@ -184,7 +183,7 @@ local function registerServerCommands()
             local success = config_manager.whitelist_event(name)
             if success then
                 print("Added event to whitelist: " .. name)
-                discord_logger.log_admin(0, "Whitelist Event", name)
+                DiscordLogger.log_admin(0, "Whitelist Event", name)
             else
                 print("Failed to add event to whitelist or already whitelisted: " .. name)
             end
@@ -192,7 +191,7 @@ local function registerServerCommands()
             local success = anti_resource_injection.whitelist_resource(name)
             if success then
                 print("Added resource to whitelist: " .. name)
-                discord_logger.log_admin(0, "Whitelist Resource", name)
+                DiscordLogger.log_admin(0, "Whitelist Resource", name)
             else
                 print("Failed to add resource to whitelist or already whitelisted: " .. name)
             end
@@ -216,12 +215,12 @@ local function registerServerCommands()
             config_manager.set_debug_mode(true)
             logger.set_debug_mode(true)
             print("Debug mode enabled")
-            discord_logger.log_admin(0, "Set Debug Mode", "Enabled")
+            DiscordLogger.log_admin(0, "Set Debug Mode", "Enabled")
         elseif mode == "off" then
             config_manager.set_debug_mode(false)
             logger.set_debug_mode(false)
             print("Debug mode disabled")
-            discord_logger.log_admin(0, "Set Debug Mode", "Disabled")
+            DiscordLogger.log_admin(0, "Set Debug Mode", "Disabled")
         else
             print("Invalid option. Use 'on' or 'off'")
         end
@@ -241,11 +240,11 @@ local function registerServerCommands()
         if mode == "on" then
             debug_module.set_dev_mode(true)
             print("Developer mode enabled")
-            discord_logger.log_admin(0, "Set Developer Mode", "Enabled")
+            DiscordLogger.log_admin(0, "Set Developer Mode", "Enabled")
         elseif mode == "off" then
             debug_module.set_dev_mode(false)
             print("Developer mode disabled")
-            discord_logger.log_admin(0, "Set Developer Mode", "Disabled")
+            DiscordLogger.log_admin(0, "Set Developer Mode", "Disabled")
         else
             print("Invalid option. Use 'on' or 'off'")
         end
@@ -282,7 +281,7 @@ local function registerServerCommands()
 
         print("=======================================")
 
-        discord_logger.log_admin(0, "System Stats", "Viewed system statistics", {
+        DiscordLogger.log_admin(0, "System Stats", "Viewed system statistics", {
             ["Total Errors"] = debug_stats.total_errors,
             ["Total Bans"] = ban_count,
             ["Active Players"] = player_count,
@@ -297,7 +296,7 @@ local function registerServerCommands()
 
         config_manager.initialize()
         print("Configuration reloaded via console command")
-        discord_logger.log_admin(0, "Reload Config", "Configuration reloaded")
+        DiscordLogger.log_admin(0, "Reload Config", "Configuration reloaded")
     end, true)
 
     print("Server console commands registered")
@@ -323,7 +322,7 @@ local function main()
   ^7]])
 
     print("^8╔══════════════════════════════════════════════════════════════════════════╗^7")
-    print("^8║                  ^2SecureServe AntiCheat v1.2.1 Initializing^8               ║^7")
+    print("^8║                  ^2SecureServe AntiCheat v1.4.0 Initializing^8               ║^7")
     print("^8╚══════════════════════════════════════════════════════════════════════════╝^7")
 
     print("\n^2╭─── Core Modules ^7")
@@ -344,10 +343,10 @@ local function main()
     print("^2│ ^2✓^7 Logger^7 initialized")
 
     print("^2│ ^5⏳^7 Discord Logger^7")
-    discord_logger.initialize(SecureServe)
+    DiscordLogger.initialize()
     print("^2│ ^2✓^7 Discord Logger^7 initialized")
     print("^2│ ^5⏳^7 Debug Module^7")
-    debug_module.initialize(SecureServe)
+    debug_module.initialize()
     print("^2│ ^2✓^7 Debug Module^7 initialized")
 
     print("^2│ ^5⏳^7 Ban Manager^7")
@@ -417,7 +416,7 @@ local function main()
 
     AddEventHandler("playerBanned", function(player_id, reason, admin_id)
         -- logger.log_ban(player_id, reason, admin_id)
-        -- discord_logger.log_ban(player_id, reason, ban_manager.get_ban_data(player_id))
+        -- DiscordLogger.log_ban(player_id, reason, ban_manager.get_ban_data(player_id))
     end)
 
     AddEventHandler("eventTriggered", function(event_name, source, ...)
@@ -461,13 +460,13 @@ local function main()
 
         if level == "ERROR" then
             logger.error(message)
-            discord_logger.log_system("Client Error", message, {
+            DiscordLogger.log_system("Client Error", message, {
                 { name = "Player", value = player_name .. " (ID: " .. source .. ")", inline = true },
                 { name = "Level",  value = level,                                    inline = true }
             })
         elseif level == "FATAL" then
             logger.fatal(message)
-            discord_logger.log_system("Client Fatal Error", message, {
+            DiscordLogger.log_system("Client Fatal Error", message, {
                 { name = "Player", value = player_name .. " (ID: " .. source .. ")", inline = true },
                 { name = "Level",  value = level,                                    inline = true }
             })
@@ -478,16 +477,16 @@ local function main()
 
     initialized = true
     print("\n^8╔══════════════════════════════════════════════════════════════════════════╗^7")
-    print("^8║              ^2SecureServe AntiCheat v1.2.1 Loaded Successfully^8            ║^7")
+    print("^8║              ^2SecureServe AntiCheat v1.4.0 Loaded Successfully^8            ║^7")
     print("^8║                 ^3All Modules Initialized and Protection Active^8            ║^7")
     print("^8╚══════════════════════════════════════════════════════════════════════════╝^7")
     print("^6⚡ Support: ^3https://discord.gg/z6qGGtbcr4^7")
     print("^6⚡ Type ^3securehelp ^6in server console for commands^7")
 
 
-    discord_logger.log_system(
+    DiscordLogger.log_system(
         "AntiCheat Started",
-        "SecureServe AntiCheat v1.2.1 has been successfully initialized.",
+        "SecureServe AntiCheat v1.4.0 has been successfully initialized.",
         {
             { name = "Server Name",       value = GetConvar("sv_hostname", "Unknown"), inline = true },
             { name = "Resource Name",     value = GetCurrentResourceName(),            inline = true },
@@ -495,7 +494,7 @@ local function main()
         }
     )
 
-    logger.info("SecureServe AntiCheat v1.2.1 initialized successfully")
+    logger.info("SecureServe AntiCheat v1.4.0 initialized successfully")
 end
 
 CreateThread(function()
@@ -699,7 +698,7 @@ RegisterNetEvent("SecureServe:Server:Methods:PunishPlayer", function(id, reason,
     end
 
     logger.warn("Player " .. source .. " triggered anti-cheat: " .. reason)
-    discord_logger.log_detection(source, reason, {
+    DiscordLogger.log_detection(source, reason, {
         time = time or 2147483647,
         webhook = webhook
     })

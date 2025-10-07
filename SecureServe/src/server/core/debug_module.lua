@@ -12,8 +12,8 @@ local DebugModule = {
 local logger = require("server/core/logger")
 
 ---@description Initialize the debug module
----@param config table Configuration options
-function DebugModule.initialize(config)
+function DebugModule.initialize()
+    local config = SecureServe
     if config then
         DebugModule.enabled = config.DebugEnabled or false
         DebugModule.max_error_history = config.MaxErrorHistory or 20

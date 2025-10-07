@@ -15,16 +15,16 @@ local Heartbeat = {
 ---@description Initialize heartbeat protection
 function Heartbeat.initialize()
     logger.info("Initializing Heartbeat protection module")
-    
+
     Heartbeat.playerHeartbeats = {}
     Heartbeat.alive = {}
     Heartbeat.allowedStop = {}
     Heartbeat.failureCount = {}
-    
+
     Heartbeat.setupEventHandlers()
-    
+
     Heartbeat.startMonitoringThreads()
-    
+
     logger.info("Heartbeat protection module initialized")
 end
 
@@ -37,32 +37,32 @@ function Heartbeat.setupEventHandlers()
         Heartbeat.allowedStop[playerId] = nil
         Heartbeat.failureCount[playerId] = nil
     end)
-    
+
     RegisterNetEvent("mMkHcvct3uIg04STT16I:cbnF2cR9ZTt8NmNx2jQS", function(key)
         local playerId = source
-        
+
         if string.len(key) < 15 or string.len(key) > 35 or key == nil then
             DropPlayer(playerId, "Invalid heartbeat key")
         else
             Heartbeat.playerHeartbeats[playerId] = os.time()
         end
     end)
-    
+
     RegisterNetEvent('addalive', function()
         local playerId = source
         Heartbeat.alive[tonumber(playerId)] = true
     end)
-    
+
     RegisterNetEvent('allowedStop', function()
         local playerId = source
         Heartbeat.allowedStop[playerId] = true
     end)
-    
+
     RegisterNetEvent('playerLoaded', function()
         local playerId = source
         Heartbeat.playerHeartbeats[playerId] = os.time()
     end)
-    
+
     RegisterNetEvent('playerSpawneda', function()
         local playerId = source
         Heartbeat.allowedStop[playerId] = true
@@ -74,13 +74,13 @@ function Heartbeat.startMonitoringThreads()
     Citizen.CreateThread(function()
         while true do
             Citizen.Wait(5000)
-            
+
             local currentTime = os.time()
-            
+
             for playerId, lastHeartbeatTime in pairs(Heartbeat.playerHeartbeats) do
                 if lastHeartbeatTime ~= nil then
                     local timeSinceLastHeartbeat = currentTime - lastHeartbeatTime
-                    
+
                     if timeSinceLastHeartbeat > 1500 then
                         DropPlayer(playerId, "No heartbeat received")
                         Heartbeat.playerHeartbeats[playerId] = nil
@@ -89,24 +89,24 @@ function Heartbeat.startMonitoringThreads()
             end
         end
     end)
-    
+
     Citizen.CreateThread(function()
         while true do
             local players = GetPlayers()
-            
+
             for _, playerId in ipairs(players) do
                 Heartbeat.alive[tonumber(playerId)] = false
                 TriggerClientEvent('checkalive', tonumber(playerId))
             end
-            
+
             Citizen.Wait(Heartbeat.checkInterval)
-            
+
             for _, playerId in ipairs(players) do
                 local numPlayerId = tonumber(playerId)
-                
+
                 if not Heartbeat.alive[numPlayerId] and Heartbeat.allowedStop[numPlayerId] then
                     Heartbeat.failureCount[numPlayerId] = (Heartbeat.failureCount[numPlayerId] or 0) + 1
-                    
+
                     if Heartbeat.failureCount[numPlayerId] >= Heartbeat.maxFailures then
                         DropPlayer(numPlayerId, "Failed to respond to alive checks")
                     end
@@ -123,7 +123,7 @@ end
 ---@param reason string The specific reason for the ban
 function Heartbeat.banPlayer(playerId, reason)
     logger.warn("Heartbeat violation detected for player " .. playerId .. ": " .. reason)
-    
+
     if ban_manager then
         ban_manager.ban_player(playerId, 'Anticheat violation detected: ' .. reason, {
             admin = "Heartbeat System",
@@ -135,6 +135,5 @@ function Heartbeat.banPlayer(playerId, reason)
         logger.error("Ban manager not available, player was only dropped")
     end
 end
-
 
 return Heartbeat

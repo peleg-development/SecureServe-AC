@@ -6,14 +6,14 @@ local ClientInit = {}
 ---@description Initialize all client components
 function ClientInit.initialize()
     local logger = require("client/core/client_logger")
-    local ConfigLoader = require("client/core/config_loader")
+    
     
     logger.initialize({
         Debug = false
     })
     
     logger.info("==============================================")
-    logger.info("SecureServe Client v1.2.1 initializing...")
+    logger.info("SecureServe Client v1.4.0 initializing...")
     
     ConfigLoader.initialize()
     logger.info("Config Loader initialized")

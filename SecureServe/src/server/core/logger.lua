@@ -20,7 +20,7 @@ local Logger = {
     log_webhook = "",
     history = {},
     max_history = 100,
-    debug_enabled = false
+    debug_enabled = SecureServe.Debug or false
 }
 
 local config_manager
@@ -181,10 +181,7 @@ end
 ---@param message string The message to log
 ---@param ... any Additional values to include in the log
 function Logger.debug(message, ...)
-    if Logger.levels.DEBUG < Logger.level then
-        return
-    end
-    
+
     local formatted = Logger.format("DEBUG", message, ...)
     Logger.add_to_history("DEBUG", formatted)
     

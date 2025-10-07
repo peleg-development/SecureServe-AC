@@ -1,4 +1,4 @@
-local ConfigLoader = require("client/core/config_loader")
+
 local Utils = require("shared/lib/utils")
 local logger = require("client/core/client_logger")
 

@@ -1,6 +1,5 @@
 ---@class Cache
 local Cache = {}
-local config_loader = require("client/core/config_loader")
 
 Cache.Values = {
     ped = nil,
@@ -77,7 +76,7 @@ function Cache.UpdateAll()
     Cache.Values.isSwimmingUnderWater = IsPedSwimmingUnderWater(ped)
     Cache.Values.isFalling = IsPedFalling(ped)
     Cache.Values.isInvisible = IsEntityVisible(ped) == 0
-    Cache.Values.isAdmin = config_loader.is_whitelisted(GetPlayerServerId(PlayerId())) 
+    Cache.Values.isAdmin = ConfigLoader.is_whitelisted(GetPlayerServerId(PlayerId())) 
 end
 
 function Cache.Get(key, subKey)
@@ -133,7 +132,7 @@ function Cache.ForceUpdate(key)
     elseif key == "selectedWeapon" then
         Cache.Values.selectedWeapon = GetSelectedPedWeapon(ped)
     elseif key == "isAdmin" then
-        Cache.Values.isAdmin = config_loader.is_whitelisted(GetPlayerServerId(PlayerId()))
+        Cache.Values.isAdmin = ConfigLoader.is_whitelisted(GetPlayerServerId(PlayerId()))
     elseif key == "permissions" then
         Cache.RequestPermissionCheck()
     end

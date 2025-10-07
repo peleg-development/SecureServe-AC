@@ -18,7 +18,7 @@ local ClientLogger = {
     level = 1,
     max_history = 4,
     history = {},
-    debug_enabled = false,
+    debug_enabled =  false,
     cleanup_thread = nil,
     last_cleanup = 0
 }

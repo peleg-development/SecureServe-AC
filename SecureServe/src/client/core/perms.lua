@@ -2,7 +2,7 @@
 ---@class PermsModule
 local Perms = {}
 
-local ConfigLoader = require("client/core/config_loader")
+
 
 ---@description Determine if a player is allowed to open the admin menu based on configured groups
 ---@param server_id number|nil Optional server ID; defaults to the local player's server ID

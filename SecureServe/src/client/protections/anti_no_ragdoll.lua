@@ -1,5 +1,5 @@
 local ProtectionManager = require("client/protections/protection_manager")
-local ConfigLoader = require("client/core/config_loader")
+
 local Cache = require("client/core/cache")
 
 ---@class AntiNoRagdollModule

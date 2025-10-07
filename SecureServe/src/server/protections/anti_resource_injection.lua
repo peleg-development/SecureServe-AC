@@ -4,8 +4,7 @@ local AntiResourceInjection = {
     initial_resources_loaded = false
 }
 
-local ban_manager = require("server/core/ban_manager")
-local config_manager = require("server/core/config_manager")
+---@todo implement this
 
 
 

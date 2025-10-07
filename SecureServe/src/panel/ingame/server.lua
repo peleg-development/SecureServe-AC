@@ -42,17 +42,37 @@ end
 
 ---@type BanManagerModule
 local BanManager = require("server/core/ban_manager")
-local DiscordLogger = require("server/core/discord_logger")
+local logger = require("server/core/logger")
 
 RegisterNetEvent('unbanPlayer', function(banId)
     local src = source
-    if not IsMenuAdmin(src) then return end
-    if not banId or banId == '' then return end
+    local admin_name = GetPlayerName(src) or "Unknown"
+    
+    logger.debug("UNBAN DEBUG: Unban event triggered by " .. admin_name .. " (ID: " .. src .. ")")
+    logger.debug("UNBAN DEBUG: Received banId: " .. tostring(banId) .. " (type: " .. type(banId) .. ")")
+    
+    if not IsMenuAdmin(src) then 
+        logger.error("UNBAN DEBUG: Unauthorized unban attempt by " .. admin_name .. " (ID: " .. src .. ")")
+        return 
+    end
+    
+    if not banId or banId == '' then 
+        logger.error("UNBAN DEBUG: Invalid banId provided: " .. tostring(banId))
+        TriggerClientEvent('anticheat:notify', src, 'Invalid ban ID provided')
+        return 
+    end
+    
+    logger.debug("UNBAN DEBUG: Calling BanManager.unban_player with banId: " .. tostring(banId))
     local ok = BanManager.unban_player(tostring(banId))
+    
+    logger.debug("UNBAN DEBUG: BanManager.unban_player returned: " .. tostring(ok))
+    
     if ok then
+        logger.info("UNBAN DEBUG: Successfully unbanned player with banId: " .. tostring(banId) .. " by admin: " .. admin_name)
         TriggerClientEvent('anticheat:notify', src, 'Player unbanned successfully')
     else
-        TriggerClientEvent('anticheat:notify', src, 'Unban failed')
+        logger.error("UNBAN DEBUG: Failed to unban player with banId: " .. tostring(banId) .. " by admin: " .. admin_name)
+        TriggerClientEvent('anticheat:notify', src, 'Unban failed - ban not found')
     end
 end)
 
@@ -106,10 +126,24 @@ RegisterNetEvent('banPlayer', function(targetId)
         local reason = "Manual ban"
         local details = { admin = GetPlayerName(src), time = 0 }
 
+        print("PANEL DEBUG: Ban event triggered for player " .. targetId .. " by admin " .. GetPlayerName(src))
+        print("PANEL DEBUG: Checking screenshot availability...")
+        print("PANEL DEBUG: _G.exports exists: " .. tostring(_G.exports ~= nil))
+        
+        if _G.exports then
+            print("PANEL DEBUG: screenshot-basic export exists: " .. tostring(_G.exports['screenshot-basic'] ~= nil))
+        end
+
         if _G.exports and _G.exports['screenshot-basic'] then
+            print("PANEL DEBUG: Taking screenshot before ban...")
             DiscordLogger.request_screenshot(tonumber(targetId), "Ban: Manual ban", function(image)
+                print("PANEL DEBUG: Screenshot callback received for player " .. targetId)
+                print("PANEL DEBUG: Image data received: " .. tostring(image ~= nil))
                 if image then
                     details.screenshot = image
+                    print("PANEL DEBUG: Screenshot assigned to details")
+                else
+                    print("PANEL DEBUG: No screenshot data received")
                 end
                 local ok = BanManager.ban_player(tonumber(targetId), reason, details)
                 if ok then
@@ -117,6 +151,7 @@ RegisterNetEvent('banPlayer', function(targetId)
                 end
             end)
         else
+            print("PANEL DEBUG: Screenshot not available, banning without screenshot")
             local ok = BanManager.ban_player(tonumber(targetId), reason, details)
             if ok then
                 print(("Player %s was banned by admin %s"):format(GetPlayerName(targetId), GetPlayerName(src)))
@@ -150,19 +185,32 @@ end)
 RegisterNetEvent('SecureServe:Panel:RequestBans', function(requestId)
     local src = source
     if not IsMenuAdmin(src) then return end
+    
+    logger.debug("BAN FETCH DEBUG: Requesting bans for admin " .. GetPlayerName(src) .. " (ID: " .. src .. ")")
+    
     local bans = BanManager.get_all_bans() or {}
+    logger.debug("BAN FETCH DEBUG: BanManager.get_all_bans() returned " .. #bans .. " bans")
+    
     if not bans or #bans == 0 then
+        logger.debug("BAN FETCH DEBUG: No bans from BanManager, trying to load from file")
         local fileBans = loadBans()
         if type(fileBans) == "table" then
             bans = fileBans
+            logger.debug("BAN FETCH DEBUG: Loaded " .. #bans .. " bans from file")
+        else
+            logger.debug("BAN FETCH DEBUG: Failed to load bans from file")
         end
     end
+    
     local mapped = {}
-    for _, ban in ipairs(bans) do
+    for i, ban in ipairs(bans) do
+        logger.debug("BAN FETCH DEBUG: Processing ban " .. i .. " - ID: " .. tostring(ban.id) .. ", Player: " .. tostring(ban.player_name))
+        
         local ids = ban.identifiers or {}
         local expires = tonumber(ban.expires or 0) or 0
         local expireText = expires > 0 and os.date("%Y-%m-%d %H:%M:%S", expires) or "Permanent"
-        table.insert(mapped, {
+        
+        local mappedBan = {
             id = tostring(ban.id or ""),
             name = ban.player_name or "Unknown",
             reason = ban.reason or ban.detection or "",
@@ -171,8 +219,13 @@ RegisterNetEvent('SecureServe:Panel:RequestBans', function(requestId)
             ip = ids.ip or ids.endpoint or "",
             hwid1 = ids.fivem or ids.guid or "",
             expire = expireText
-        })
+        }
+        
+        logger.debug("BAN FETCH DEBUG: Mapped ban - ID: " .. mappedBan.id .. ", Name: " .. mappedBan.name)
+        table.insert(mapped, mappedBan)
     end
+    
+    logger.debug("BAN FETCH DEBUG: Sending " .. #mapped .. " mapped bans to client")
     TriggerClientEvent('SecureServe:Panel:SendBans', src, mapped, requestId)
 end)
 

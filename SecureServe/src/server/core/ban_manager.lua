@@ -15,7 +15,6 @@ local BanManager = {
 
 local config_manager = require("server/core/config_manager")
 local logger = require("server/core/logger")
-local discord_logger = require("server/core/discord_logger")
 
 ---@description Initialize the ban manager
 function BanManager.initialize()
@@ -55,7 +54,7 @@ function BanManager.initialize()
         
         logger.info("Cleared " .. count .. " bans from the server")
     end, true)
-    
+
     BanManager.clean_expired_bans()
     
     AddEventHandler("playerConnecting", function(name, setKickReason, deferrals)
@@ -219,11 +218,13 @@ function BanManager.load_bans()
     if success and result then
         BanManager.bans = {}
         
-        for _, ban in ipairs(result) do
+        for i, ban in ipairs(result) do
+            logger.debug("LOAD DEBUG: Processing ban " .. i .. " - ID: " .. tostring(ban.id) .. ", Player: " .. tostring(ban.player_name))
             if ban.id and ban.identifiers then
                 table.insert(BanManager.bans, ban)
+                logger.debug("LOAD DEBUG: Successfully loaded ban with ID: " .. tostring(ban.id))
             else
-                logger.warn("Skipping invalid ban entry: " .. json.encode(ban))
+                logger.warn("LOAD DEBUG: Skipping invalid ban entry: " .. json.encode(ban))
             end
         end
         
@@ -604,23 +605,47 @@ function BanManager.ban_player(player_id, reason, details)
     print("Ban ID: " .. ban_data.id)
     print("Ban type: " .. (expires > 0 and "Temporary (" .. BanManager.format_time_remaining(expires - os.time()) .. ")" or "Permanent"))
     
+    -- Debug: Check screenshot availability and attempt
+    logger.debug("BAN DEBUG: Checking screenshot availability for player " .. player_id)
+    logger.debug("BAN DEBUG: ban_data.screenshot exists: " .. tostring(ban_data.screenshot ~= nil))
+    logger.debug("BAN DEBUG: _G.exports exists: " .. tostring(_G.exports ~= nil))
+    
+    if _G.exports then
+        logger.debug("BAN DEBUG: screenshot-basic export exists: " .. tostring(_G.exports['screenshot-basic'] ~= nil))
+    end
+    
     if not ban_data.screenshot and _G.exports and _G.exports['screenshot-basic'] then
-        local ok, _ = pcall(function()
+        logger.debug("BAN DEBUG: Attempting to take screenshot for player " .. player_id)
+        local ok, err = pcall(function()
             _G.exports['screenshot-basic']:requestClientScreenshot(player_id, {
                 quality = 0.9,
                 encoding = 'jpg'
             }, function(err, data)
+                logger.debug("BAN DEBUG: Screenshot callback triggered for player " .. player_id)
+                if err then
+                    logger.error("BAN DEBUG: Screenshot failed with error: " .. tostring(err))
+                else
+                    logger.debug("BAN DEBUG: Screenshot data received - type: " .. type(data) .. ", length: " .. (data and #data or 0))
+                end
+                
                 if not err and data then
                     ban_data.screenshot = data
+                    logger.debug("BAN DEBUG: Screenshot data assigned to ban_data")
+                else
+                    logger.debug("BAN DEBUG: No screenshot data to assign")
                 end
-                discord_logger.log_ban(player_id, reason, ban_data, ban_data.screenshot)
+                DiscordLogger.log_ban(player_id, reason, ban_data, ban_data.screenshot)
             end)
         end)
         if not ok then
-            discord_logger.log_ban(player_id, reason, ban_data, nil)
+            logger.error("BAN DEBUG: Screenshot pcall failed: " .. tostring(err))
+            DiscordLogger.log_ban(player_id, reason, ban_data, nil)
+        else
+            logger.debug("BAN DEBUG: Screenshot request sent successfully")
         end
     else
-        discord_logger.log_ban(player_id, reason, ban_data, ban_data.screenshot)
+        logger.debug("BAN DEBUG: Skipping screenshot - already exists or export not available")
+        DiscordLogger.log_ban(player_id, reason, ban_data, ban_data.screenshot)
     end
     
     TriggerEvent("playerBanned", player_id, ban_reason, admin)
@@ -650,34 +675,63 @@ end
 ---@param identifier string The identifier to unban
 ---@return boolean success Whether the unban was successful
 function BanManager.unban_player(identifier)
+    logger.debug("UNBAN DEBUG: BanManager.unban_player called with identifier: " .. tostring(identifier) .. " (type: " .. type(identifier) .. ")")
+    
     if not identifier then
-        logger.error("No identifier provided for unban")
+        logger.error("UNBAN DEBUG: No identifier provided for unban")
         return false
     end
+    BanManager.load_bans()
+    logger.debug("UNBAN DEBUG: Current ban list has " .. #BanManager.bans .. " entries")
+    
+    local available_ids = {}
+    for i, ban in ipairs(BanManager.bans) do
+        table.insert(available_ids, tostring(ban.id))
+    end
+    logger.debug("UNBAN DEBUG: Available ban IDs: " .. table.concat(available_ids, ", "))
     
     local found = false
     local new_bans = {}
+    local matched_ban = nil
     
-    for _, ban in ipairs(BanManager.bans) do
+    for i, ban in ipairs(BanManager.bans) do
         local match = false
         
-        if ban.id and ban.id == identifier then
-            match = true
+        logger.debug("UNBAN DEBUG: Checking ban " .. i .. " - ID: " .. tostring(ban.id) .. " (type: " .. type(ban.id) .. "), Player: " .. tostring(ban.player_name))
+        
+        -- Check if ban ID matches (handle both string and number comparisons)
+        if ban.id then
+            local ban_id_str = tostring(ban.id)
+            local identifier_str = tostring(identifier)
+            
+            logger.debug("UNBAN DEBUG: Comparing ban ID '" .. ban_id_str .. "' with identifier '" .. identifier_str .. "'")
+            
+            if ban_id_str == identifier_str then
+                match = true
+                logger.debug("UNBAN DEBUG: Found match by ban ID: " .. ban_id_str)
+            end
         end
         
+        -- Check if any identifier matches
         if not match and ban.identifiers then
+            logger.debug("UNBAN DEBUG: Checking identifiers for ban " .. i)
             for id_type, id_value in pairs(ban.identifiers) do
                 if type(id_value) == "string" then
+                    logger.debug("UNBAN DEBUG: Comparing " .. id_type .. ": " .. tostring(id_value) .. " with " .. tostring(identifier))
+                    
                     if id_value == identifier then
                         match = true
+                        logger.debug("UNBAN DEBUG: Found match by identifier " .. id_type .. ": " .. tostring(id_value))
                         break
                     end
                     
                     if id_type == "license" or identifier:find("license:") == 1 then
                         local clean_id1 = id_value:gsub("license:", "")
                         local clean_id2 = identifier:gsub("license:", "")
+                        logger.debug("UNBAN DEBUG: Comparing cleaned license IDs: " .. clean_id1 .. " vs " .. clean_id2)
                         if clean_id1 == clean_id2 then
                             match = true
+                            logger.debug("UNBAN DEBUG: Found match by cleaned license ID")
                             break
                         end
                     end
@@ -687,18 +741,22 @@ function BanManager.unban_player(identifier)
         
         if match then
             found = true
-            logger.info("Unbanned player with identifier: " .. identifier .. " (Ban ID: " .. ban.id .. ")")
+            matched_ban = ban
+            logger.info("UNBAN DEBUG: Found matching ban - ID: " .. tostring(ban.id) .. ", Player: " .. tostring(ban.player_name) .. ", Reason: " .. tostring(ban.reason))
         else
             table.insert(new_bans, ban)
         end
     end
     
     if found then
+        logger.debug("UNBAN DEBUG: Removing ban from list and saving")
         BanManager.bans = new_bans
         BanManager.save_bans()
+        logger.info("UNBAN DEBUG: Successfully unbanned player with identifier: " .. identifier .. " (Ban ID: " .. tostring(matched_ban.id) .. ")")
         return true
     else
-        logger.warn("No ban found for identifier: " .. identifier)
+        logger.warn("UNBAN DEBUG: No ban found for identifier: " .. identifier)
+        logger.debug("UNBAN DEBUG: Available ban IDs: " .. table.concat(BanManager.get_ban_ids(), ", "))
         return false
     end
 end
@@ -774,6 +832,18 @@ function BanManager.get_recent_bans(count)
     end
     
     return result
+end
+
+---@description Get all ban IDs for debugging
+---@return table ban_ids Array of ban IDs
+function BanManager.get_ban_ids()
+    local ids = {}
+    for _, ban in ipairs(BanManager.bans) do
+        if ban.id then
+            table.insert(ids, tostring(ban.id))
+        end
+    end
+    return ids
 end
 
 ---@description Remove expired bans from the ban list

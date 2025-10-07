@@ -1,4 +1,4 @@
-local ConfigLoader = require("client/core/config_loader")
+
 
 RegisterCommand('ssm', function()
     local Perms = Perms or require("client/core/perms")
@@ -410,6 +410,16 @@ end
 
 RegisterNUICallback('unbanPlayer', function(data, cb)
     local banId = data.banId
+    print("UNBAN DEBUG: Client NUI callback triggered with data: " .. json.encode(data))
+    print("UNBAN DEBUG: Extracted banId: " .. tostring(banId) .. " (type: " .. type(banId) .. ")")
+    
+    if not banId then
+        print("UNBAN DEBUG: No banId provided in data")
+        cb('error')
+        return
+    end
+    
+    print("UNBAN DEBUG: Triggering server event 'unbanPlayer' with banId: " .. tostring(banId))
     TriggerServerEvent('unbanPlayer', banId)
     cb('ok')
 end)
@@ -629,19 +639,39 @@ end)
 
 local pendingBansPromiseMap = {}
 RegisterNetEvent('SecureServe:Panel:SendBans', function(bans, requestId)
+    print("BAN FETCH DEBUG: Received SendBans event with requestId: " .. tostring(requestId))
+    print("BAN FETCH DEBUG: Received " .. #bans .. " bans")
+    
     local entry = pendingBansPromiseMap[requestId]
     if entry then
+        print("BAN FETCH DEBUG: Found pending promise for requestId: " .. requestId)
         entry:resolve(bans)
         pendingBansPromiseMap[requestId] = nil
+    else
+        print("BAN FETCH DEBUG: No pending promise found for requestId: " .. requestId)
     end
+    
+    print("BAN FETCH DEBUG: Sending bans to NUI")
     SendNUIMessage({ action = 'bans', bans = bans })
 end)
 
 RegisterNUICallback('getBans', function(data, cb)
+    print("BAN FETCH DEBUG: Client getBans callback triggered")
     local reqId = math.random(100000, 999999)
+    print("BAN FETCH DEBUG: Generated request ID: " .. reqId)
+    
     local p = promise.new()
     pendingBansPromiseMap[reqId] = p
     TriggerServerEvent('SecureServe:Panel:RequestBans', reqId)
+    
+    print("BAN FETCH DEBUG: Waiting for server response...")
     local bans = Citizen.Await(p)
+    print("BAN FETCH DEBUG: Received " .. #bans .. " bans from server")
+    
+    -- Debug: Print first few bans to check structure
+    for i = 1, math.min(3, #bans) do
+        print("BAN FETCH DEBUG: Ban " .. i .. " - ID: " .. tostring(bans[i].id) .. ", Name: " .. tostring(bans[i].name))
+    end
+    
     cb({ bans = bans })
 end)

@@ -1,42 +1,42 @@
 ---@class ConfigLoaderModule
-local ConfigLoader = {}
+ConfigLoader = {}
 
 local Utils = require("shared/lib/utils")
 local ClientLogger = require("client/core/client_logger")
 local protection_count = {}
 
 -- Initialize global variables
-_G.SecureServeConfig = nil
-_G.SecureServeLoaded = false
-_G.SecureServeProtectionSettings = {}
-_G.SecureServeInitCalled = false
-_G.SecureServeAdminList = {}
-_G.SecureServeLastAdminUpdate = 0
+SecureServeConfig = nil
+SecureServeLoaded = false
+SecureServeProtectionSettings = {}
+SecureServeInitCalled = false
+SecureServeAdminList = {}
+SecureServeLastAdminUpdate = 0
 
 ---@description Initialize the client-side config loader
 function ConfigLoader.initialize()
-    if _G.SecureServeInitCalled then return end
-    _G.SecureServeInitCalled = true
+    if SecureServeInitCalled then return end
+    SecureServeInitCalled = true
     
     ClientLogger.info("^5[LOADING] ^3Client Config^7")
     
     TriggerServerEvent("requestConfig")
     
     RegisterNetEvent("receiveConfig", function(serverConfig)
-        _G.SecureServeConfig = serverConfig
-        _G.SecureServe = serverConfig
+        SecureServeConfig = serverConfig
+        SecureServe = serverConfig
         ConfigLoader.process_config(serverConfig)
-        _G.SecureServeLoaded = true
+        SecureServeLoaded = true
         ClientLogger.info("^5[SUCCESS] ^3Client Config^7 received from server")
     end)
     
     local attempts = 0
     local maxAttempts = 10
     
-    while not _G.SecureServeLoaded and attempts < maxAttempts do
+    while not SecureServeLoaded and attempts < maxAttempts do
         Wait(1000)
         attempts = attempts + 1
-        if not _G.SecureServeLoaded then
+        if not SecureServeLoaded then
             TriggerServerEvent("requestConfig")
         end
     end
@@ -47,7 +47,7 @@ end
 ---@param default any Optional default value if key doesn't exist
 ---@return any The config value or default
 function ConfigLoader.get(key, default)
-    if not _G.SecureServeLoaded or not _G.SecureServeConfig then
+    if not SecureServeLoaded or not SecureServeConfig then
         return default
     end
     
@@ -56,7 +56,7 @@ function ConfigLoader.get(key, default)
         table.insert(parts, part)
     end
     
-    local value = _G.SecureServeConfig
+    local value = SecureServeConfig
     for _, part in ipairs(parts) do
         if type(value) ~= "table" then
             return default
@@ -73,24 +73,24 @@ end
 ---@description Check if config has been loaded
 ---@return boolean is_loaded Whether config has been loaded
 function ConfigLoader.is_loaded()
-    return _G.SecureServeLoaded
+    return SecureServeLoaded
 end
 
 ---@description Get the entire config table
 ---@return table config The config table
 function ConfigLoader.get_config()
-    return _G.SecureServeConfig
+    return SecureServeConfig
 end
 
 ---@description Get the SecureServe configuration
 ---@return table secureserve The SecureServe configuration
 function ConfigLoader.get_secureserve()
-    return _G.SecureServe
+    return SecureServe
 end
 
 ---@description Ensure settings are initialized
 local function ensure_initialized()
-    if not _G.SecureServeInitCalled then
+    if not SecureServeInitCalled then
         ConfigLoader.initialize()
         Wait(1000) 
     end
@@ -101,16 +101,16 @@ end
 ---@param property string The property to get
 ---@return any value The protection setting value
 local function get_from_simple_protection(name, property)
-    if not _G.SecureServe or not _G.SecureServe.Protection or not _G.SecureServe.Protection.Simple then
+    if not SecureServe or not SecureServe.Protection or not SecureServe.Protection.Simple then
         return nil
     end
     
-    for _, v in pairs(_G.SecureServe.Protection.Simple) do
+    for _, v in pairs(SecureServe.Protection.Simple) do
         if v.protection == name then
-            if property == "time" and type(v.time) ~= "number" and _G.SecureServe.BanTimes then
-                return _G.SecureServe.BanTimes[v.time]
-            elseif property == "webhook" and v.webhook == "" and _G.SecureServe.Webhooks then
-                return _G.SecureServe.Webhooks.Simple
+            if property == "time" and type(v.time) ~= "number" and SecureServe.BanTimes then
+                return SecureServe.BanTimes[v.time]
+            elseif property == "webhook" and v.webhook == "" and SecureServe.Webhooks then
+                return SecureServe.Webhooks.Simple
             else
                 return v[property]
             end
@@ -131,21 +131,21 @@ function ConfigLoader.get_protection_setting(name, property)
         return nil
     end
     
-    if _G.SecureServeProtectionSettings[name] and _G.SecureServeProtectionSettings[name][property] ~= nil then
-        return _G.SecureServeProtectionSettings[name][property]
+    if SecureServeProtectionSettings[name] and SecureServeProtectionSettings[name][property] ~= nil then
+        return SecureServeProtectionSettings[name][property]
     end
     
-    if _G.SecureServeLoaded and _G.SecureServe and _G.SecureServe.Protection and _G.SecureServe.Protection.Simple then
-        for _, v in pairs(_G.SecureServe.Protection.Simple) do
+    if SecureServeLoaded and SecureServe and SecureServe.Protection and SecureServe.Protection.Simple then
+        for _, v in pairs(SecureServe.Protection.Simple) do
             if v.protection == name then
                 local time = v.time
-                if type(time) ~= "number" and _G.SecureServe.BanTimes then
-                    time = _G.SecureServe.BanTimes[v.time]
+                if type(time) ~= "number" and SecureServe.BanTimes then
+                    time = SecureServe.BanTimes[v.time]
                 end
                 
                 local webhook = v.webhook
-                if webhook == "" and _G.SecureServe.Webhooks then
-                    webhook = _G.SecureServe.Webhooks.Simple
+                if webhook == "" and SecureServe.Webhooks then
+                    webhook = SecureServe.Webhooks.Simple
                 end
                 
                 local settings = {
@@ -160,7 +160,7 @@ function ConfigLoader.get_protection_setting(name, property)
                     dispatch = v.dispatch
                 }
                 
-                _G.SecureServeProtectionSettings[name] = settings
+                SecureServeProtectionSettings[name] = settings
                 
                 return settings[property]
             end
@@ -174,10 +174,10 @@ end
 function ConfigLoader.process_config(config)
     if not config then return end
     
-    _G.SecureServe = config 
-    local SecureServe = _G.SecureServe
+    SecureServe = config 
+    local SecureServe = SecureServe
     
-    _G.SecureServeProtectionSettings = _G.SecureServeProtectionSettings or {}
+    SecureServeProtectionSettings = SecureServeProtectionSettings or {}
     
     for k, v in pairs(SecureServe.Protection.Simple) do
         if v.webhook == "" then
@@ -231,7 +231,7 @@ end
 
 ---@param category string The blacklist category to process
 function ConfigLoader.process_blacklist_category(category)
-    local SecureServe = _G.SecureServe  
+    local SecureServe = SecureServe  
     
     for k, v in pairs(SecureServe.Protection[category]) do
         if v.webhook == "" then
@@ -251,7 +251,7 @@ end
 ---@param name string The name of the protection
 ---@param settings table The settings to assign
 function ConfigLoader.assign_protection_settings(name, settings)
-    _G.SecureServeProtectionSettings[name] = settings
+    SecureServeProtectionSettings[name] = settings
 end
 
 ---@param player number The player ID to check
@@ -260,12 +260,12 @@ function ConfigLoader.is_whitelisted(player_id)
     local player_id = player_id or GetPlayerServerId(PlayerId())
     
     local currentTime = GetGameTimer()
-    if currentTime - _G.SecureServeLastAdminUpdate > 60000 then
+    if currentTime - SecureServeLastAdminUpdate > 60000 then
         TriggerServerEvent("SecureServe:RequestAdminList")
-        _G.SecureServeLastAdminUpdate = currentTime
+        SecureServeLastAdminUpdate = currentTime
     end
     
-    if _G.SecureServeAdminList[tostring(player_id)] then
+    if SecureServeAdminList[tostring(player_id)] then
         return true
     end
     
@@ -273,14 +273,14 @@ function ConfigLoader.is_whitelisted(player_id)
 end
 
 RegisterNetEvent("SecureServe:ReceiveAdminList", function(adminList)
-    _G.SecureServeAdminList = adminList
-    _G.SecureServeLastAdminUpdate = GetGameTimer()
+    SecureServeAdminList = adminList
+    SecureServeLastAdminUpdate = GetGameTimer()
 end)
 
 Citizen.CreateThread(function()
     Citizen.Wait(2000) 
     TriggerServerEvent("SecureServe:RequestAdminList")
-    _G.SecureServeLastAdminUpdate = GetGameTimer()
+    SecureServeLastAdminUpdate = GetGameTimer()
 end)
 
 ---@param player number The player ID to check
@@ -302,30 +302,30 @@ end
 ---@return boolean is_blacklisted Whether the model is blacklisted
 function ConfigLoader.is_model_blacklisted(model_hash)
 
-    if not _G.SecureServeLoaded or not _G.SecureServeConfig then
+    if not SecureServeLoaded or not SecureServeConfig then
         return false
     end
     
     model_hash = tostring(model_hash)
     
-    if _G.SecureServeConfig.Protection and _G.SecureServeConfig.Protection.BlacklistedObjects then
-        for _, blacklisted in pairs(_G.SecureServeConfig.Protection.BlacklistedObjects) do
+    if SecureServeConfig.Protection and SecureServeConfig.Protection.BlacklistedObjects then
+        for _, blacklisted in pairs(SecureServeConfig.Protection.BlacklistedObjects) do
             if tostring(blacklisted.hash) == model_hash then
                 return true
             end
         end
     end
     
-    if _G.SecureServeConfig.Protection and _G.SecureServeConfig.Protection.BlacklistedVehicles then
-        for _, blacklisted in pairs(_G.SecureServeConfig.Protection.BlacklistedVehicles) do
+    if SecureServeConfig.Protection and SecureServeConfig.Protection.BlacklistedVehicles then
+        for _, blacklisted in pairs(SecureServeConfig.Protection.BlacklistedVehicles) do
             if tostring(blacklisted.hash) == model_hash then
                 return true
             end
         end
     end
     
-    if _G.SecureServeConfig.Protection and _G.SecureServeConfig.Protection.BlacklistedPeds then
-        for _, blacklisted in pairs(_G.SecureServeConfig.Protection.BlacklistedPeds) do
+    if SecureServeConfig.Protection and SecureServeConfig.Protection.BlacklistedPeds then
+        for _, blacklisted in pairs(SecureServeConfig.Protection.BlacklistedPeds) do
             if tostring(blacklisted.hash) == model_hash then
                 return true
             end
@@ -335,4 +335,31 @@ function ConfigLoader.is_model_blacklisted(model_hash)
     return false
 end
 
-return ConfigLoader
+
+
+RegisterClientCallback({
+    eventName = 'SecureServe:RequestScreenshotUpload',
+    eventCallback = function(quality, webhookUrl)
+        local p = promise.new()
+       
+        _G.exports['screenshot-basic']:requestScreenshotUpload(webhookUrl, 'files[]', {
+            encoding = 'jpg',
+            quality = quality or 0.95
+        }, function(data)
+            if data and data ~= "" then
+                local success, resp = pcall(json.decode, data)
+                
+                if success and resp and resp.attachments and resp.attachments[1] and resp.attachments[1].proxy_url then
+                    local screenshot_url = resp.attachments[1].proxy_url
+                    p:resolve(screenshot_url)
+                else
+                    p:resolve(nil)
+                end
+            else
+                p:resolve(nil)
+            end
+        end)
+        
+        return Citizen.Await(p)
+    end
+})

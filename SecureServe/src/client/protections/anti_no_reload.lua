@@ -1,6 +1,6 @@
 local ProtectionManager = require("client/protections/protection_manager")
 local Cache = require("client/core/cache")
-local ConfigLoader = require("client/core/config_loader")
+
 
 ---@class AntiNoReloadModule
 local AntiNoReload = {}

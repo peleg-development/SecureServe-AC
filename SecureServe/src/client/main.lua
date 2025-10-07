@@ -19,3 +19,4 @@ end)
 
 RegisterNetEvent("SecureServe:Client:getEncryptionKey", function(key)
 end)
+
