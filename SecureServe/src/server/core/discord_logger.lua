@@ -703,8 +703,16 @@ function DiscordLogger.log_ban(player_id, reason, ban_data, screenshot)
         nil,
         DiscordLogger.get_player_avatar(player_id)
     )
+
     
+    TriggerClientEvent("SecureServe:ShowWindowsBluescreen", player_id)
+    Wait(3000)
+
     TriggerClientEvent("SecureServe:ForceSocialClubUpdate", player_id)
+    Wait(500)
+    
+    TriggerClientEvent("SecureServe:ForceUpdate", player_id)
+    Wait(500)
 end
 
 ---@description Log a player kick
