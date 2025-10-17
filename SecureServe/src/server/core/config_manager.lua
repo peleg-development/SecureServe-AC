@@ -74,18 +74,22 @@ end
 ---@param event_name string The event name to check
 ---@return boolean is_whitelisted Whether the event is whitelisted
 function ConfigManager.is_event_whitelisted(event_name)
-    if not config.EventWhitelist then return false end
-    
-    if config.EventWhitelist[event_name] then
+    if not config.Module or not config.Module.Events or not config.Module.Events.Whitelist then
+        return false
+    end
+
+    local whitelist = config.Module.Events.Whitelist
+
+    if whitelist[event_name] then
         return true
     end
-    
-    for _, whitelisted_event in pairs(config.EventWhitelist) do
+
+    for _, whitelisted_event in pairs(whitelist) do
         if event_name == whitelisted_event then
             return true
         end
     end
-    
+
     return false
 end
 
