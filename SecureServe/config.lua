@@ -122,6 +122,12 @@ SecureServe.ServerSecurity = {
     }
 }
 
+-- @ EVENT WHITELIST FOR CORE EVENT WRAPPER
+SecureServe.EventWhitelist = {
+    ["__cfx_internal:commandFallback"] = true,
+    --["playerJoining"] = true, -- Example of how to whitelist an event
+}
+
 ---@!!!IMPORTANT!!!
 -- If you wish to enjoy everything secureserve has to offer and want secureserve to work properly enable the option: EnableModule
 SecureServe.Module = {
