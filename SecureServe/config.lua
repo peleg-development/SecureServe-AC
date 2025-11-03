@@ -262,12 +262,57 @@ SecureServe.Detections = {
         
         -- Resource Management
         ["Anti Resource Stopper"] = { enabled = true, action = "Ban" },
-        ["Anti Resource Starter"] = { enabled = true, action = "Ban" }
+        ["Anti Resource Starter"] = { enabled = true, action = "Ban" },
+        
+        -- Vehicle Protections
+        ["Anti Vehicle Modifier"] = { 
+            enabled = true, 
+            action = "Ban",
+            default = 1.5, -- Maximum allowed engine power multiplier
+            defaultr = 1.5, -- Maximum allowed torque multiplier  
+            defaults = 50.0, -- Minimum vehicle mass in kg
+            tolerance = 5.0 -- Maximum traction/grip multiplier
+        },
+        
+        -- Animation & Task Protections
+        ["Anti Animation Injection"] = { 
+            enabled = true, 
+            action = "Ban",
+            limit = 10 -- Max animations per time window before action
+        },
+        ["Anti Blacklisted Task"] = { 
+            enabled = true, 
+            action = "Ban",
+            limit = 20 -- Max ClearPedTasks calls per time window
+        }
     }
 }
 
-
-
+-- Server-Side Protection Settings
+SecureServe.ServerProtections = {
+    ["Anti Ped Spam"] = {
+        enabled = true,
+        action = "Ban",
+        max_peds_per_player = 15, -- Maximum peds a player can spawn
+        rapid_spawn_threshold = 5, -- Peds spawned in short time = ban
+        rapid_spawn_window = 5000 -- Time window in ms for rapid spawn check
+    },
+    
+    ["Anti Fake Death"] = {
+        enabled = true,
+        action = "Ban",
+        death_spam_threshold = 5, -- Max deaths in time window
+        death_spam_window = 30000 -- Time window in ms (30 seconds)
+    },
+    
+    ["Anti Event Flood"] = {
+        enabled = true,
+        action = "Ban",
+        max_events_per_second = 25, -- Max events per player per second
+        suspicious_event_threshold = 50, -- Total events that trigger warning
+        blocked_event_threshold = 5 -- Times player can trigger blocked events
+    }
+}
 
 SecureServe.OCR = { -- Words on scrren that will get player banned
 	"FlexSkazaMenu","SidMenu","Lynx8","LynxEvo","Maestro Menu","redEngine","HamMafia","HamHaxia","Dopameme","redMENU","Desudo","explode","gamesense","Anticheat","Tapatio","Malossi","RedStonia","Chocohax",
