@@ -76,10 +76,18 @@ new Vue({
         objectName: '',
         pedModel: '',
         notifications: [],
-        notificationId: 0
+        notificationId: 0,
+        showConfirmation: false,
+        confirmationTitle: '',
+        confirmationMessage: '',
+        confirmationCallback: null,
+        isLoadingPlayers: false,
+        isLoadingBans: false,
+        isLoadingStats: false
     },
     methods: {
         fetchDashboardStats() {
+            this.isLoadingStats = true;
             fetch(`https://${GetParentResourceName()}/getDashboardStats`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -91,10 +99,14 @@ new Vue({
                 this.activeCheaters = data.activeCheaters;
                 this.serverUptime   = data.serverUptime;
                 this.peakPlayers    = data.peakPlayers;
+                this.isLoadingStats = false;
               })
-              .catch(() => {})
+              .catch(() => {
+                this.isLoadingStats = false;
+              })
         },
         fetchPlayers() {
+            this.isLoadingPlayers = true;
             fetch(`https://${GetParentResourceName()}/getPlayers`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -105,8 +117,17 @@ new Vue({
                 if (data && data.players) {
                   this.players = data.players;
                 }
+                this.isLoadingPlayers = false;
             })
-            .catch(() => {})
+            .catch(() => {
+                this.isLoadingPlayers = false;
+            })
+        },
+        confirmKickPlayer(player) {
+            this.showConfirmation = true;
+            this.confirmationTitle = 'Confirm Kick';
+            this.confirmationMessage = `Are you sure you want to kick ${player.name} (ID: ${player.id})?`;
+            this.confirmationCallback = () => this.kickPlayer(player.id);
         },
         kickPlayer(playerId) {
             fetch(`https://${GetParentResourceName()}/kickPlayer`, {
@@ -128,6 +149,12 @@ new Vue({
                 this.showNotification(`Error kicking player ${playerId}`, 'error');
             });
         },
+        confirmBanPlayer(player) {
+            this.showConfirmation = true;
+            this.confirmationTitle = 'Confirm Ban';
+            this.confirmationMessage = `Are you sure you want to ban ${player.name} (ID: ${player.id})? This action cannot be undone easily.`;
+            this.confirmationCallback = () => this.banPlayer(player.id);
+        },
         banPlayer(playerId) {
             fetch(`https://${GetParentResourceName()}/banPlayer`, {
                 method: 'POST',
@@ -139,6 +166,7 @@ new Vue({
                 if (data.success) {
                     this.showNotification(`Player ${playerId} banned successfully`, 'success');
                     this.fetchPlayers();
+                    this.fetchBans();
                 } else {
                     this.showNotification(`Failed to ban player ${playerId}`, 'error');
                 }
@@ -168,6 +196,7 @@ new Vue({
             });
         },
         fetchBans() {
+            this.isLoadingBans = true;
             fetch(`https://${GetParentResourceName()}/getBans`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -178,8 +207,17 @@ new Vue({
                 if (data && data.bans) {
                   this.bans = data.bans;
                 }
+                this.isLoadingBans = false;
             })
-            .catch(() => {})
+            .catch(() => {
+                this.isLoadingBans = false;
+            })
+        },
+        confirmUnbanPlayer(ban) {
+            this.showConfirmation = true;
+            this.confirmationTitle = 'Confirm Unban';
+            this.confirmationMessage = `Are you sure you want to unban ${ban.name}?`;
+            this.confirmationCallback = () => this.unbanPlayer(ban.id);
         },
         unbanPlayer(banId) {
             fetch(`https://${GetParentResourceName()}/unbanPlayer`, {
@@ -368,13 +406,36 @@ new Vue({
                 this.showNotification('Error executing server action.', 'error');
             });
         },        
+        confirmClearAllEntities() {
+            this.showConfirmation = true;
+            this.confirmationTitle = 'Confirm Clear All Entities';
+            this.confirmationMessage = 'Are you sure you want to clear all entities? This will delete all objects, peds, and vehicles on the server.';
+            this.confirmationCallback = () => this.clearAllEntities();
+        },
         clearAllEntities() {
-            this.showNotification('Clearing all entities', 'success');
+            this.showNotification('Clearing all entities', 'info');
             fetch(`https://${GetParentResourceName()}/clearAllEntities`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({})
+            })
+            .then(() => {
+                this.showNotification('All entities cleared successfully', 'success');
+            })
+            .catch(() => {
+                this.showNotification('Failed to clear entities', 'error');
             });
+        },
+        executeConfirmation() {
+            if (this.confirmationCallback) {
+                this.confirmationCallback();
+            }
+            this.showConfirmation = false;
+            this.confirmationCallback = null;
+        },
+        cancelConfirmation() {
+            this.showConfirmation = false;
+            this.confirmationCallback = null;
         },
         getOptionIcon(optionName) {
             const icons = {
