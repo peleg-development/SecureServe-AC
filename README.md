@@ -9,7 +9,7 @@
 - **Discord:** [Join Our Server](https://discord.gg/9AuTeZPgrX) for live support and updates.
 - **Docs:** [SecureServe Documentation](https://peleg.gitbook.io/secureserve/)
 - **Support the anticheat for future updates:** [KOFI](https://ko-fi.com/peleg)
-- **Please use the release beta or v versions only unless u want to the test latest version (might be bugged)!**
+- **V1.5 will comeout at 1/2026**
 
 SecureServe is a state-of-the-art anti-cheat solution designed specifically for FiveM servers. Combining advanced detection techniques with comprehensive server protection, it ensures a fair and secure gaming environment. This open-source script is completely free to use, modify, and extend.
 
