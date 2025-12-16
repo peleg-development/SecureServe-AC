@@ -76,7 +76,7 @@ Citizen.CreateThread(function()
             end)
             ischecking = true
         end
-        Citizen.Wait(5000)
+        Citizen.Wait(9000)
     end
 end)
 

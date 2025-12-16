@@ -1,28 +1,3 @@
 [
-    {
-        "id": "1",
-        "detection": "Attempted to spam objects with count of: 20",
-        "identifiers": {
-            "guid": "",
-            "tokens": [
-                "3:",
-                "4:",
-                "4:",
-                "4:",
-                "2:",
-                "5:"
-            ],
-            "discord": "discord:",
-            "license": "license:",
-            "ip": "ip:",
-            "xbl": "xbl:",
-            "live": "live:",
-            "endpoint": ""
-        },
-        "timestamp": 1759568290,
-        "expires": 0,
-        "reason": "Object Spam",
-        "admin": "System",
-        "player_name": "Hamburger"
-    }
+ 
 ]

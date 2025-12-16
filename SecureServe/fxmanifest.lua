@@ -2,7 +2,7 @@ fx_version "cerulean"
 game "gta5"
 
 author "SecureServe.net"
-version "1.2.1"
+version "1.4.0"
 
 files {
     "bans.json",
@@ -62,6 +62,7 @@ client_scripts {
     "src/panel/ingame/client.lua"
 }
 server_scripts {
+    "src/server/core/version.lua",
     "config.lua",
     "src/server/main.lua",
     "src/server/core/config_manager.lua",
