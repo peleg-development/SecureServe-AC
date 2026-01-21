@@ -1,39 +1,57 @@
 local ProtectionManager = require("client/protections/protection_manager")
-
 local Cache = require("client/core/cache")
 
 ---@class AntiInvisibleModule
-local AntiInvisible = {alpha_threshold = 50}
-local invisibilityDetections = 0
+local AntiInvisible = {
+    alpha_threshold = 50,
+    max_detections = 4,
+    reset_time = 60 
+}
+
+local detections = 0
+local last_detection_time = 0
 
 function AntiInvisible.initialize()
     if not ConfigLoader.get_protection_setting("Anti Invisible", "enabled") then return end
     
     Citizen.CreateThread(function()
         while true do
-            Citizen.Wait(3000)
+            Citizen.Wait(2000) 
             
-            if Cache.Get("hasPermission", "invisible") or Cache.Get("hasPermission", "all") or Cache.Get("isAdmin") then
-                goto continue
-            end
-
             local ped = Cache.Get("ped")
-            if not IsEntityVisible(ped) or GetEntityAlpha(ped) == 0 then
-                if
-                    HasModelLoaded(joaat("mp_f_freemode_01")) and
-                        HasModelLoaded(joaat("mp_m_freemode_01"))
-                 then
-                    SetEntityVisible(ped, true)
+            local is_exempt = Cache.Get("hasPermission", "invisible") or 
+                              Cache.Get("hasPermission", "all") or 
+                              Cache.Get("isAdmin")
+
+            local is_ignorable = IsCutscenePlaying() or 
+                                 IsPedDeadOrDying(ped, 1) or 
+                                 IsPlayerSwitchInProgress()
+
+            if not is_exempt and not is_ignorable then
+                
+                if not IsEntityVisible(ped) or GetEntityAlpha(ped) < AntiInvisible.alpha_threshold then
+                    
+                    SetEntityVisible(ped, true, 0)
                     ResetEntityAlpha(ped)
-                    invisibilityDetections = invisibilityDetections + 1
-                    if invisibilityDetections > 4 then
-                        invisibilityDetections = 0
-                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Invisible", webhook, time)
+
+                    if (GetGameTimer() - last_detection_time) > AntiInvisible.reset_time then
+                        detections = 0 
+                    end
+
+                    detections = detections + 1
+                    last_detection_time = GetGameTimer()
+
+                    if detections > AntiInvisible.max_detections then
+                        detections = 0
+                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", 
+                            nil, 
+                            "Anti Invisible (Alpha: " .. GetEntityAlpha(ped) .. ")", 
+                            webhook, 
+                           time
+                        )
                     end
                 end
             end
-            
-            ::continue::
         end
     end)
 end

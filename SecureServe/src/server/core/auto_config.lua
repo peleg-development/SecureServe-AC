@@ -306,8 +306,6 @@ function AutoConfig.get_whitelist(protection_type)
         whitelist = config.Module and config.Module.Events and config.Module.Events.Whitelist or {}
     elseif protection_type == "entity" then
         whitelist = config.Module and config.Module.Entity and config.Module.Entity.SecurityWhitelist or {}
-    elseif protection_type == "explosions" then
-        whitelist = config.Module and config.Module.Explosions and config.Module.Explosions.Whitelist or {}
     end
     
     return whitelist
@@ -321,7 +319,7 @@ function AutoConfig.is_resource_whitelisted(resource_name, protection_type)
     local config = SecureServe
     local whitelist = AutoConfig.get_whitelist(protection_type)
     
-    if protection_type == "events" or protection_type == "explosions" then
+    if protection_type == "events" then
         return whitelist[resource_name] == true
     elseif protection_type == "entity" then
         for _, entry in pairs(whitelist) do

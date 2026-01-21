@@ -32,6 +32,17 @@ Cache.LastUpdated = {}
 Cache.LastValues = {}   
 
 local updateThreads = {}
+---@param currentTime number The current game timer
+---@return number ped The current player ped
+local function get_ped(currentTime)
+    local ped = Cache.Values.ped
+    if not Cache.LastUpdated["ped"] or (currentTime - Cache.LastUpdated["ped"]) > Cache.UpdateIntervals.ped then
+        ped = PlayerPedId()
+        Cache.Values.ped = ped
+        Cache.LastUpdated["ped"] = currentTime
+    end
+    return ped
+end
 
 ---@description Initialize the cache
 function Cache.initialize()
@@ -56,11 +67,6 @@ function Cache.UpdateAll()
     local ped = PlayerPedId()
     Cache.Values.ped = ped
     
-    for k, v in pairs(Cache.Values) do
-        Cache.LastValues[k] = v
-        Cache.LastUpdated[k] = currentTime
-    end
-    
     Cache.Values.health = GetEntityHealth(ped)
     Cache.Values.armor = GetPedArmour(ped)
     Cache.Values.coords = GetEntityCoords(ped)
@@ -77,34 +83,35 @@ function Cache.UpdateAll()
     Cache.Values.isFalling = IsPedFalling(ped)
     Cache.Values.isInvisible = IsEntityVisible(ped) == 0
     Cache.Values.isAdmin = ConfigLoader.is_whitelisted(GetPlayerServerId(PlayerId())) 
+    
+    for k, v in pairs(Cache.Values) do
+        Cache.LastValues[k] = v
+        Cache.LastUpdated[k] = currentTime
+    end
 end
 
 function Cache.Get(key, subKey)
     local currentTime = GetGameTimer()
     local updateInterval = Cache.UpdateIntervals[key] or Cache.UpdateIntervals.default
     
-    -- Handle special case for permission check
     if key == "hasPermission" and subKey then
         Cache.CheckPermission(subKey)
         return Cache.Values.permissions[subKey] or false
     end
     
     if not Cache.LastUpdated[key] or (currentTime - Cache.LastUpdated[key]) > updateInterval then
-        Cache.ForceUpdate(key)
+        Cache.ForceUpdate(key, currentTime)
     end
     
     return Cache.Values[key]
 end
 
-function Cache.ForceUpdate(key)
-    local currentTime = GetGameTimer()
-    local ped = Cache.Values.ped
-    
-    if currentTime - (Cache.LastUpdated["ped"] or 0) > Cache.UpdateIntervals.ped then
-        ped = PlayerPedId()
-        Cache.Values.ped = ped
-        Cache.LastUpdated["ped"] = currentTime
-    end
+---@param key string The cache key to force update
+---@param currentTime number|nil The current game timer
+---@param ped number|nil The player ped to reuse
+function Cache.ForceUpdate(key, currentTime, ped)
+    local currentTime = currentTime or GetGameTimer()
+    local ped = ped or get_ped(currentTime)
     
     if key == "ped" then
     elseif key == "vehicle" then
@@ -166,15 +173,17 @@ function Cache.StartUpdateThreads()
         updateThreads[groupName] = Citizen.CreateThread(function()
             while true do
                 Citizen.Wait(groupData.interval)
+                local currentTime = GetGameTimer()
+                local ped
                 
                 if groupName == "slow" then
-                    local ped = PlayerPedId()
+                    ped = PlayerPedId()
                     Cache.Values.ped = ped
-                    Cache.LastUpdated["ped"] = GetGameTimer()
+                    Cache.LastUpdated["ped"] = currentTime
                 end
                 
                 for _, key in ipairs(groupData.keys) do
-                    Cache.ForceUpdate(key)
+                    Cache.ForceUpdate(key, currentTime, ped)
                 end
             end
         end)
@@ -184,8 +193,9 @@ end
 ---@description Request permission check from server
 function Cache.RequestPermissionCheck()
     TriggerServerEvent("SecureServe:RequestPermissions")
-    Cache.Values.permissionsLastUpdate = GetGameTimer()
-    Cache.LastUpdated["permissions"] = GetGameTimer()
+    local currentTime = GetGameTimer()
+    Cache.Values.permissionsLastUpdate = currentTime
+    Cache.LastUpdated["permissions"] = currentTime
 end
 
 ---@description Check if player has specific permission
@@ -209,9 +219,10 @@ AddEventHandler("gameEventTriggered", function(name, args)
     if name == "CEventNetworkEntityDamage" then
         local victim = args[1]
         if victim == Cache.Values.ped then
+            local currentTime = GetGameTimer()
             Cache.Values.damageTaken = true
-            Cache.ForceUpdate("health")
-            Cache.ForceUpdate("armor")
+            Cache.ForceUpdate("health", currentTime, Cache.Values.ped)
+            Cache.ForceUpdate("armor", currentTime, Cache.Values.ped)
         end
     end
 end)

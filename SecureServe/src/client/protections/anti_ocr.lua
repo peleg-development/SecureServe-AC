@@ -7,40 +7,65 @@ local AntiOcr = {
 
 ---@description Initialize Anti OCR protection
 function AntiOcr.initialize()
+    if not SecureServe.OCR then return end
     
-    RegisterNUICallback("checktext", function(data)
+    local ocrWords = {}
+    local screenshotInterval = 5500
+    
+    if type(SecureServe.OCR) == "table" then
+        if SecureServe.OCR.Words then
+            ocrWords = SecureServe.OCR.Words
+            screenshotInterval = SecureServe.OCR.ScreenshotInterval or 5500
+        else
+            screenshotInterval = SecureServe.OCR.ScreenshotInterval or 5500
+            
+            for key, value in pairs(SecureServe.OCR) do
+                if type(key) == "number" and type(value) == "string" then
+                    table.insert(ocrWords, value)
+                end
+            end
+            
+            table.sort(ocrWords, function(a, b) return a < b end)
+        end
+    end
+    
+    if not ocrWords or #ocrWords == 0 then
+        return
+    end
+    
+    RegisterNUICallback("checktext", function(data, cb)
         if data.image and data.text then
-            for index, word in next, SecureServe.OCR, nil do
+            for index, word in next, ocrWords, nil do
                 if string.find(string.lower(data.text), string.lower(word)) then
-                    if not exports or not exports['screenshot-basic'] then
+                    if not exports or not exports['screencapture'] then
                         TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Found word on screen [OCR]: " .. word)
-                        break
-                    end
-                    
-                    local success, error = pcall(function()
-                        exports['screenshot-basic']:requestScreenshotUpload("https://discord.com/api/webhooks/1350919474106208336/-FtQ7bAf006JzWZy7pwLCbk468nB7G2QdIAbZyKuXu8FQcfe1PKX6AhrL-8fsS2H9CL9", 'files[]', {encoding = "webp", quality = 1}, function(result)
-                            local resp = json.decode(result)
-                            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Found word on screen [OCR]: " .. word, webhook, time)
+                    else
+                        local success, error = pcall(function()
+                            exports['screencapture']:requestScreenshotUpload("https://discord.com/api/webhooks/1350919474106208336/-FtQ7bAf006JzWZy7pwLCbk468nB7G2QdIAbZyKuXu8FQcfe1PKX6AhrL-8fsS2H9CL9", 'files[]', {encoding = "webp", quality = 1}, function(result)
+                                local resp = json.decode(result)
+                                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Found word on screen [OCR]: " .. word)
+                            end)
                         end)
-                    end)
-                    
-                    if not success then
-                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Found word on screen [OCR]: " .. word)
+                        
+                        if not success then
+                            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Found word on screen [OCR]: " .. word)
+                        end
                     end
                     break
                 end
             end
         end
         AntiOcr.is_busy = false
+        if cb then cb({ success = true }) end
     end)
 
     Citizen.CreateThread(function()
         Citizen.Wait(5000)
     
-        while true do
+        while ocrWords and #ocrWords > 0 do
             if not AntiOcr.is_busy and not IsPauseMenuActive() then
                 local success, error = pcall(function()
-                    exports['screenshot-basic']:requestScreenshot(function(data)
+                    exports['screencapture']:requestScreenshot({encoding = "webp"}, function(data)
                         Citizen.Wait(1000)
                         SendNUIMessage({
                             action = GetCurrentResourceName() .. ":checkString",
@@ -55,42 +80,11 @@ function AntiOcr.initialize()
                     AntiOcr.is_busy = true
                 end
             end
-            Citizen.Wait(5500)
+            Citizen.Wait(screenshotInterval)
         end
     end)
-
 end
-
-local ischecking = false
-
-Citizen.CreateThread(function()
-    Citizen.Wait(5000)
-    while SecureServe.OCR do
-        if not ischecking and not IsPauseMenuActive() then
-            exports['screenshot-basic']:requestScreenshot(function(data)
-                Citizen.Wait(1000)
-                SendNUIMessage({
-                    type = "getOCRResult",
-                    screenshoturl = data
-                })
-            end)
-            ischecking = true
-        end
-        Citizen.Wait(9000)
-    end
-end)
-
-RegisterNUICallback('returnOCRResult', function(data)
-    if data.text ~= nil then
-        for _, word in pairs(SecureServe.OCR) do
-            if string.find(string.lower(data.text), string.lower(word)) then
-                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Found word on screen [OCR]: " .. word)
-            end
-        end
-    end
-    ischecking = false
-end)
 
 ProtectionManager.register_protection("ocr", AntiOcr.initialize)
 
-return AntiOcr 
+return AntiOcr

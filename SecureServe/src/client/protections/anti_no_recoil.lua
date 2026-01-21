@@ -2,45 +2,75 @@ local ProtectionManager = require("client/protections/protection_manager")
 local Cache = require("client/core/cache")
 
 ---@class AntiNoRecoilModule
-local AntiNoRecoil = {}
+local AntiNoRecoil = {
+    max_detections = 5, 
+    min_recoil_value = 0.1 
+}
 
----@description Initialize Anti No Recoil protection
+-- Armas ignoradas (Cuerpo a cuerpo, arrojadizas, taser, etc)
+local WhitelistedWeapons = {
+    [GetHashKey("WEAPON_UNARMED")] = true,
+    [GetHashKey("WEAPON_STUNGUN")] = true,
+    [GetHashKey("WEAPON_FIREEXTINGUISHER")] = true,
+    [GetHashKey("WEAPON_PETROLCAN")] = true,
+    [GetHashKey("WEAPON_SNIPERRIFLE")] = true,
+    [GetHashKey("WEAPON_HEAVYSNIPER")] = true,
+    [GetHashKey("WEAPON_HEAVYSNIPER_MK2")] = true,
+    [GetHashKey("WEAPON_RPG")] = true,
+    [GetHashKey("WEAPON_HOMINGLAUNCHER")] = true
+}
+
 function AntiNoRecoil.initialize()
     if not ConfigLoader.get_protection_setting("Anti No Recoil", "enabled") then return end
     
-    local spawn_time = GetGameTimer()
+    local detections = 0
     
     Citizen.CreateThread(function()
         while true do
-            Citizen.Wait(2500)
-            if Cache.Get("hasPermission", "norecoil") or Cache.Get("hasPermission", "all") or Cache.Get("isAdmin") then
-                goto continue
-            end
-
+            local sleep = 1000 
             local player_ped = Cache.Get("ped")
-            local weapon_hash = Cache.Get("selectedWeapon")
-            local recoil = GetWeaponRecoilShakeAmplitude(weapon_hash)
-            local focused = IsNuiFocused()
 
-            local has_been_spawned_long_enough = spawn_time and (GetGameTimer() - spawn_time) > 30000
-            
-            if has_been_spawned_long_enough and weapon_hash and weapon_hash ~= GetHashKey("weapon_unarmed") and not Cache.Get("isInVehicle") then
-                if recoil <= 0.0 
-                and GetGameplayCamRelativePitch() == 0.0 
-                and player_ped ~= nil 
-                and weapon_hash ~= -1569615261 
-                and not focused 
-                and not IsPedArmed(player_ped, 1) 
-                and not IsPauseMenuActive() 
-                and IsPedShooting(player_ped) then
-                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti No Recoil", webhook, time)
+            if IsPedShooting(player_ped) then
+                sleep = 100 
+
+                local is_exempt = Cache.Get("hasPermission", "norecoil") or 
+                                  Cache.Get("hasPermission", "all") or 
+                                  Cache.Get("isAdmin")
+
+                if not is_exempt and not Cache.Get("isInVehicle") then
+                    local weapon_hash = Cache.Get("selectedWeapon")
+                    
+                    if weapon_hash and not WhitelistedWeapons[weapon_hash] then
+                        
+                        local recoil_shake = GetWeaponRecoilShakeAmplitude(weapon_hash)
+                        
+                        if recoil_shake < AntiNoRecoil.min_recoil_value then
+                            detections = detections + 1
+                            
+                            if detections > AntiNoRecoil.max_detections then
+                                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", 
+                                    nil, 
+                                    "Anti No Recoil (Shake: " .. string.format("%.2f", recoil_shake) .. ")", 
+                                    webhook, 
+                                    time
+                                )
+                                detections = 0 
+                            end
+                        else
+                            
+                            if detections > 0 then detections = detections - 1 end
+                        end
+                    end
                 end
+            else
+                detections = 0
             end
-            ::continue::
+
+            Citizen.Wait(sleep)
         end
     end)
 end
 
 ProtectionManager.register_protection("no_recoil", AntiNoRecoil.initialize)
 
-return AntiNoRecoil 
+return AntiNoRecoil

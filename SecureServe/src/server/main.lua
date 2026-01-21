@@ -1,6 +1,5 @@
 local config_manager = require("server/core/config_manager")
 local ban_manager = require("server/core/ban_manager")
-local player_manager = require("server/core/player_manager")
 local logger = require("server/core/logger")
 local debug_module = require("server/core/debug_module")
 local admin_whitelist = require("server/core/admin_whitelist")
@@ -270,12 +269,7 @@ local function registerServerCommands()
 
         print("Players:")
 
-        local player_count = 0
-        if player_manager and player_manager.get_player_count then
-            player_count = player_manager.get_player_count()
-        else
-            player_count = #GetPlayers()
-        end
+        local player_count = #GetPlayers()
 
         print("  Active Players: " .. player_count)
 
@@ -322,7 +316,7 @@ local function main()
   ^7]])
 
     print("^8╔══════════════════════════════════════════════════════════════════════════╗^7")
-    print("^8║                  ^2SecureServe AntiCheat v1.4.0 Initializing^8               ║^7")
+    print("^8║                  ^2SecureServe AntiCheat V1.5.0 Initializing^8               ║^7")
     print("^8╚══════════════════════════════════════════════════════════════════════════╝^7")
 
     print("\n^2╭─── Core Modules ^7")
@@ -333,13 +327,6 @@ local function main()
 
     print("^2│ ^5⏳^7 Logger^7")
     logger.initialize(SecureServe)
-    logger.initialize({
-        LogLevel = SecureServe.LogLevel,
-        UseWebhook = SecureServe.UseWebhook,
-        LogWebhook = SecureServe.LogWebhook,
-        MaxLogHistory = SecureServe.MaxLogHistory,
-        Debug = SecureServe.Debug
-    })
     print("^2│ ^2✓^7 Logger^7 initialized")
 
     print("^2│ ^5⏳^7 Discord Logger^7")
@@ -352,11 +339,6 @@ local function main()
     print("^2│ ^5⏳^7 Ban Manager^7")
     ban_manager.initialize()
     print("^2│ ^2✓^7 Ban Manager^7 initialized")
-
-    print("^2│ ^5⏳^7 Player Manager^7")
-    player_manager.initialize()
-    print("^2│ ^2✓^7 Player Manager^7 initialized")
-
 
     print("^2│ ^5⏳^7 Admin Whitelist^7")
     admin_whitelist.initialize()
@@ -414,39 +396,6 @@ local function main()
         end
     end)
 
-    AddEventHandler("playerBanned", function(player_id, reason, admin_id)
-        -- logger.log_ban(player_id, reason, admin_id)
-        -- DiscordLogger.log_ban(player_id, reason, ban_manager.get_ban_data(player_id))
-    end)
-
-    AddEventHandler("eventTriggered", function(event_name, source, ...)
-
-        if event_name and SecureServe.SafeEvents then
-            local safe_events = SecureServe.SafeEvents
-            if type(safe_events) == "table" and #safe_events > 0 then
-                for _, safe_event in ipairs(safe_events) do
-                    if safe_event == event_name then
-                        return
-                    end
-                end
-            end
-        end
-    end)
-
-    AddEventHandler("resourceStarted", function(resource_name)
-        local resource_to_check = resource_name
-        if resource_to_check and SecureServe.SafeResources then
-            local safe_resources = SecureServe.SafeResources
-            if type(safe_resources) == "table" and #safe_resources > 0 then
-                for _, safe_resource in ipairs(safe_resources) do
-                    if safe_resource == resource_to_check then
-                        return
-                    end
-                end
-            end
-        end
-    end)
-
     AddEventHandler("playerJoining", function(source, oldID)
         local player_name = GetPlayerName(source) or "Unknown"
         logger.info("Player " .. player_name .. " (" .. source .. ") is joining the server")
@@ -477,7 +426,7 @@ local function main()
 
     initialized = true
     print("\n^8╔══════════════════════════════════════════════════════════════════════════╗^7")
-    print("^8║              ^2SecureServe AntiCheat v1.4.0 Loaded Successfully^8            ║^7")
+    print("^8║              ^2SecureServe AntiCheat V1.5.0 Loaded Successfully^8            ║^7")
     print("^8║                 ^3All Modules Initialized and Protection Active^8            ║^7")
     print("^8╚══════════════════════════════════════════════════════════════════════════╝^7")
     print("^6⚡ Support: ^3https://discord.gg/z6qGGtbcr4^7")
@@ -486,7 +435,7 @@ local function main()
 
     DiscordLogger.log_system(
         "AntiCheat Started",
-        "SecureServe AntiCheat v1.4.0 has been successfully initialized.",
+        "SecureServe AntiCheat V1.5.0 has been successfully initialized.",
         {
             { name = "Server Name",       value = GetConvar("sv_hostname", "Unknown"), inline = true },
             { name = "Resource Name",     value = GetCurrentResourceName(),            inline = true },
@@ -494,68 +443,12 @@ local function main()
         }
     )
 
-    logger.info("SecureServe AntiCheat v1.4.0 initialized successfully")
+    logger.info("SecureServe AntiCheat V1.5.0 initialized successfully")
 end
 
 CreateThread(function()
     Wait(4000)
     main()
-end)
-
-exports("get_ban_manager", function()
-    return ban_manager
-end)
-
-exports("get_config_manager", function()
-    return config_manager
-end)
-
-exports("get_player_manager", function()
-    return player_manager
-end)
-
-exports("get_logger", function()
-    return logger
-end)
-
-exports("get_debug_module", function()
-    return debug_module
-end)
-
-
-exports("get_admin_whitelist", function()
-    return admin_whitelist
-end)
-
-exports("is_player_banned", function(identifier)
-    return ban_manager.is_banned(identifier)
-end)
-
-exports("is_player_whitelisted", function(source)
-    return admin_whitelist.isWhitelisted(source)
-end)
-
-exports("whitelist_resource", function(resource_name)
-    return anti_resource_injection.whitelist_resource(resource_name)
-end)
-
-exports("whitelist_explosion", function(source, explosion_type)
-    return anti_explosions.whitelist_explosion(source, explosion_type)
-end)
-
-exports("ban_player", function(source, reason, details)
-    return ban_manager.ban_player(source, reason, details)
-end)
-
-exports("whitelist_event", function(event_name)
-    if config_manager and config_manager.whitelist_event then
-        return config_manager.whitelist_event(event_name)
-    end
-    return false
-end)
-
-exports("validate_event", function(source, event_name, resource_name, webhook)
-    return false
 end)
 
 exports("module_punish", function(source, reason, webhook, time)
@@ -655,42 +548,6 @@ exports("module_punish", function(source, reason, webhook, time)
     })
 end)
 
-SecureBan = function(source, reason, details)
-    return ban_manager.ban_player(source, reason, details)
-end
-
-SecureLog = function(level, message, ...)
-    if logger then
-        if level == "debug" then
-            return logger.debug(message, ...)
-        elseif level == "info" then
-            return logger.info(message, ...)
-        elseif level == "warn" then
-            return logger.warn(message, ...)
-        elseif level == "error" then
-            return logger.error(message, ...)
-        elseif level == "fatal" then
-            return logger.fatal(message, ...)
-        end
-    end
-end
-
-RegisterNetEvent("SecureServe:DisconnectMe", function()
-    local source = source
-    if not source or source <= 0 then
-        return
-    end
-
-    local identifiers = ban_manager.get_player_identifiers(source)
-    local is_banned, ban_data = ban_manager.check_ban(identifiers)
-
-    if is_banned and ban_data then
-        DropPlayer(source, ban_manager.format_ban_message(ban_data))
-    else
-        DropPlayer(source, "You have been disconnected from the server.")
-    end
-end)
-
 RegisterNetEvent("SecureServe:Server:Methods:PunishPlayer", function(id, reason, webhook, time)
     local source = source
     if admin_whitelist.isWhitelisted(source) then
@@ -708,25 +565,4 @@ RegisterNetEvent("SecureServe:Server:Methods:PunishPlayer", function(id, reason,
         time = time or 2147483647,
         detection = reason
     })
-end)
-
-RegisterNetEvent("check_trigger_list", function(source, event_name, resource_name)
-    if not source or not event_name or not resource_name then
-        return
-    end
-
-end)
-
-exports("isPlayerWhitelisted", function(source)
-    return admin_whitelist.isWhitelisted(source)
-end)
-
-exports("refreshAdminWhitelist", function()
-    admin_whitelist.refreshAdminList()
-    return true
-end)
-
--- New export to check if a protection should be bypassed for an admin
-exports("shouldBypassProtection", function(source, protectionName)
-    return admin_whitelist.shouldBypassProtection(source, protectionName)
 end)

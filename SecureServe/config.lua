@@ -153,15 +153,18 @@ SecureServe.Module = {
 		},
 	},
 
-	Explosions = {
-		ModuleEnabled = false, -- Activates protection against unauthorized explosion events.
-
-		Whitelist = { -- Allows specific resources to legitimately trigger explosion events without penalties.
-			["resource_name_1"] = true,
-			["resource_name_2"] = true,
-		},
+	Heartbeat = {
+		BanOnViolation = true, -- Set to false to only drop players instead of banning them when heartbeat violations occur
+								-- Useful if you want to avoid banning players with legitimate connection issues
+		
+		CheckInterval = 3000,      -- Interval in milliseconds between alive checks (default: 3000)
+		MaxFailures = 7,           -- Maximum number of failures before ban/drop (default: 7)
+		HeartbeatCheckInterval = 5000, -- Interval in milliseconds for heartbeat monitoring thread (default: 5000)
+		TimeoutThreshold = 10,    -- Timeout threshold in seconds for missing heartbeats (default: 10)
+		GracePeriod = 15,          -- Grace period in seconds for new players to send first heartbeat (default: 15)
 	},
 }
+
 
 
 -- |       ______ _______ _______
@@ -269,7 +272,8 @@ SecureServe.Detections = {
 
 
 
-SecureServe.OCR = { -- Words on scrren that will get player banned
+SecureServe.OCR = { -- Words on screen that will get player banned
+	ScreenshotInterval = 8500, -- Interval in milliseconds between OCR screenshots (default: 5500)
 	"FlexSkazaMenu","SidMenu","Lynx8","LynxEvo","Maestro Menu","redEngine","HamMafia","HamHaxia","Dopameme","redMENU","Desudo","explode","gamesense","Anticheat","Tapatio","Malossi","RedStonia","Chocohax",
 	"skin changer","torque multiple","override player speed","colision proof","explosion proof","copy outfit","play single particle","infinite ammo","rip server","remove ammo","remove all weapons",
 	"V1s_u4l","D3str_0y","D3str_Oy","S3tt1ngs","P4rt1cl_3s","Pl4y3rz","D3l3t3","Sp4m","V3h1cl3s","T4ze","1nv1s1bll3","R41nb_0w","Sp33d","R41nb_Ow","F_ly","3xpl_0d3","Pr0pz","D3str_0y","M4p","G1v3",

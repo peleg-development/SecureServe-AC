@@ -1,9 +1,14 @@
 ---@class ConfigLoaderModule
 ConfigLoader = {}
 
-local Utils = require("shared/lib/utils")
 local ClientLogger = require("client/core/client_logger")
-local protection_count = {}
+local menu_admin_requests = {}
+local menu_admin_request_id = 0
+local blacklist_model_hashes = {
+    objects = {},
+    vehicles = {},
+    peds = {}
+}
 
 -- Initialize global variables
 SecureServeConfig = nil
@@ -88,12 +93,49 @@ function ConfigLoader.get_secureserve()
     return SecureServe
 end
 
----@description Ensure settings are initialized
-local function ensure_initialized()
-    if not SecureServeInitCalled then
-        ConfigLoader.initialize()
-        Wait(1000) 
+---@return number request_id The next menu admin request ID
+local function next_menu_admin_request_id()
+    menu_admin_request_id = menu_admin_request_id + 1
+    return menu_admin_request_id
+end
+
+---@param list table|nil The blacklist entries
+---@param target table The target lookup table
+local function add_blacklist_hashes(list, target)
+    if type(list) ~= "table" then
+        return
     end
+    
+    for _, entry in pairs(list) do
+        if type(entry) == "table" then
+            local hash = entry.hash
+            if not hash and entry.name then
+                if type(entry.name) == "number" then
+                    hash = entry.name
+                else
+                    hash = GetHashKey(entry.name)
+                end
+            end
+            if hash then
+                target[hash] = true
+            end
+        end
+    end
+end
+
+---@description Build model blacklist hash lookups for fast checks
+local function build_blacklist_hashes()
+    blacklist_model_hashes.objects = {}
+    blacklist_model_hashes.vehicles = {}
+    blacklist_model_hashes.peds = {}
+    
+    if not SecureServe or not SecureServe.Protection then
+        return
+    end
+    
+    add_blacklist_hashes(SecureServe.Protection.BlacklistedObjects, blacklist_model_hashes.objects)
+    add_blacklist_hashes(SecureServe.Protection.BlacklistedVehicles, blacklist_model_hashes.vehicles)
+    add_blacklist_hashes(SecureServe.Protection.BlacklistedPeds, blacklist_model_hashes.peds)
 end
 
 ---@description Get protection setting directly from SecureServe.Protection.Simple
@@ -177,47 +219,47 @@ function ConfigLoader.process_config(config)
     SecureServe = config 
     local SecureServe = SecureServe
     
-    SecureServeProtectionSettings = SecureServeProtectionSettings or {}
+    SecureServeProtectionSettings = {}
     
-    for k, v in pairs(SecureServe.Protection.Simple) do
-        if v.webhook == "" then
-            SecureServe.Protection.Simple[k].webhook = SecureServe.Webhooks.Simple
+    if SecureServe and SecureServe.Protection and type(SecureServe.Protection.Simple) == "table" then
+        for k, v in pairs(SecureServe.Protection.Simple) do
+            if SecureServe.Webhooks and v.webhook == "" then
+                SecureServe.Protection.Simple[k].webhook = SecureServe.Webhooks.Simple
+            end
+            if SecureServe.BanTimes and type(v.time) ~= "number" then
+                SecureServe.Protection.Simple[k].time = SecureServe.BanTimes[v.time]
+            end
+            
+            local name = SecureServe.Protection.Simple[k].protection
+            local dispatch = SecureServe.Protection.Simple[k].dispatch
+            local default = SecureServe.Protection.Simple[k].default
+            local defaultr = SecureServe.Protection.Simple[k].defaultr
+            local tolerance = SecureServe.Protection.Simple[k].tolerance
+            local defaults = SecureServe.Protection.Simple[k].defaults
+            local time = SecureServe.Protection.Simple[k].time
+            if SecureServe.BanTimes and type(time) ~= "number" then
+                time = SecureServe.BanTimes[v.time]
+            end
+            local limit = SecureServe.Protection.Simple[k].limit or 999
+            local webhook = SecureServe.Protection.Simple[k].webhook
+            if SecureServe.Webhooks and webhook == "" then
+                webhook = SecureServe.Webhooks.Simple
+            end
+            local enabled = SecureServe.Protection.Simple[k].enabled
+            
+            ConfigLoader.assign_protection_settings(name, {
+                ["time"] = time,
+                ["limit"] = limit,
+                ["webhook"] = webhook,
+                ["enabled"] = enabled,
+                ["default"] = default,
+                ["defaultr"] = defaultr,
+                ["tolerance"] = tolerance,
+                ["defaults"] = defaults,
+                ["dispatch"] = dispatch
+            })
+            
         end
-        if type(v.time) ~= "number" then
-            SecureServe.Protection.Simple[k].time = SecureServe.BanTimes[v.time]
-        end
-        
-        local name = SecureServe.Protection.Simple[k].protection
-        local dispatch = SecureServe.Protection.Simple[k].dispatch
-        local default = SecureServe.Protection.Simple[k].default
-        local defaultr = SecureServe.Protection.Simple[k].defaultr
-        local tolerance = SecureServe.Protection.Simple[k].tolerance
-        local defaults = SecureServe.Protection.Simple[k].defaults
-        local time = SecureServe.Protection.Simple[k].time
-        if type(time) ~= "number" then
-            time = SecureServe.BanTimes[v.time]
-        end
-        local limit = SecureServe.Protection.Simple[k].limit or 999
-        local webhook = SecureServe.Protection.Simple[k].webhook
-        if webhook == "" then
-            webhook = SecureServe.Webhooks.Simple
-        end
-        local enabled = SecureServe.Protection.Simple[k].enabled
-        
-        ConfigLoader.assign_protection_settings(name, {
-            ["time"] = time,
-            ["limit"] = limit,
-            ["webhook"] = webhook,
-            ["enabled"] = enabled,
-            ["default"] = default,
-            ["defaultr"] = defaultr,
-            ["tolerance"] = tolerance,
-            ["defaults"] = defaults,
-            ["dispatch"] = dispatch
-        })
-        
-        if not protection_count["SecureServe.Protection.Simple"] then protection_count["SecureServe.Protection.Simple"] = 0 end
-        protection_count["SecureServe.Protection.Simple"] = protection_count["SecureServe.Protection.Simple"] + 1
     end
 
     ConfigLoader.process_blacklist_category("BlacklistedCommands")
@@ -227,24 +269,24 @@ function ConfigLoader.process_config(config)
     ConfigLoader.process_blacklist_category("BlacklistedWeapons")
     ConfigLoader.process_blacklist_category("BlacklistedVehicles")
     ConfigLoader.process_blacklist_category("BlacklistedObjects")
+    build_blacklist_hashes()
 end
 
 ---@param category string The blacklist category to process
 function ConfigLoader.process_blacklist_category(category)
-    local SecureServe = SecureServe  
+    local SecureServe = SecureServe
+    if not SecureServe or not SecureServe.Protection or type(SecureServe.Protection[category]) ~= "table" then
+        return
+    end
     
     for k, v in pairs(SecureServe.Protection[category]) do
-        if v.webhook == "" then
+        if SecureServe.Webhooks and v.webhook == "" then
             SecureServe.Protection[category][k].webhook = SecureServe.Webhooks[category]
         end
-        if type(v.time) ~= "number" then
+        if SecureServe.BanTimes and type(v.time) ~= "number" then
             SecureServe.Protection[category][k].time = SecureServe.BanTimes[v.time]
         end
                 
-        if not protection_count["SecureServe.Protection." .. category] then 
-            protection_count["SecureServe.Protection." .. category] = 0 
-        end
-        protection_count["SecureServe.Protection." .. category] = protection_count["SecureServe.Protection." .. category] + 1
     end
 end
 
@@ -277,6 +319,22 @@ RegisterNetEvent("SecureServe:ReceiveAdminList", function(adminList)
     SecureServeLastAdminUpdate = GetGameTimer()
 end)
 
+RegisterNetEvent('SecureServe:ReturnMenuAdminStatus', function(request_id, result)
+    if request_id == nil or menu_admin_requests[request_id] == nil then
+        if type(request_id) == "boolean" then
+            for pending_id, pending in pairs(menu_admin_requests) do
+                menu_admin_requests[pending_id] = nil
+                pending:resolve(request_id)
+            end
+        end
+        return
+    end
+    
+    local pending = menu_admin_requests[request_id]
+    menu_admin_requests[request_id] = nil
+    pending:resolve(result == true)
+end)
+
 Citizen.CreateThread(function()
     Citizen.Wait(2000) 
     TriggerServerEvent("SecureServe:RequestAdminList")
@@ -287,11 +345,16 @@ end)
 ---@return boolean is_menu_admin Whether the player is a menu admin
 function ConfigLoader.is_menu_admin(player)
     local promise = promise.new()
-
-    TriggerServerEvent('SecureServe:RequestMenuAdminStatus', player)
-
-    RegisterNetEvent('SecureServe:ReturnMenuAdminStatus', function(result)
-        promise:resolve(result)
+    local request_id = next_menu_admin_request_id()
+    menu_admin_requests[request_id] = promise
+    
+    TriggerServerEvent('SecureServe:RequestMenuAdminStatus', player, request_id)
+    
+    SetTimeout(5000, function()
+        if menu_admin_requests[request_id] == promise then
+            menu_admin_requests[request_id] = nil
+            promise:resolve(false)
+        end
     end)
 
     return Citizen.Await(promise)
@@ -306,30 +369,17 @@ function ConfigLoader.is_model_blacklisted(model_hash)
         return false
     end
     
-    model_hash = tostring(model_hash)
-    
-    if SecureServeConfig.Protection and SecureServeConfig.Protection.BlacklistedObjects then
-        for _, blacklisted in pairs(SecureServeConfig.Protection.BlacklistedObjects) do
-            if tostring(blacklisted.hash) == model_hash then
-                return true
-            end
-        end
+    if model_hash == nil then
+        return false
     end
     
-    if SecureServeConfig.Protection and SecureServeConfig.Protection.BlacklistedVehicles then
-        for _, blacklisted in pairs(SecureServeConfig.Protection.BlacklistedVehicles) do
-            if tostring(blacklisted.hash) == model_hash then
-                return true
-            end
-        end
+    local hash = tonumber(model_hash)
+    if not hash then
+        hash = GetHashKey(tostring(model_hash))
     end
     
-    if SecureServeConfig.Protection and SecureServeConfig.Protection.BlacklistedPeds then
-        for _, blacklisted in pairs(SecureServeConfig.Protection.BlacklistedPeds) do
-            if tostring(blacklisted.hash) == model_hash then
-                return true
-            end
-        end
+    if blacklist_model_hashes.objects[hash] or blacklist_model_hashes.vehicles[hash] or blacklist_model_hashes.peds[hash] then
+        return true
     end
     
     return false
@@ -342,7 +392,7 @@ RegisterClientCallback({
     eventCallback = function(quality, webhookUrl)
         local p = promise.new()
        
-        _G.exports['screenshot-basic']:requestScreenshotUpload(webhookUrl, 'files[]', {
+        _G.exports['screencapture']:requestScreenshotUpload(webhookUrl, 'files[]', {
             encoding = 'jpg',
             quality = quality or 0.95
         }, function(data)

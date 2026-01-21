@@ -203,8 +203,7 @@ function hasOldSecureServe(manifestContent) {
  * @return {boolean} Whether it has the new SecureServe includes
  */
 function hasNewSecureServe(manifestContent) {
-    return manifestContent.includes(`shared_script "@${CURRENT_RESOURCE_NAME}/src/module/module.lua"`) || 
-           manifestContent.includes(`shared_script "@${CURRENT_RESOURCE_NAME}/src/module/module.js"`);
+    return manifestContent.includes(`shared_script "@${CURRENT_RESOURCE_NAME}/src/module/module.lua"`);
 }
 
 /**
@@ -256,7 +255,7 @@ function addSecureServe(manifestContent) {
     let insertion = '';
     
     if (!hasNewSecureServe(manifestContent)) {
-        insertion += `\nshared_script "@${CURRENT_RESOURCE_NAME}/src/module/module.lua"\nshared_script "@${CURRENT_RESOURCE_NAME}/src/module/module.js"`;
+        insertion += `\nshared_script "@${CURRENT_RESOURCE_NAME}/src/module/module.lua"\n`;
     }
     
     if (!hasKeyFile(manifestContent)) {
@@ -276,7 +275,7 @@ function addSecureServe(manifestContent) {
 function removeSecureServe(manifestContent) {
     manifestContent = manifestContent.replace(`shared_script "@${CURRENT_RESOURCE_NAME}/module.lua"`, '');
     manifestContent = manifestContent.replace(`shared_script "@${CURRENT_RESOURCE_NAME}/src/module/module.lua"`, '');
-    manifestContent = manifestContent.replace(`shared_script "@${CURRENT_RESOURCE_NAME}/src/module/module.js"`, '');
+    manifestContent = manifestContent.replace(``, '');
     manifestContent = manifestContent.replace(`file "@${CURRENT_RESOURCE_NAME}/secureserve.key"`, '');
     
     // Clean up excess newlines
@@ -317,7 +316,7 @@ function updateSecureServe(manifestContent) {
     
     const insertion = `
 shared_script "@${CURRENT_RESOURCE_NAME}/src/module/module.lua"
-shared_script "@${CURRENT_RESOURCE_NAME}/src/module/module.js"
+
 `;
     
     return manifestContent.slice(0, insertPosition) + insertion + manifestContent.slice(insertPosition);

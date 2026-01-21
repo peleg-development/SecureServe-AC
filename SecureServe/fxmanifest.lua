@@ -2,7 +2,7 @@ fx_version "cerulean"
 game "gta5"
 
 author "SecureServe.net"
-version "1.4.0"
+version "1.5.0"
 
 files {
     "bans.json",
@@ -16,9 +16,7 @@ ui_page "src/panel/ingame/html/index.html"
 
 shared_scripts {
     "src/module/module.lua",
-    "src/module/module.js",
     "src/shared/lib/require.lua",
-    "src/shared/lib/encryption.lua",
     "src/shared/lib/utils.lua",
     "src/shared/lib/callbacks.lua",
     "src/shared/init.lua",
@@ -29,7 +27,6 @@ client_scripts {
     "src/client/core/config_loader.lua",
     "src/client/core/perms.lua",
     "src/client/core/cache.lua",
-    "src/client/core/entity_monitor.lua",
     "src/client/core/client_logger.lua",
     "src/client/core/blue_screen.lua",
     "src/client/protections/protection_manager.lua",
@@ -67,7 +64,6 @@ server_scripts {
     "src/server/main.lua",
     "src/server/core/config_manager.lua",
     "src/server/core/ban_manager.lua",
-    "src/server/core/player_manager.lua",
     "src/server/core/logger.lua",
     "src/server/core/debug_module.lua",
     "src/server/core/discord_logger.lua",
@@ -87,24 +83,12 @@ server_scripts {
 
 dependencies {
     "/server:5181",
-    "screenshot-basic",
+    "screencapture",
     "keep-alive"
 }
 
 lua54 "yes"
 
-exports {
-    "get_event_whitelist",
-    "add_event_handler",
-    "register_net_event"
-}
-
 server_exports {
-    "banPlayer",
-    "get_logger",
-    "get_debug_module",
-    "whitelist_event",
-    "validate_event",
-    "module_punish",
-    "SecureLog"
+    "module_punish"
 }

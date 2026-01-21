@@ -4,14 +4,14 @@ local ServerPerms = {}
 local AdminWhitelist = require("server/core/admin_whitelist")
 
 ---@description Respond to client requests for admin status (menu access)
-RegisterNetEvent("SecureServe:RequestMenuAdminStatus", function(target)
+RegisterNetEvent("SecureServe:RequestMenuAdminStatus", function(target, request_id)
     local src = tonumber(source)
     local check_id = tonumber(target) or tonumber(src)
     local is_admin = false
     if check_id then
         is_admin = AdminWhitelist.isWhitelisted(check_id) == true
     end
-    TriggerClientEvent("SecureServe:ReturnMenuAdminStatus", src, is_admin)
+    TriggerClientEvent("SecureServe:ReturnMenuAdminStatus", src, request_id, is_admin)
 end)
 
 ---@description Check if a server player has admin access for the in-game menu

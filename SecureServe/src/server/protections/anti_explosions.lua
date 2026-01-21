@@ -4,23 +4,10 @@ local AntiExplosions = {}
 local config_manager = require("server/core/config_manager")
 local ban_manager = require("server/core/ban_manager")
 local logger = require("server/core/logger")
-local debug_module = require("server/core/debug_module")
-
 ---@description Initialize anti-explosions protection
 function AntiExplosions.initialize()
-    if not SecureServe.Module.Explosions.ModuleEnabled then
-        return
-    end
-    
-    local whitelist = {}
     local explosions = {}
     local detected = {}
-    
-    RegisterNetEvent("SecureServe:Explosions:Whitelist", function(data)
-        if (data.source == nil) then return end
-        whitelist[data.source] = true
-        logger.debug("Whitelisted explosion for player ID: " .. data.source)
-    end)
     
     AddEventHandler('explosionEvent', function(sender, ev)
         explosions[sender] = explosions[sender] or {}
@@ -38,18 +25,6 @@ function AntiExplosions.initialize()
         logger.debug(string.format("Explosion detected! Type: %s | Position: %s | Damage Scale: %s | Owner: %s", 
             explosionType, explosionPos, explosionDamage, explosionOwner))
 
-        local resourceName = GetInvokingResource()
-        if GetPlayerPing(sender) > 0 and SecureServe.ExplosionsModule then
-            if whitelist[sender] or SecureServe.ExplosionsWhitelist[resourceName] then
-                whitelist[sender] = false
-            else
-                ban_manager.ban_player(sender, "Explosions", string.format("Explosion Details: Type: %s, Position: %s, Damage Scale: %s", 
-                    explosionType, explosionPos, explosionDamage))
-                CancelEvent()
-                return
-            end
-        end
-    
         for k, v in pairs(SecureServe.Protection.BlacklistedExplosions) do
             if ev.explosionType == v.id then
                 local explosionInfo = string.format("Explosion Type: %d, Position: (%.2f, %.2f, %.2f)", ev.explosionType, ev.posX, ev.posY, ev.posZ)

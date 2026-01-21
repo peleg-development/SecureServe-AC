@@ -16,6 +16,35 @@ local config = {
     Admins = {}
 }
 
+---@return table whitelist The normalized event whitelist table
+local function get_event_whitelist()
+    config.Module = config.Module or {}
+    config.Module.Events = config.Module.Events or {}
+    if type(config.Module.Events.Whitelist) ~= "table" then
+        config.Module.Events.Whitelist = {}
+    end
+    
+    local whitelist = config.Module.Events.Whitelist
+    
+    for key, value in pairs(whitelist) do
+        if type(key) == "number" and type(value) == "string" then
+            whitelist[value] = true
+        end
+    end
+    
+    if type(config.EventWhitelist) == "table" then
+        for key, value in pairs(config.EventWhitelist) do
+            if type(key) == "string" then
+                whitelist[key] = true
+            elseif type(value) == "string" then
+                whitelist[value] = true
+            end
+        end
+    end
+    
+    return whitelist
+end
+
 ---@description Loads and manages server-side configuration
 function ConfigManager.initialize()
     if not _G.SecureServe then
@@ -24,6 +53,7 @@ function ConfigManager.initialize()
     end
     
     config = _G.SecureServe
+    get_event_whitelist()
     
     ConfigManager.initialize_blacklist_lookups()
     
@@ -74,11 +104,7 @@ end
 ---@param event_name string The event name to check
 ---@return boolean is_whitelisted Whether the event is whitelisted
 function ConfigManager.is_event_whitelisted(event_name)
-    if not config.Module or not config.Module.Events or not config.Module.Events.Whitelist then
-        return false
-    end
-
-    local whitelist = config.Module.Events.Whitelist
+    local whitelist = get_event_whitelist()
 
     if whitelist[event_name] then
         return true
@@ -99,12 +125,10 @@ end
 function ConfigManager.whitelist_event(event_name)
     if not event_name then return false end
     
-    if not config.EventWhitelist then
-        config.EventWhitelist = {}
-    end
+    local whitelist = get_event_whitelist()
     
     if not ConfigManager.is_event_whitelisted(event_name) then
-        config.EventWhitelist[event_name] = true
+        whitelist[event_name] = true
         return true
     end
     
@@ -276,11 +300,6 @@ end
 function ConfigManager.get_weapon_max_damage(weapon_hash)
     if not config.WeaponDamages then return nil end
     return config.WeaponDamages[weapon_hash]
-end
-
----@return boolean is_enabled Whether explosion protection is enabled
-function ConfigManager.is_explosion_protection_enabled()
-    return safe_get(SecureServe.Module.Explosions, "ModuleEnabled", false)
 end
 
 ---@todo fix this to acutally work

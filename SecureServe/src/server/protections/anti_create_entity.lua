@@ -72,12 +72,13 @@ function AntiCreateEntity.initialize()
         print("[SecureServe] Incase this is a false ban go to config.lua and in it search SecureServe.Module incase this is an event ban go to Events and then to whitelist and add the event")
         print("[SecureServe] Incase its an entity ban go to Entity and SecurityWhitelist and add the resource name")
         if not screenshot and SecureServe.Module.Entity.TakeScreenshot then
-            exports['screenshot-basic']:requestClientScreenshot(src, {
-                fileName = 'entity_' .. src .. '_' .. os.time() .. '.jpg'
-            }, function(err, data)
+            exports['screencapture']:serverCapture(tostring(src), {
+                encoding = 'jpg',
+                filename = 'entity_' .. src .. '_' .. os.time() .. '.jpg'
+            }, function(data)
                 details.screenshot = data
                 ban_manager.ban_player(src, reason, details)
-            end)
+            end, 'base64')
         else
             ban_manager.ban_player(src, reason, details)
         end

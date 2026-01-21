@@ -8,15 +8,6 @@ RegisterNetEvent("SecureServe:ForceUpdate", function()
     NetworkIsPlayerConnected(PlayerId())
 end)
 
-RegisterNetEvent("SecureServe:ShowPermaBanCard", function(cardData)
-    ForceSocialClubUpdate()
-end) 
-
-
 RegisterNetEvent("checkalive", function ()
     TriggerServerEvent("addalive")
 end)
-
-RegisterNetEvent("SecureServe:Client:getEncryptionKey", function(key)
-end)
-

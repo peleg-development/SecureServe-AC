@@ -1,6 +1,7 @@
 local Utils = require("shared/lib/utils")
 local logger = require("server/core/logger")
 local ban_manager = require("server/core/ban_manager")
+local config_manager = require("server/core/config_manager")
 
 ---@class HeartbeatModule
 local Heartbeat = {
@@ -8,18 +9,31 @@ local Heartbeat = {
     alive = {},
     allowedStop = {},
     failureCount = {},
+    playerJoinTime = {},
     checkInterval = 3000,
-    maxFailures = 7
+    maxFailures = 7,
+    heartbeatCheckInterval = 5000,
+    timeoutThreshold = 10,
+    gracePeriod = 15
 }
 
 ---@description Initialize heartbeat protection
 function Heartbeat.initialize()
     logger.info("Initializing Heartbeat protection module")
 
+    local config = SecureServe.Module and SecureServe.Module.Heartbeat or {}
+    
+    Heartbeat.checkInterval = config.CheckInterval or 3000
+    Heartbeat.maxFailures = config.MaxFailures or 7
+    Heartbeat.heartbeatCheckInterval = config.HeartbeatCheckInterval or 5000
+    Heartbeat.timeoutThreshold = config.TimeoutThreshold or 10
+    Heartbeat.gracePeriod = config.GracePeriod or 15
+
     Heartbeat.playerHeartbeats = {}
     Heartbeat.alive = {}
     Heartbeat.allowedStop = {}
     Heartbeat.failureCount = {}
+    Heartbeat.playerJoinTime = {}
 
     Heartbeat.setupEventHandlers()
 
@@ -36,15 +50,20 @@ function Heartbeat.setupEventHandlers()
         Heartbeat.alive[playerId] = nil
         Heartbeat.allowedStop[playerId] = nil
         Heartbeat.failureCount[playerId] = nil
+        Heartbeat.playerJoinTime[playerId] = nil
     end)
 
     RegisterNetEvent("mMkHcvct3uIg04STT16I:cbnF2cR9ZTt8NmNx2jQS", function(key)
         local playerId = source
+        local numPlayerId = tonumber(playerId)
 
         if string.len(key) < 15 or string.len(key) > 35 or key == nil then
             DropPlayer(playerId, "Invalid heartbeat key")
         else
-            Heartbeat.playerHeartbeats[playerId] = os.time()
+            Heartbeat.playerHeartbeats[numPlayerId] = os.time()
+            if not Heartbeat.playerJoinTime[numPlayerId] then
+                Heartbeat.playerJoinTime[numPlayerId] = os.time()
+            end
         end
     end)
 
@@ -60,7 +79,13 @@ function Heartbeat.setupEventHandlers()
 
     RegisterNetEvent('playerLoaded', function()
         local playerId = source
-        Heartbeat.playerHeartbeats[playerId] = os.time()
+        local numPlayerId = tonumber(playerId)
+        if numPlayerId then
+            Heartbeat.playerHeartbeats[numPlayerId] = os.time()
+            if not Heartbeat.playerJoinTime[numPlayerId] then
+                Heartbeat.playerJoinTime[numPlayerId] = os.time()
+            end
+        end
     end)
 
     RegisterNetEvent('playerSpawneda', function()
@@ -73,19 +98,41 @@ end
 function Heartbeat.startMonitoringThreads()
     Citizen.CreateThread(function()
         while true do
-            Citizen.Wait(5000)
+            Citizen.Wait(Heartbeat.heartbeatCheckInterval)
 
             local currentTime = os.time()
+            local players = GetPlayers()
 
-            for playerId, lastHeartbeatTime in pairs(Heartbeat.playerHeartbeats) do
-                if lastHeartbeatTime ~= nil then
-                    local timeSinceLastHeartbeat = currentTime - lastHeartbeatTime
-
-                    if timeSinceLastHeartbeat > 1500 then
-                        DropPlayer(playerId, "No heartbeat received")
-                        Heartbeat.playerHeartbeats[playerId] = nil
+            for _, playerId in ipairs(players) do
+                local numPlayerId = tonumber(playerId)
+                
+                local lastHeartbeatTime = Heartbeat.playerHeartbeats[numPlayerId]
+                
+                if not lastHeartbeatTime then
+                    if not Heartbeat.playerJoinTime[numPlayerId] then
+                        Heartbeat.playerJoinTime[numPlayerId] = currentTime
                     end
+                    goto continue
                 end
+                
+                if not Heartbeat.playerJoinTime[numPlayerId] then
+                    Heartbeat.playerJoinTime[numPlayerId] = currentTime
+                end
+                
+                local joinTime = Heartbeat.playerJoinTime[numPlayerId]
+                local timeSinceJoin = currentTime - joinTime
+                
+                if timeSinceJoin < Heartbeat.gracePeriod then
+                    goto continue
+                end
+                
+                local timeSinceLastHeartbeat = currentTime - lastHeartbeatTime
+                if timeSinceLastHeartbeat > Heartbeat.timeoutThreshold then
+                    Heartbeat.banPlayer(numPlayerId, "No heartbeat received")
+                    Heartbeat.playerHeartbeats[numPlayerId] = nil
+                end
+                
+                ::continue::
             end
         end
     end)
@@ -124,15 +171,26 @@ end
 function Heartbeat.banPlayer(playerId, reason)
     logger.warn("Heartbeat violation detected for player " .. playerId .. ": " .. reason)
 
-    if ban_manager then
+    local config = config_manager.get_config()
+    local shouldBan = true
+    
+    if config and config.Module and config.Module.Heartbeat then
+        shouldBan = config.Module.Heartbeat.BanOnViolation ~= false
+    end
+
+    if shouldBan and ban_manager then
         ban_manager.ban_player(playerId, 'Anticheat violation detected: ' .. reason, {
             admin = "Heartbeat System",
             time = 2147483647,
             detection = "Heartbeat System - " .. reason
         })
     else
-        DropPlayer(playerId, 'Anticheat violation detected')
-        logger.error("Ban manager not available, player was only dropped")
+        DropPlayer(playerId, 'Anticheat violation detected: ' .. reason)
+        if not shouldBan then
+            logger.info("Heartbeat violation: Player dropped (banning disabled in config)")
+        else
+            logger.error("Ban manager not available, player was only dropped")
+        end
     end
 end
 

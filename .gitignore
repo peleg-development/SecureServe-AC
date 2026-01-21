@@ -41,3 +41,4 @@ luac.out
 
 .vscode/
 SecureServe-AC.rar
+/SecureServe/src/panel/ingame/ui/node_modules

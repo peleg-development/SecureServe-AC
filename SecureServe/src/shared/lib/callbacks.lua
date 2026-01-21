@@ -16,39 +16,22 @@ local REJECTED = 4
 
 ---@class CallbacksModule
 local Callbacks = {
-    callbackRegistry = {},
-    currentCallbackId = 0
+    initialized = false
 }
 
 ---@description Initialize the callbacks module
 ---@param isServer boolean Whether the current environment is server or client
 function Callbacks.initialize(isServer)
-    if isServer then
-        RegisterNetEvent("SecureServe:callback:serverRequest", function(eventName, callbackId, ...)
-            local src = source
-            
-            if Callbacks.callbackRegistry[eventName] then
-                local result = Callbacks.callbackRegistry[eventName](src, ...)
-                TriggerClientEvent("SecureServe:callback:clientResponse", src, callbackId, result)
-            end
-        end)
-    else
-        RegisterNetEvent("SecureServe:callback:clientResponse", function(callbackId, ...)
-            if Callbacks.callbackRegistry[callbackId] then
-                Callbacks.callbackRegistry[callbackId](...)
-                Callbacks.callbackRegistry[callbackId] = nil
-            end
-        end)
-    end
-    
-    print("^5[INITIALIZED] ^3Callbacks System^7")
+    Callbacks.initialized = true
 end
 
 ---@description Register a server callback that can be triggered from clients
 ---@param name string The name of the callback
 ---@param cb function The callback function to execute
 function Callbacks.registerServerCallback(name, cb)
-    Callbacks.callbackRegistry[name] = cb
+    if IS_SERVER and Callbacks.register_server_callback then
+        return Callbacks.register_server_callback({ eventName = name, eventCallback = cb })
+    end
 end
 
 ---@description Trigger a server callback from the client
@@ -56,9 +39,13 @@ end
 ---@param cb function The callback function to execute with the result
 ---@param ... any Additional parameters to pass to the server callback
 function Callbacks.triggerServerCallback(name, cb, ...)
-    Callbacks.currentCallbackId = Callbacks.currentCallbackId + 1
-    Callbacks.callbackRegistry[Callbacks.currentCallbackId] = cb
-    TriggerServerEvent("SecureServe:callback:serverRequest", name, Callbacks.currentCallbackId, ...)
+    if not IS_SERVER and Callbacks.trigger_server_callback then
+        return Callbacks.trigger_server_callback({
+            eventName = name,
+            args = { ... },
+            callback = cb
+        })
+    end
 end
 
 ---@param obj any The object to check

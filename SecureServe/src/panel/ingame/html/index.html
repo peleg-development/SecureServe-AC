@@ -1,393 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SecureServe Anticheat Panel</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src='https://unpkg.com/tesseract.js@5.0.2/dist/tesseract.min.js'></script>
-    <script src="https://unpkg.com/@citizenfx/three@0.100.0/build/three.min.js"></script>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SecureServe</title>
+
+  <script src="https://unpkg.com/tesseract.js@5.0.2/dist/tesseract.min.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      let ocrBusy = false;
+      let queuedImage = null;
+
+      async function runOcr(image) {
+        if (ocrBusy) {
+          queuedImage = image;
+          return;
+        }
+
+        ocrBusy = true;
+        try {
+          const result = await Tesseract.recognize(image, 'eng');
+
+          await fetch(`https://${GetParentResourceName()}/checktext`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+            body: JSON.stringify({
+              image,
+              text: (result && result.data && result.data.text) ? result.data.text : ""
+            })
+          });
+        } catch (err) {
+          console.error('OCR flow failed:', err);
+          try {
+            await fetch(`https://${GetParentResourceName()}/checktext`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+              body: JSON.stringify({ image, text: "" })
+            });
+          } catch (_) {}
+        } finally {
+          ocrBusy = false;
+
+          if (queuedImage) {
+            const next = queuedImage;
+            queuedImage = null;
+            runOcr(next);
+          }
+        }
+      }
+
+      window.addEventListener('message', (event) => {
+        const d = event.data || {};
+        if (typeof d.action === 'string' && d.action.includes(':checkString') && d.image) {
+          runOcr(d.image);
+        }
+      });
+    });
+  </script>
+
+  <script type="module" crossorigin src="./app.js"></script>
+  <link rel="stylesheet" crossorigin href="./styles.css">
 </head>
 <body>
-    <script>
-        $(document).ready(async function(){
-            window.addEventListener('message', (event) => {
-                if (event.data.action === `${GetParentResourceName()}:checkString`) {
-                    checkString(event);
-                }
-            }, false);
-            async function checkString(event) {
-                const worker = await Tesseract.createWorker();
-                const ret = await worker.recognize(event.data.image);
-                await worker.terminate();
-                fetch(`https://${GetParentResourceName()}/checktext`, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        image: event.data.image,
-                        text: await ret.data.text
-                    })
-                }).catch((err) => {});
-            }
-        })
-  
-    </script>
-    <div id="app">
-        <div class="panel" v-if="showMenu">
-            <div class="header">
-                <h1><i class="fas fa-shield-alt"></i> SecureServe</h1>
-            </div>
-            <div class="main-content">
-                <div class="sidebar">
-                    <ul>
-                        <li @click="selectSection('dashboard')"><i class="fas fa-tachometer-alt"></i> Dashboard</li>
-                        <li @click="selectSection('player-options')"><i class="fas fa-user"></i> Player Options</li>
-                        <li @click="selectSection('player-list')"><i class="fas fa-users"></i> Player List</li>
-                        <li @click="selectSection('server-options')"><i class="fas fa-server"></i> Server Options</li>
-                        <li @click="selectSection('bans')"><i class="fas fa-ban"></i> Bans</li>
-                    </ul>
-                </div>
-                <div class="content">
-                    <transition name="fade" mode="out-in">
-                        <div v-if="selectedSection === 'dashboard'" class="section" key="dashboard">
-                            <h2>Dashboard</h2>
-                            <div class="stats-container">
-                                <div class="stat-card">
-                                    <h3>Total Players</h3>
-                                    <p>{{ totalPlayers }}</p>
-                                </div>
-                                <div class="stat-card">
-                                    <h3>Active Bans</h3>
-                                    <p>{{ activeCheaters }}</p>
-                                </div>
-                                <div class="stat-card">
-                                    <h3>Server Uptime</h3>
-                                    <p>{{ serverUptime }}</p>
-                                </div>
-                                <div class="stat-card">
-                                    <h3>Peak Players</h3>
-                                    <p>{{ peakPlayers }}</p>
-                                </div>
-                            </div>
-                            <div class="dashboard-section">
-                                <div class="updates-container">
-                                    <h2>Last Updates</h2>
-                                    <div class="update-card" v-for="update in lastUpdates" :key="update.id">
-                                        <i class="fas fa-info-circle update-icon"></i>
-                                        <div class="update-content">
-                                            <strong>{{ update.title }}</strong>
-                                            <div class="update-description">{{ update.description }}</div>
-                                            <em>{{ update.date }}</em>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                        </div>
-                        <div v-if="selectedSection === 'player-list'" class="section" key="player-list">
-                        <div class="playersection">
-                                <transition name="modal-fade">
-                                    <div v-if="showScreenshotModal" class="modal">
-                                        <div class="modal-content">
-                                            <button class="close-button3" @click="closeScreenshotModal">×</button>
-                                            <h3>Screenshot</h3>
-                                            <img :src="modalScreenshot" alt="Player Screenshot" class="screenshot-image">
-                                        </div>
-                                    </div>
-                                </transition>
-                                                                                    
-                                <div class="player-list-header">
-                                    <h2>Player List</h2>
-                                    <input type="text" class="search-bar" v-model="searchQuery" placeholder="Search players...">
-                                </div>
-                                <div class="player-list">
-                                    <div v-for="player in filteredPlayers" :key="player.id" class="player-item">
-                                        <span class="player-status"></span>
-                                        <div class="player-info">
-                                            <div class="player-name">{{ player.name }}</div>
-                                            <div class="player-steamid">Steam ID: {{ player.steamId }}</div>
-                                        </div>
-                                        <div class="player-actions">
-                                            <i class="fas fa-user-slash" @click="kickPlayer(player.id)" title="Kick"></i>
-                                            <i class="fas fa-ban" @click="banPlayer(player.id)" title="Ban"></i>
-                                            <i class="fas fa-camera" @click="screenshotPlayer(player.id)" title="Screenshot"></i>
-                                            <i class="fas fa-eye" @click="spectatePlayer(player.id)" title="Spectate"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div v-if="selectedSection === 'bans'" class="section ban-section">
-                            <div class="ban-header">
-                                <div class="ban-title">
-                                    <h2>Ban Management</h2>
-                                </div>
-                                <div class="ban-controls">
-                                    <div class="search-container">
-                                        <i class="fas fa-search search-icon"></i>
-                                        <input 
-                                            type="text" 
-                                            class="ban-search" 
-                                            v-model="banSearchQuery" 
-                                            placeholder="Search by name, Steam ID, or reason..."
-                                        >
-                                    </div>
-                                </div>
-                            </div>
-                        
-                            <div class="ban-list-container">
-                                <div v-if="filteredBans.length === 0" class="no-bans">
-                                    <i class="fas fa-check-circle"></i>
-                                    <p>No banned players found</p>
-                                </div>
-                                
-                                <div v-else class="ban-grid">
-                                    <div v-for="ban in filteredBans" 
-                                         :key="ban.id" 
-                                         class="ban-card">
-                                        <div class="ban-card-header">
-                                            <div class="ban-user-info">
-                                                <div class="ban-avatar">
-                                                    <i class="fas fa-user"></i>
-                                                </div>
-                                                <div class="ban-user-details">
-                                                    <h3>{{ ban.name }}</h3>
-                                                    <span class="ban-date">Banned until: {{ ban.expire }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="ban-actions">
-                                                <button @click="unbanPlayer(ban.id)" class="unban-btn">
-                                                    <i class="fas fa-undo"></i>
-                                                    <span>Unban</span>
-                                                </button>
-                                                <button @click="showBanInfo(ban)" class="details-btn">
-                                                    <i class="fas fa-info-circle"></i>
-                                                    <span>Details</span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div class="ban-card-content">
-                                            <div class="ban-info-grid">
-                                                <div class="ban-info-item">
-                                                    <span class="info-label">Steam ID</span>
-                                                    <span class="info-value">{{ ban.steam }}</span>
-                                                </div>
-                                                <div class="ban-info-item">
-                                                    <span class="info-label">Discord</span>
-                                                    <span class="info-value">{{ ban.discord }}</span>
-                                                </div>
-                                                <div class="ban-info-item">
-                                                    <span class="info-label">IP Address</span>
-                                                    <span class="info-value">{{ ban.ip }}</span>
-                                                </div>
-                                                <div class="ban-info-item">
-                                                    <span class="info-label">HWID</span>
-                                                    <span class="info-value">{{ ban.hwid1 }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="ban-reason">
-                                                <span class="info-label">Reason</span>
-                                                <p>{{ ban.reason }}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <transition name="modal-fade">
-                                <div v-if="showModal" class="modal-overlay">
-                                    <div class="modal-container">
-                                        <div class="modal-header">
-                                            <div class="modal-title">
-                                                <i class="fas fa-user-shield"></i>
-                                                <h3>Ban Details</h3>
-                                            </div>
-                                            <button class="modal-close" @click="closeModal">
-                                                <i class="fas fa-times"></i>
-                                            </button>
-                                        </div>
-                                        
-                                        <div class="modal-body">
-                                            <div class="modal-user-header">
-                                                <div class="modal-avatar">
-                                                    <i class="fas fa-user"></i>
-                                                </div>
-                                                <div class="modal-user-info">
-                                                    <h4>{{ modalBan.name }}</h4>
-                                                    <span class="ban-status">Banned</span>
-                                                </div>
-                                            </div>
-                            
-                                            <div class="modal-info-grid">
-                                                <div class="modal-info-item">
-                                                    <span class="modal-label">Steam ID</span>
-                                                    <div class="modal-value-container">
-                                                        <span class="modal-value">{{ modalBan.steam }}</span>
-                                                        <button class="copy-btn" @click="copyToClipboard(modalBan.steam)">
-                                                            <i class="fas fa-copy"></i>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                            
-                                                <div class="modal-info-item">
-                                                    <span class="modal-label">Discord ID</span>
-                                                    <div class="modal-value-container">
-                                                        <span class="modal-value">{{ modalBan.discord }}</span>
-                                                        <button class="copy-btn" @click="copyToClipboard(modalBan.discord)">
-                                                            <i class="fas fa-copy"></i>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                            
-                                                <div class="modal-info-item">
-                                                    <span class="modal-label">HWID</span>
-                                                    <div class="modal-value-container">
-                                                        <span class="modal-value">{{ modalBan.hwid1 }}</span>
-                                                        <button class="copy-btn" @click="copyToClipboard(modalBan.hwid1)">
-                                                            <i class="fas fa-copy"></i>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                            
-                                                <div class="modal-info-item">
-                                                    <span class="modal-label">IP Address</span>
-                                                    <div class="modal-value-container">
-                                                        <span class="modal-value">{{ modalBan.ip }}</span>
-                                                        <button class="copy-btn" @click="copyToClipboard(modalBan.ip)">
-                                                            <i class="fas fa-copy"></i>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                            
-                                                <div class="modal-info-item full-width">
-                                                    <span class="modal-label">Ban Expiration</span>
-                                                    <span class="modal-value">{{ modalBan.expire }}</span>
-                                                </div>
-                            
-                                                <div class="modal-info-item full-width">
-                                                    <span class="modal-label">Ban Reason</span>
-                                                    <span class="modal-value reason">{{ modalBan.reason }}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                            
-                                        <div class="modal-footer">
-                                            <button class="modal-btn secondary" @click="closeModal">
-                                                <i class="fas fa-times"></i>
-                                                Close
-                                            </button>
-                                            <button class="modal-btn primary" @click="unbanPlayer(modalBan.id)">
-                                                <i class="fas fa-undo"></i>
-                                                Unban Player
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </transition>
-                        </div>
-                        
-                        
-                        <div v-if="selectedSection === 'server-options'" class="section" key="server-options">
-                            <h2 class="section-title">Server Options</h2>
-                            <div class="server-options-grid">
-                                <div v-for="option in serverOptions" :key="option.name" class="server-card">
-                                    <div class="card-content">
-                                        <div class="card-icon">
-                                            <i :class="getOptionIcon(option.name)"></i>
-                                        </div>
-                                        <h3 class="card-title">{{ option.name }}</h3>
-                                        <button @click="executeServerOption(option.action)" class="action-button">
-                                            <span class="button-text">Execute</span>
-                                            <i class="fas fa-arrow-right"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="server-card danger">
-                                    <div class="card-content">
-                                        <div class="card-icon">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </div>
-                                        <h3 class="card-title">Clear All Entities</h3>
-                                        <button @click="clearAllEntities" class="action-button">
-                                            <span class="button-text">Execute</span>
-                                            <i class="fas fa-arrow-right"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div v-if="selectedSection === 'player-options'" class="section" key="player-options">
-                            <h2>Player Options</h2>
-                            <div class="player-options-content">
-                                <div class="option-category misc-options">
-                                    <h3>Miscellaneous Options</h3>
-                                    <div v-for="option in playerOptions" :key="option.name" v-if="option.category === 'misc'" class="option">
-                                        <div class="option-label">{{ option.name }}</div>
-                                        <div class="option-toggle">
-                                            <div class="toggle-switch">
-                                                <input type="checkbox" v-model="option.enabled" :id="option.name" @change="toggleOptiona(option.name)">
-                                                <label :for="option.name"></label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="option-category actions">
-                                    <h3 class="actions-title">Actions</h3>
-                                    <div class="action-item">
-                                        <input type="text" v-model="vehicleName" placeholder="Enter vehicle name" class="styled-input">
-                                        <button @click="spawnVehicle" class="styled-button">Spawn</button>
-                                    </div>
-                                    <div class="action-item">
-                                        <input type="text" v-model="objectName" placeholder="Enter object name" class="styled-input">
-                                        <button @click="objectSpawn" class="styled-button">Spawn</button>
-                                    </div>
-                                    <div class="action-item">
-                                        <input type="text" v-model="pedModel" placeholder="Enter ped name" class="styled-input">
-                                        <button @click="changePed" class="styled-button">Spawn</button>
-                                    </div>
-                                </div>
-                                
-                                <div class="option-category admin-powers">
-                                    <h3>Admin Powers</h3>
-                                    <div v-for="option in playerOptions" :key="option.name" v-if="option.category === 'admin'" class="option">
-                                        <div class="option-label">{{ option.name }}</div>
-                                        <div class="option-toggle">
-                                            <div class="toggle-switch">
-                                                <input type="checkbox" v-model="option.enabled" :id="option.name" @change="toggleOptiona(option.name)">
-                                                <label :for="option.name"></label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>                        
-                    </transition>
-                </div>
-            </div>
-        </div>
-        <transition-group name="notification" tag="div" class="notification-container">
-            <div v-for="notification in notifications" 
-                 :key="notification.id" 
-                 class="notification" 
-                 :class="notification.type">
-                <div class="notification-icon">
-                    <i :class="getNotificationIcon(notification.type)"></i>
-                </div>
-                <div class="notification-content">
-                    {{ notification.message }}
-                </div>
-                <button class="notification-close" @click="removeNotification(notification.id)">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        </transition-group>
-    </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
-    <script src="app.js"></script>
+  <div id="root"></div>
 </body>
 </html>
-
-

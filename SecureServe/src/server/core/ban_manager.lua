@@ -555,10 +555,15 @@ function BanManager.ban_player(player_id, reason, details)
     
     if details then
         if type(details) == "table" then
-        details.detection = details.detection or reason
-        
-        if details.time and tonumber(details.time) then
-            expires = os.time() + (tonumber(details.time) * 60)
+            details.detection = details.detection or reason
+            
+            if details.time and tonumber(details.time) then
+                local banTimeMinutes = tonumber(details.time)
+                if banTimeMinutes >= 2147483647 or banTimeMinutes <= 0 then
+                    expires = 0
+                else
+                    expires = os.time() + (banTimeMinutes * 60)
+                end
             end
         else
             local detection_reason = details
@@ -592,12 +597,19 @@ function BanManager.ban_player(player_id, reason, details)
     
     BanManager.save_bans()
     
+    local detection_text = ""
+    if details and type(details) == "table" and details.detection then
+        detection_text = "\nDetection: " .. tostring(details.detection)
+    end
+    
     Citizen.CreateThread(function()
         Citizen.Wait(10000)
         if GetPlayerPing(player_id) > 0 then
-            DropPlayer(player_id, "You have been banned from this server.\nReason: " .. ban_reason .. 
-                (expires > 0 and "\nExpires: " .. os.date("%Y-%m-%d %H:%M:%S", expires) or "") ..
-                (details and details.detection and "\nDetection: " .. details.detection or ""))
+            local expire_text = ""
+            if expires > 0 then
+                expire_text = "\nExpires: " .. os.date("%Y-%m-%d %H:%M:%S", expires)
+            end
+            DropPlayer(player_id, "You have been banned from this server.\nReason: " .. tostring(ban_reason) .. expire_text .. detection_text)
         end
     end)
 
@@ -611,31 +623,25 @@ function BanManager.ban_player(player_id, reason, details)
     logger.debug("BAN DEBUG: _G.exports exists: " .. tostring(_G.exports ~= nil))
     
     if _G.exports then
-        logger.debug("BAN DEBUG: screenshot-basic export exists: " .. tostring(_G.exports['screenshot-basic'] ~= nil))
+        logger.debug("BAN DEBUG: screencapture export exists: " .. tostring(_G.exports['screencapture'] ~= nil))
     end
     
-    if not ban_data.screenshot and _G.exports and _G.exports['screenshot-basic'] then
+    if not ban_data.screenshot and _G.exports and _G.exports['screencapture'] then
         logger.debug("BAN DEBUG: Attempting to take screenshot for player " .. player_id)
         local ok, err = pcall(function()
-            _G.exports['screenshot-basic']:requestClientScreenshot(player_id, {
-                quality = 0.9,
+            _G.exports['screencapture']:serverCapture(tostring(player_id), {
                 encoding = 'jpg'
-            }, function(err, data)
+            }, function(data)
                 logger.debug("BAN DEBUG: Screenshot callback triggered for player " .. player_id)
-                if err then
-                    logger.error("BAN DEBUG: Screenshot failed with error: " .. tostring(err))
-                else
+                if data then
                     logger.debug("BAN DEBUG: Screenshot data received - type: " .. type(data) .. ", length: " .. (data and #data or 0))
-                end
-                
-                if not err and data then
                     ban_data.screenshot = data
                     logger.debug("BAN DEBUG: Screenshot data assigned to ban_data")
                 else
                     logger.debug("BAN DEBUG: No screenshot data to assign")
                 end
                 DiscordLogger.log_ban(player_id, reason, ban_data, ban_data.screenshot)
-            end)
+            end, 'base64')
         end)
         if not ok then
             logger.error("BAN DEBUG: Screenshot pcall failed: " .. tostring(err))

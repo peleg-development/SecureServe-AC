@@ -5,14 +5,15 @@ local Utils = {}
 ---@return string The generated random string
 function Utils.random_key(length)
     local characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    local random_string = ""
+    local characters_length = #characters
+    local random_chars = {}
 
     for i = 1, length do
-        local random_index = math.random(1, #characters)
-        random_string = random_string .. characters:sub(random_index, random_index)
+        local random_index = math.random(1, characters_length)
+        random_chars[i] = characters:sub(random_index, random_index)
     end
 
-    return random_string
+    return table.concat(random_chars)
 end
 
 local entity_enumerator = {

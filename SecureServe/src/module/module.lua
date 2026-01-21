@@ -158,39 +158,6 @@ else
     
         return true
     end
-    
-    ---@param originalFunction function The original explosion function
-    ---@return function The wrapped explosion function
-    local handleExplosionEvent = function(originalFunction, ...)
-        local resourceName = GetCurrentResourceName()
-        if isValidResource(resourceName) then
-            TriggerServerEvent("SecureServe:Explosions:Whitelist", {
-                source = GetPlayerServerId(PlayerId()),
-                resource = resourceName
-            })
-        end
-        return originalFunction(...)
-    end
-    
-    local _AddExplosion = AddExplosion
-    local _AddExplosionWithUserVfx = AddExplosionWithUserVfx
-    local _ExplodeVehicle = ExplodeVehicle
-    local _NetworkExplodeVehicle = NetworkExplodeVehicle
-    local _ShootSingleBulletBetweenCoords = ShootSingleBulletBetweenCoords
-    local _AddOwnedExplosion = AddOwnedExplosion
-    local _StartScriptFire = StartScriptFire
-    local _RemoveScriptFire = RemoveScriptFire
-    
-    _G.AddExplosion = function(...) return handleExplosionEvent(_AddExplosion, ...) end
-    _G.AddExplosionWithUserVfx = function(...) return handleExplosionEvent(_AddExplosionWithUserVfx, ...) end
-    _G.ExplodeVehicle = function(...) return handleExplosionEvent(_ExplodeVehicle, ...) end
-    _G.NetworkExplodeVehicle = function(...) return handleExplosionEvent(_NetworkExplodeVehicle, ...) end
-    _G.ShootSingleBulletBetweenCoords = function(...) return handleExplosionEvent(_ShootSingleBulletBetweenCoords, ...) end
-    _G.AddOwnedExplosion = function(...) return handleExplosionEvent(_AddOwnedExplosion, ...) end
-    _G.StartScriptFire = function(...) return handleExplosionEvent(_StartScriptFire, ...) end
-    _G.RemoveScriptFire = function(...) return handleExplosionEvent(_RemoveScriptFire, ...) end 
-    
-
 
     local function handleWeaponEvent(originalFunction, weaponArgIndex, ...)
         local args = { ... }

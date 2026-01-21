@@ -113,6 +113,7 @@ function Require.add_path(path)
     table.insert(Require.paths, 1, path)
 end
 
+if not _G.SecureServeErrorHandler then
 _G.SecureServeErrorHandler = function(err)
     local trace = debug.traceback("", 2)
     
@@ -124,10 +125,11 @@ _G.SecureServeErrorHandler = function(err)
     print(formatted_error)
     
     return err
+    end
 end
 
-_G.require = function(module_name)
-    return Require.load(module_name)
+if _G.require ~= Require.load then
+    _G.require = Require.load
 end
 
 return Require 

@@ -131,10 +131,10 @@ RegisterNetEvent('banPlayer', function(targetId)
         print("PANEL DEBUG: _G.exports exists: " .. tostring(_G.exports ~= nil))
         
         if _G.exports then
-            print("PANEL DEBUG: screenshot-basic export exists: " .. tostring(_G.exports['screenshot-basic'] ~= nil))
+            print("PANEL DEBUG: screencapture export exists: " .. tostring(_G.exports['screencapture'] ~= nil))
         end
 
-        if _G.exports and _G.exports['screenshot-basic'] then
+        if _G.exports and _G.exports['screencapture'] then
             print("PANEL DEBUG: Taking screenshot before ban...")
             DiscordLogger.request_screenshot(tonumber(targetId), "Ban: Manual ban", function(image)
                 print("PANEL DEBUG: Screenshot callback received for player " .. targetId)
@@ -165,16 +165,15 @@ RegisterNetEvent('SecureServe:screenshotPlayer', function(targetId)
     local src = source
     if not IsMenuAdmin(src) then return end
     if not targetId or targetId <= 0 then return end
-    if not _G.exports or not _G.exports['screenshot-basic'] then
+    if not _G.exports or not _G.exports['screencapture'] then
         TriggerClientEvent('anticheat:notify', src, 'Screenshot system unavailable')
         return
     end
 
-    _G.exports['screenshot-basic']:requestClientScreenshot(targetId, {
-        quality = 0.95,
+    _G.exports['screencapture']:serverCapture(tostring(targetId), {
         encoding = 'jpg'
-    }, function(err, data)
-        if err or not data then
+    }, function(data)
+        if not data then
             TriggerClientEvent('anticheat:notify', src, 'Failed to take screenshot')
             return
         end
