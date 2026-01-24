@@ -11,7 +11,7 @@ client_scripts {
 
 dependencies {
     "/server:5181",
-    "screenshot-basic"
+    "screencapture"
 }
 
 lua54 "yes"
