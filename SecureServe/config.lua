@@ -51,7 +51,7 @@ SecureServe.Debug = false 																      -- Enables debug mode, this will
 -- First try enabling everything and then disable the ones that are not needed or cause issues in your server 
 -- This system is Fivem Built-in and not created by SecureServe's team...
 SecureServe.ServerSecurity = {
-    Enabled = true, -- Master toggle for all server security settings
+    Enabled = false, -- Master toggle for all server security settings
     
     -- CONNECTION & AUTHENTICATION SETTINGS
     Connection = {
@@ -60,7 +60,7 @@ SecureServe.ServerSecurity = {
                                         -- If experiencing connection issues, increase to 1200
         
         UpdateRate = 60,                -- How often player status is checked (every 60 seconds)
-                                        -- Lower values increase server load but improve security
+                                        -- Lower values increase server load.improve security
         
         ConsecutiveFailures = 2,        -- Number of consecutive failures before kicking
                                         -- Increase to 3 if experiencing false kicks
