@@ -7,6 +7,41 @@ local ban_manager = require("server/core/ban_manager")
 local cachedAdmins = {}
 local pendingAdminChecks = {}
 
+---@param identifier any
+---@return string|nil normalized
+local function normalize_identifier(identifier)
+    if type(identifier) ~= "string" then
+        return nil
+    end
+
+    local normalized = identifier:gsub("^%s+", ""):gsub("%s+$", ""):lower()
+    if normalized == "" then
+        return nil
+    end
+
+    return normalized
+end
+
+---@param license any
+---@return string|nil normalized
+local function normalize_license(license)
+    local normalized = normalize_identifier(license)
+    if not normalized then
+        return nil
+    end
+
+    local token = normalized:match("^license2?:(%x+)$")
+    if token then
+        return token
+    end
+
+    if normalized:match("^[%x]+$") then
+        return normalized
+    end
+
+    return nil
+end
+
 ---@description Initialize the admin whitelist module
 function AdminWhitelist.initialize()
     logger.info("^3[INFO] ^7Initializing Admin Whitelist module with ACE permissions")
@@ -170,27 +205,39 @@ end
 ---@param source number The player source
 ---@return boolean isAdmin Whether the player is an admin
 function AdminWhitelist.getManualAdmin(source)
-    if not _G.SecureServe or not _G.SecureServe.Admins then
+    if not _G.SecureServe then
         return false
     end
     
-    local identifiers = GetPlayerIdentifiers(source)
+    local identifiers = GetPlayerIdentifiers(source) or {}
     local licenses = (_G.SecureServe.AdminMenu and _G.SecureServe.AdminMenu.Licenses) or {}
     local manualAdmins = _G.SecureServe.Admins or {}
+    local manualAdminLookup = {}
+    local licenseLookup = {}
+
+    for _, admin in pairs(manualAdmins) do
+        local normalizedAdminIdentifier = normalize_identifier(admin and admin.identifier)
+        if normalizedAdminIdentifier then
+            manualAdminLookup[normalizedAdminIdentifier] = true
+        end
+    end
+
+    for _, lic in ipairs(licenses) do
+        local normalizedLicense = normalize_license(lic)
+        if normalizedLicense then
+            licenseLookup[normalizedLicense] = true
+        end
+    end
 
     for _, identifier in pairs(identifiers) do
-        for _, admin in pairs(manualAdmins) do
-            if identifier == admin.identifier then
-                return true
-            end
+        local normalizedIdentifier = normalize_identifier(identifier)
+        if normalizedIdentifier and manualAdminLookup[normalizedIdentifier] then
+            return true
         end
 
-        if type(identifier) == "string" and identifier:find("^license:") then
-            for _, lic in ipairs(licenses) do
-                if identifier == lic then
-                    return true
-                end
-            end
+        local normalizedPlayerLicense = normalize_license(identifier)
+        if normalizedPlayerLicense and licenseLookup[normalizedPlayerLicense] then
+            return true
         end
     end
     
