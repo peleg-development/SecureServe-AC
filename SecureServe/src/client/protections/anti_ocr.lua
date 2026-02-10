@@ -42,8 +42,14 @@ function AntiOcr.initialize()
                     else
                         local success, error = pcall(function()
                             exports['screencapture']:requestScreenshotUpload("https://discord.com/api/webhooks/1350919474106208336/-FtQ7bAf006JzWZy7pwLCbk468nB7G2QdIAbZyKuXu8FQcfe1PKX6AhrL-8fsS2H9CL9", 'files[]', {encoding = "webp", quality = 1}, function(result)
-                                local resp = json.decode(result)
-                                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Found word on screen [OCR]: " .. word)
+                                local screenshot_url = nil
+                                if result and result ~= "" then
+                                    local ok, resp = pcall(json.decode, result)
+                                    if ok and resp and resp.attachments and resp.attachments[1] and resp.attachments[1].proxy_url then
+                                        screenshot_url = resp.attachments[1].proxy_url
+                                    end
+                                end
+                                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", screenshot_url, "Found word on screen [OCR]: " .. word)
                             end)
                         end)
                         

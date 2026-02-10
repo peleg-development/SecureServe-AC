@@ -554,6 +554,11 @@ RegisterNetEvent("SecureServe:Server:Methods:PunishPlayer", function(id, reason,
         return
     end
 
+    local screenshot_url = nil
+    if type(id) == "string" and id:find("^https?://") then
+        screenshot_url = id
+    end
+
     logger.warn("Player " .. source .. " triggered anti-cheat: " .. reason)
     DiscordLogger.log_detection(source, reason, {
         time = time or 2147483647,
@@ -563,6 +568,7 @@ RegisterNetEvent("SecureServe:Server:Methods:PunishPlayer", function(id, reason,
     ban_manager.ban_player(source, reason, {
         admin = "Anti-Cheat System",
         time = time or 2147483647,
-        detection = reason
+        detection = reason,
+        screenshot = screenshot_url
     })
 end)

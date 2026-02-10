@@ -522,7 +522,8 @@ end
 ---@param player_id number The player ID
 ---@param reason string The reason for screenshot
 ---@param callback function Optional callback after screenshot is taken
-function DiscordLogger.request_screenshot(player_id, reason, callback)
+---@param timeout_seconds number|nil Optional timeout (seconds), defaults to 15
+function DiscordLogger.request_screenshot(player_id, reason, callback, timeout_seconds)
     if not player_id or player_id <= 0 then
         logger.error("Cannot request screenshot: Invalid player ID")
         return
@@ -530,20 +531,25 @@ function DiscordLogger.request_screenshot(player_id, reason, callback)
     
     local player_name = GetPlayerName(player_id) or "Unknown"
     
-    -- Get the screenshot webhook URL
+    -- Prefer dedicated screenshot webhook, fallback to ban webhook.
     local screenshot_webhook = DiscordLogger.webhooks.screenshot
-    
+    if not screenshot_webhook or screenshot_webhook == "" then
+        screenshot_webhook = DiscordLogger.webhooks.ban
+    end
+
     if not screenshot_webhook or screenshot_webhook == "" then
         if callback then callback(nil) end
         return
     end
+
+    local request_timeout = tonumber(timeout_seconds) or 15
     
     -- Request screenshot upload from client
     TriggerClientCallback({
         source = player_id,
         eventName = 'SecureServe:RequestScreenshotUpload',
         args = {0.95, screenshot_webhook},
-        timeout = 15,
+        timeout = request_timeout,
         timedout = function(state)
             if callback then callback(nil) end
         end,
