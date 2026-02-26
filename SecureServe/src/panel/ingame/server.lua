@@ -43,6 +43,7 @@ end
 ---@type BanManagerModule
 local BanManager = require("server/core/ban_manager")
 local logger = require("server/core/logger")
+local ScreenshotHelper = require("shared/lib/screenshot_helper")
 
 RegisterNetEvent('unbanPlayer', function(banId)
     local src = source
@@ -162,20 +163,20 @@ RegisterNetEvent('SecureServe:screenshotPlayer', function(targetId)
     local src = source
     if not IsMenuAdmin(src) then return end
     if not targetId or targetId <= 0 then return end
-    if not _G.exports or not _G.exports['screencapture'] then
-        TriggerClientEvent('anticheat:notify', src, 'Screenshot system unavailable')
-        return
-    end
 
-    _G.exports['screencapture']:serverCapture(tostring(targetId), {
+    local started = ScreenshotHelper.capture_player(targetId, {
         encoding = 'jpg'
-    }, function(data)
-        if not data then
+    }, function(data, err)
+        if not data or err then
             TriggerClientEvent('anticheat:notify', src, 'Failed to take screenshot')
             return
         end
         TriggerClientEvent('SecureServe:Panel:DisplayScreenshot', src, data)
     end)
+
+    if not started then
+        TriggerClientEvent('anticheat:notify', src, 'Screenshot system unavailable')
+    end
 end)
 
 RegisterNetEvent('SecureServe:Panel:RequestBans', function(requestId)

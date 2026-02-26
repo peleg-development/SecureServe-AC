@@ -83,7 +83,6 @@ server_scripts {
 
 dependencies {
     "/server:5181",
-    "screencapture",
     "keep-alive"
 }
 

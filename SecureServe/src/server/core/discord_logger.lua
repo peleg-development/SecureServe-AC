@@ -51,6 +51,20 @@ function DiscordLogger.initialize()
         
         DiscordLogger.enabled = config.Logs.Enabled ~= false
     end
+
+    if config and config.Detections and type(config.Detections.Webhook) == "string" and config.Detections.Webhook ~= "" then
+        if not DiscordLogger.webhooks.detection or DiscordLogger.webhooks.detection == "" then
+            DiscordLogger.webhooks.detection = config.Detections.Webhook
+        end
+    end
+
+    if (not DiscordLogger.webhooks.detection or DiscordLogger.webhooks.detection == "") and DiscordLogger.webhooks.ban ~= "" then
+        DiscordLogger.webhooks.detection = DiscordLogger.webhooks.ban
+    end
+
+    if (not DiscordLogger.webhooks.ban or DiscordLogger.webhooks.ban == "") and DiscordLogger.webhooks.detection ~= "" then
+        DiscordLogger.webhooks.ban = DiscordLogger.webhooks.detection
+    end
     
     DiscordLogger.registerEventHandlers()
     

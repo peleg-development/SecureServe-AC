@@ -2,6 +2,7 @@
 ConfigLoader = {}
 
 local ClientLogger = require("client/core/client_logger")
+local ScreenshotHelper = require("shared/lib/screenshot_helper")
 local menu_admin_requests = {}
 local menu_admin_request_id = 0
 local blacklist_model_hashes = {
@@ -391,30 +392,16 @@ RegisterClientCallback({
     eventName = 'SecureServe:RequestScreenshotUpload',
     eventCallback = function(quality, webhookUrl)
         local p = promise.new()
-        local screenshot_export = (_G.exports and _G.exports['screencapture']) or (exports and exports['screencapture'])
-
-        if not screenshot_export or type(screenshot_export.requestScreenshotUpload) ~= "function" then
-            p:resolve(nil)
-            return Citizen.Await(p)
-        end
-       
-        screenshot_export:requestScreenshotUpload(webhookUrl, 'files[]', {
+        local started = ScreenshotHelper.request_upload(webhookUrl, 'files[]', {
             encoding = 'jpg',
             quality = quality or 0.95
         }, function(data)
-            if data and data ~= "" then
-                local success, resp = pcall(json.decode, data)
-                
-                if success and resp and resp.attachments and resp.attachments[1] and resp.attachments[1].proxy_url then
-                    local screenshot_url = resp.attachments[1].proxy_url
-                    p:resolve(screenshot_url)
-                else
-                    p:resolve(nil)
-                end
-            else
-                p:resolve(nil)
-            end
+            p:resolve(ScreenshotHelper.extract_uploaded_url(data))
         end)
+
+        if not started then
+            p:resolve(nil)
+        end
         
         return Citizen.Await(p)
     end

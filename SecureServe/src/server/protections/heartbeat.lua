@@ -17,17 +17,33 @@ local Heartbeat = {
     gracePeriod = 15
 }
 
+local function normalize_player_id(player_id)
+    local numeric = tonumber(player_id)
+    if not numeric or numeric <= 0 then
+        return nil
+    end
+    return numeric
+end
+
+local function get_positive_number(value, default_value)
+    local numeric = tonumber(value)
+    if numeric and numeric > 0 then
+        return numeric
+    end
+    return default_value
+end
+
 ---@description Initialize heartbeat protection
 function Heartbeat.initialize()
     logger.info("Initializing Heartbeat protection module")
 
     local config = SecureServe.Module and SecureServe.Module.Heartbeat or {}
     
-    Heartbeat.checkInterval = config.CheckInterval or 3000
-    Heartbeat.maxFailures = config.MaxFailures or 7
-    Heartbeat.heartbeatCheckInterval = config.HeartbeatCheckInterval or 5000
-    Heartbeat.timeoutThreshold = config.TimeoutThreshold or 10
-    Heartbeat.gracePeriod = config.GracePeriod or 15
+    Heartbeat.checkInterval = get_positive_number(config.CheckInterval, 3000)
+    Heartbeat.maxFailures = math.floor(get_positive_number(config.MaxFailures, 7))
+    Heartbeat.heartbeatCheckInterval = get_positive_number(config.HeartbeatCheckInterval, 5000)
+    Heartbeat.timeoutThreshold = get_positive_number(config.TimeoutThreshold, 10)
+    Heartbeat.gracePeriod = get_positive_number(config.GracePeriod, 15)
 
     Heartbeat.playerHeartbeats = {}
     Heartbeat.alive = {}
@@ -45,7 +61,9 @@ end
 ---@description Set up event handlers for heartbeat system
 function Heartbeat.setupEventHandlers()
     AddEventHandler("playerDropped", function()
-        local playerId = source
+        local playerId = normalize_player_id(source)
+        if not playerId then return end
+
         Heartbeat.playerHeartbeats[playerId] = nil
         Heartbeat.alive[playerId] = nil
         Heartbeat.allowedStop[playerId] = nil
@@ -54,11 +72,11 @@ function Heartbeat.setupEventHandlers()
     end)
 
     RegisterNetEvent("mMkHcvct3uIg04STT16I:cbnF2cR9ZTt8NmNx2jQS", function(key)
-        local playerId = source
-        local numPlayerId = tonumber(playerId)
+        local numPlayerId = normalize_player_id(source)
+        if not numPlayerId then return end
 
-        if string.len(key) < 15 or string.len(key) > 35 or key == nil then
-            DropPlayer(playerId, "Invalid heartbeat key")
+        if type(key) ~= "string" or string.len(key) < 15 or string.len(key) > 35 then
+            DropPlayer(numPlayerId, "Invalid heartbeat key")
         else
             Heartbeat.playerHeartbeats[numPlayerId] = os.time()
             if not Heartbeat.playerJoinTime[numPlayerId] then
@@ -68,18 +86,19 @@ function Heartbeat.setupEventHandlers()
     end)
 
     RegisterNetEvent('addalive', function()
-        local playerId = source
-        Heartbeat.alive[tonumber(playerId)] = true
+        local playerId = normalize_player_id(source)
+        if not playerId then return end
+        Heartbeat.alive[playerId] = true
     end)
 
     RegisterNetEvent('allowedStop', function()
-        local playerId = source
+        local playerId = normalize_player_id(source)
+        if not playerId then return end
         Heartbeat.allowedStop[playerId] = true
     end)
 
     RegisterNetEvent('playerLoaded', function()
-        local playerId = source
-        local numPlayerId = tonumber(playerId)
+        local numPlayerId = normalize_player_id(source)
         if numPlayerId then
             Heartbeat.playerHeartbeats[numPlayerId] = os.time()
             if not Heartbeat.playerJoinTime[numPlayerId] then
@@ -89,7 +108,8 @@ function Heartbeat.setupEventHandlers()
     end)
 
     RegisterNetEvent('playerSpawneda', function()
-        local playerId = source
+        local playerId = normalize_player_id(source)
+        if not playerId then return end
         Heartbeat.allowedStop[playerId] = true
     end)
 end
@@ -104,13 +124,23 @@ function Heartbeat.startMonitoringThreads()
             local players = GetPlayers()
 
             for _, playerId in ipairs(players) do
-                local numPlayerId = tonumber(playerId)
+                local numPlayerId = normalize_player_id(playerId)
+                if not numPlayerId then
+                    goto continue
+                end
                 
                 local lastHeartbeatTime = Heartbeat.playerHeartbeats[numPlayerId]
                 
                 if not lastHeartbeatTime then
                     if not Heartbeat.playerJoinTime[numPlayerId] then
                         Heartbeat.playerJoinTime[numPlayerId] = currentTime
+                        goto continue
+                    end
+
+                    local timeSinceJoinWithoutHeartbeat = currentTime - Heartbeat.playerJoinTime[numPlayerId]
+                    if timeSinceJoinWithoutHeartbeat > (Heartbeat.gracePeriod + Heartbeat.timeoutThreshold) then
+                        Heartbeat.banPlayer(numPlayerId, "No initial heartbeat received")
+                        Heartbeat.playerHeartbeats[numPlayerId] = nil
                     end
                     goto continue
                 end
@@ -142,14 +172,20 @@ function Heartbeat.startMonitoringThreads()
             local players = GetPlayers()
 
             for _, playerId in ipairs(players) do
-                Heartbeat.alive[tonumber(playerId)] = false
-                TriggerClientEvent('checkalive', tonumber(playerId))
+                local numPlayerId = normalize_player_id(playerId)
+                if numPlayerId then
+                    Heartbeat.alive[numPlayerId] = false
+                    TriggerClientEvent('checkalive', numPlayerId)
+                end
             end
 
             Citizen.Wait(Heartbeat.checkInterval)
 
             for _, playerId in ipairs(players) do
-                local numPlayerId = tonumber(playerId)
+                local numPlayerId = normalize_player_id(playerId)
+                if not numPlayerId then
+                    goto continue
+                end
 
                 if not Heartbeat.alive[numPlayerId] and Heartbeat.allowedStop[numPlayerId] then
                     Heartbeat.failureCount[numPlayerId] = (Heartbeat.failureCount[numPlayerId] or 0) + 1
@@ -160,6 +196,8 @@ function Heartbeat.startMonitoringThreads()
                 else
                     Heartbeat.failureCount[numPlayerId] = 0
                 end
+
+                ::continue::
             end
         end
     end)

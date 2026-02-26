@@ -541,6 +541,15 @@ exports("module_punish", function(source, reason, webhook, time)
 
     logger.info("Ban reason not matching any whitelist, proceeding with ban: " .. reason)
     time = tonumber(time) or 2147483647
+
+    if DiscordLogger and type(DiscordLogger.log_detection) == "function" then
+        DiscordLogger.log_detection(source, reason, {
+            time = time,
+            webhook = webhook,
+            module = "Module Protection"
+        }, false)
+    end
+
     return ban_manager.ban_player(source, reason, {
         detection = "Module Protection",
         time = time,

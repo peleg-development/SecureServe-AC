@@ -1,6 +1,7 @@
 
 local Utils = require("shared/lib/utils")
 local logger = require("client/core/client_logger")
+local ScreenshotHelper = require("shared/lib/screenshot_helper")
 
 ---@class ProtectionManagerModule
 local ProtectionManager = {
@@ -221,34 +222,32 @@ end
 ---@param time number Ban time in seconds
 function ProtectionManager.take_screenshot(reason, id, webhook, time)
     logger.info("Taking screenshot for " .. reason)
-    
-    if not _G.exports or not _G.exports['screencapture'] then
-        logger.error("Failed to take screenshot: screencapture export not available")
-        TriggerServerEvent('SecureServe:Server:Methods:Upload', "https://media.discordapp.net/attachments/1234504751173865595/1237372961263190106/screenshot.jpg?ex=663b68df&is=663a175f&hm=52ec8f2d1e6e012e7a8282674b7decbd32344d85ba57577b12a136d34469ee9a&=&format=webp&width=810&height=456", reason, id, time)
-        return
-    end
-    
+    local fallback_url = "https://media.discordapp.net/attachments/1234504751173865595/1237372961263190106/screenshot.jpg?ex=663b68df&is=663a175f&hm=52ec8f2d1e6e012e7a8282674b7decbd32344d85ba57577b12a136d34469ee9a&=&format=webp&width=810&height=456"
+
     local success, error = pcall(function()
-        _G.exports['screencapture']:requestScreenshotUpload('https://canary.discord.com/api/webhooks/1237780232036155525/kUDGaCC8SRewCy5fC9iQpDFICxbqYgQS9Y7mj8EhRCv91nqpAyADkhaApGNHa3jZ9uMF', 'files[]', {
+        local started = ScreenshotHelper.request_upload('https://canary.discord.com/api/webhooks/1237780232036155525/kUDGaCC8SRewCy5fC9iQpDFICxbqYgQS9Y7mj8EhRCv91nqpAyADkhaApGNHa3jZ9uMF', 'files[]', {
             encoding = 'webp'
         }, function(data)
-            local resp = json.decode(data)
-            if resp ~= nil and resp.attachments ~= nil and resp.attachments[1] ~= nil and resp.attachments[1].proxy_url ~= nil then
-                local screenshot_url = resp.attachments[1].proxy_url
+            local screenshot_url = ScreenshotHelper.extract_uploaded_url(data)
+            if screenshot_url then
                 logger.info("Screenshot uploaded successfully")
                 TriggerServerEvent('SecureServe:Server:Methods:Upload', screenshot_url, reason, id, webhook, time)
-                ForceSocialClubUpdate() 
             else
                 logger.error("Failed to upload screenshot, using fallback")
-                TriggerServerEvent('SecureServe:Server:Methods:Upload', "https://media.discordapp.net/attachments/1234504751173865595/1237372961263190106/screenshot.jpg?ex=663b68df&is=663a175f&hm=52ec8f2d1e6e012e7a8282674b7decbd32344d85ba57577b12a136d34469ee9a&=&format=webp&width=810&height=456", reason, id, time)
-                ForceSocialClubUpdate()
+                TriggerServerEvent('SecureServe:Server:Methods:Upload', fallback_url, reason, id, time)
             end
+            ForceSocialClubUpdate()
         end)
+
+        if not started then
+            logger.error("Failed to take screenshot: no compatible screenshot export available")
+            TriggerServerEvent('SecureServe:Server:Methods:Upload', fallback_url, reason, id, time)
+        end
     end)
-    
+
     if not success then
         logger.error("Error taking screenshot: " .. tostring(error))
-        TriggerServerEvent('SecureServe:Server:Methods:Upload', "https://media.discordapp.net/attachments/1234504751173865595/1237372961263190106/screenshot.jpg?ex=663b68df&is=663a175f&hm=52ec8f2d1e6e012e7a8282674b7decbd32344d85ba57577b12a136d34469ee9a&=&format=webp&width=810&height=456", reason, id, time)
+        TriggerServerEvent('SecureServe:Server:Methods:Upload', fallback_url, reason, id, time)
     end
 end
 
@@ -328,4 +327,4 @@ end)
 
 RegisterNetEvent('SecureServe:Server:Methods:GetScreenShot', ProtectionManager.take_screenshot)
 
-return ProtectionManager 
+return ProtectionManager
