@@ -1,3 +1,4 @@
+
 local config_manager = require("server/core/config_manager")
 local ban_manager = require("server/core/ban_manager")
 local logger = require("server/core/logger")
@@ -386,6 +387,12 @@ local function main()
 
     print("^3╰───────────────^7")
 
+    print("^3═════════════════════════════════════════════════════════════════════════════════")
+    print("^1★ ^3THE PERFECT ^4FiveM MLO's ^1-> ^5https://kingmaps.net/")
+    print("^1★ ^3For the best ^1FiveM Anticheat ^1-> ^5https://fiveguard.net/")
+    print("^1★ ^3Most reliable ^2FiveM Scripts ^3supporting ^1QBCORE, ESX, VRP ^1-> ^5https://justscripts.net/")
+    print("^3═════════════════════════════════════════════════════════════════════════════════")
+    print("^6This resource is sponsored by ^5https://kingmaps.net/^6, ^5https://fiveguard.net/^6, and ^5https://justscripts.net/^6!")
 
     registerServerCommands()
 
