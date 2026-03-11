@@ -1,3 +1,20 @@
+### Fiveguard
+
+[Fiveguard.net](https://fiveguard.net/) is best paid FiveM Anticheat providing unique features such as Anti Aimbot, Objects-AI detection, Cheats-AI detection, Safe-Events and many more. This product is developed to eliminate cheats and at the same time provide smooth gaming experience!
+
+<p align='center'>
+  For an enhanced <b>paid anticheat</b>, visit <a href="https://store.fiveguard.ac">https://store.fiveguard.ac</a>.
+</p>
+<p align='center'>
+  We are able to provide this <strong>free product</strong> thanks to the support of <a href="https://fiveguard.net">https://fiveguard.net</a>.
+</p>
+<p align='center'>
+  <strong>Fiveguard</strong> - Elevating your FiveM server security.
+</p>
+
+<b>SecureServe-AC is only free version containing basic checks if you want FULL PROTECTION you need to purchase this <a href="https://fiveguard.net/" rel="dofollow">FiveM Anticheat</a>
+---
+
 # SecureServe - Free & Open Source Fivem Anti-Cheat
 <div align="center">
 
