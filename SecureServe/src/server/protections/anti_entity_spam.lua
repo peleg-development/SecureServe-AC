@@ -12,12 +12,19 @@ local config_manager = require("server/core/config_manager")
 ---@description Initialize anti-entity spam protection
 function AntiEntitySpam.initialize()
     AddEventHandler("entityCreating", function(entity)
-        -- Note: entityCreating fires before the entity actually exists; avoid DoesEntityExist checks here
         local entityType  = GetEntityType(entity)
         local owner       = NetworkGetFirstEntityOwner(entity)
         local population  = GetEntityPopulationType(entity)
         local modelHash   = GetEntityModel(entity)
-        local hwid        = GetPlayerToken(owner, 0)
+
+        if not owner or owner <= 0 then
+            if modelHash and config_manager.is_blacklisted_model(modelHash) then
+                CancelEvent()
+            end
+            return
+        end
+
+        local hwid = GetPlayerToken(owner, 0)
     
         if modelHash and config_manager.is_blacklisted_model(modelHash) then
             local isVehicle = (entityType == 2) and config_manager.is_blacklisted_vehicle_protection_enabled()
@@ -27,8 +34,11 @@ function AntiEntitySpam.initialize()
             if isVehicle or isPed or isObject then
                 CancelEvent()
                 local entityTypeName = (entityType == 2 and "Vehicle") or (entityType == 1 and "Ped") or (entityType == 3 and "Object") or "Unknown"
-                ban_manager.ban_player(owner, "Blacklisted " .. entityTypeName, 
-                    "Tried to spawn a blacklisted " .. entityTypeName:lower() .. " (Hash: " .. tostring(modelHash) .. ")")
+                ban_manager.ban_player(owner, "Blacklisted " .. entityTypeName, {
+                    admin     = "Anti-Cheat System",
+                    time      = 2147483647,
+                    detection = "Tried to spawn a blacklisted " .. entityTypeName:lower() .. " (Hash: " .. tostring(modelHash) .. ")",
+                })
                 return
             end
         end
@@ -82,7 +92,11 @@ function AntiEntitySpam.handleAntiSpam(hwid, owner, tracker, entityType, maxEnti
             AntiEntitySpam.markedUsers[hwid] = true
             AntiEntitySpam.clearSpamTracking()
 
-            ban_manager.ban_player(owner, reasonStr, detectionStr)
+            ban_manager.ban_player(owner, reasonStr, {
+                admin     = "Anti-Cheat System",
+                time      = 2147483647,
+                detection = detectionStr,
+            })
 
             CancelEvent()
         end

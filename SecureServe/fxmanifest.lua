@@ -3,13 +3,14 @@ game "gta5"
 
 author "SecureServe.net"
 version "1.5.0"
+description "SecureServe AntiCheat"
 
 files {
     "bans.json",
     "src/panel/ingame/html/index.html",
     "src/panel/ingame/html/styles.css",
     "src/panel/ingame/html/app.js",
-    "secureserve.key"
+    "secureserve.key",
 }
 
 ui_page "src/panel/ingame/html/index.html"
@@ -29,6 +30,7 @@ client_scripts {
     "src/client/core/cache.lua",
     "src/client/core/client_logger.lua",
     "src/client/core/blue_screen.lua",
+    "src/client/core/protection_helper.lua",
     "src/client/protections/protection_manager.lua",
     "src/client/protections/anti_load_resource_file.lua",
     "src/client/protections/anti_invisible.lua",
@@ -55,9 +57,13 @@ client_scripts {
     "src/client/protections/anti_no_recoil.lua",
     "src/client/protections/anti_visions.lua",
     "src/client/protections/anti_weapon_pickup.lua",
+    "src/client/protections/anti_super_jump.lua",
+    "src/client/protections/anti_no_ragdoll.lua",
+    "src/client/protections/anti_infinite_stamina.lua",
     "src/client/main.lua",
-    "src/panel/ingame/client.lua"
+    "src/panel/ingame/client.lua",
 }
+
 server_scripts {
     "src/server/core/version.lua",
     "config.lua",
@@ -69,7 +75,7 @@ server_scripts {
     "src/server/core/discord_logger.lua",
     "src/server/core/perms.lua",
     "src/server/core/admin_whitelist.lua",
-    "src/server/protections/resource_manager.lua", 
+    "src/server/protections/resource_manager.lua",
     "src/server/protections/anti_execution.lua",
     "src/server/protections/anti_entity_spam.lua",
     "src/server/protections/anti_resource_injection.lua",
@@ -77,17 +83,22 @@ server_scripts {
     "src/server/protections/anti_explosions.lua",
     "src/server/protections/anti_particle_effects.lua",
     "src/server/protections/heartbeat.lua",
+    "src/server/protections/canary.lua",
+    "src/server/protections/anti_create_entity.lua",
+    "src/server/protections/anti_explosive_damage.lua",
+    "src/server/protections/anti_server_cfg_options.lua",
     "src/server/core/install.js",
-    "src/panel/ingame/server.lua"
+    "src/panel/ingame/server.lua",
 }
 
 dependencies {
     "/server:5181",
-    "keep-alive"
+    "screenshot-basic",
+    "keep-alive",
 }
 
 lua54 "yes"
 
 server_exports {
-    "module_punish"
+    "module_punish",
 }

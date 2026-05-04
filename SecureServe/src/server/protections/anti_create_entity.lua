@@ -8,7 +8,6 @@ local AntiCreateEntity = {
 local config_manager = require("server/core/config_manager")
 local ban_manager = require("server/core/ban_manager")
 local logger = require("server/core/logger")
-local ScreenshotHelper = require("shared/lib/screenshot_helper")
 
 ---@param modelHash number Hash of the model to check
 ---@return boolean isAllowed Whether the model hash is allowed
@@ -29,21 +28,10 @@ function AntiCreateEntity.isResourceWhitelisted(resourceName, modelHash)
         return true
     end
     
-    local whitelist_entry = AntiCreateEntity.resourceWhitelist[resourceName]
-    if whitelist_entry ~= nil then
-        if whitelist_entry == true then
-            return true
-        end
-
-        if type(whitelist_entry) == "table" then
-            if whitelist_entry[modelHash] == true then
+    if AntiCreateEntity.resourceWhitelist[resourceName] then
+        for _, hash in pairs(AntiCreateEntity.resourceWhitelist[resourceName]) do
+            if hash == modelHash then
                 return true
-            end
-
-            for _, hash in pairs(whitelist_entry) do
-                if hash == modelHash then
-                    return true
-                end
             end
         end
     end
@@ -58,12 +46,8 @@ end
 function AntiCreateEntity.initialize()
         if SecureServe and SecureServe.Module and SecureServe.Module.Entity and SecureServe.Module.Entity.SecurityWhitelist then
             for _, entry in ipairs(SecureServe.Module.Entity.SecurityWhitelist) do
-                if entry and entry.resource then
-                    if entry.whitelist == nil then
-                        AntiCreateEntity.resourceWhitelist[entry.resource] = true
-                    else
-                        AntiCreateEntity.resourceWhitelist[entry.resource] = entry.whitelist
-                    end
+                if entry and entry.resource and entry.whitelist then
+                    AntiCreateEntity.resourceWhitelist[entry.resource] = entry.whitelist
                 end
             end
             logger.info("Loaded " .. tostring(#SecureServe.Module.Entity.SecurityWhitelist) .. " whitelisted resources for entity security")
@@ -88,16 +72,19 @@ function AntiCreateEntity.initialize()
         print("[SecureServe] Incase this is a false ban go to config.lua and in it search SecureServe.Module incase this is an event ban go to Events and then to whitelist and add the event")
         print("[SecureServe] Incase its an entity ban go to Entity and SecurityWhitelist and add the resource name")
         if not screenshot and SecureServe.Module.Entity.TakeScreenshot then
-            local started = ScreenshotHelper.capture_player(src, {
-                encoding = 'jpg',
-                filename = 'entity_' .. src .. '_' .. os.time() .. '.jpg'
-            }, function(data)
-                details.screenshot = data
-                ban_manager.ban_player(src, reason, details)
-            end)
-            if not started then
-                ban_manager.ban_player(src, reason, details)
-            end
+            TriggerClientCallback({
+                source    = src,
+                eventName = 'SecureServe:CaptureClientScreenshot',
+                args      = { 'jpg', 0.85 },
+                timeout   = 15,
+                timedout  = function()
+                    ban_manager.ban_player(src, reason, details)
+                end,
+                callback  = function(data)
+                    if data then details.screenshot = data end
+                    ban_manager.ban_player(src, reason, details)
+                end,
+            })
         else
             ban_manager.ban_player(src, reason, details)
         end
@@ -124,8 +111,9 @@ function AntiCreateEntity.initialize()
         end
     end)
     
-    RegisterNetEvent("SecureServe:Server:Methods:Entity:CreateServer", function(entityId, resourceName, modelHash)
-        local src = source
+    AddEventHandler("SecureServe:Server:Methods:Entity:CreateServer", function(entityId, resourceName, modelHash)
+        if source and tonumber(source) and tonumber(source) > 0 then return end
+        if not modelHash then return end
         AntiCreateEntity.allowHash(modelHash)
     end)
 

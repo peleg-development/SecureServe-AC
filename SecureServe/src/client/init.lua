@@ -1,13 +1,15 @@
----@class ClientInit
 local ClientInit = {}
+local initialized = false
 
----@description Initialize all client components
 function ClientInit.initialize()
+    if initialized then return end
+    initialized = true
+
     local logger = require("client/core/client_logger")
     logger.initialize({ Debug = false })
-    
-    local function run_init(name, init_fn)
-        local ok, err = pcall(init_fn)
+
+    local function run(name, fn)
+        local ok, err = pcall(fn)
         if not ok then
             logger.error(name .. " init failed: " .. tostring(err))
             return false
@@ -15,18 +17,25 @@ function ClientInit.initialize()
         logger.info(name .. " initialized")
         return true
     end
-    
-    run_init("Config Loader", ConfigLoader.initialize)
-    run_init("Cache", function()
+
+    run("Config Loader", function()
+        if ConfigLoader and ConfigLoader.initialize then
+            ConfigLoader.initialize()
+        end
+    end)
+
+    run("Cache", function()
         require("client/core/cache").initialize()
     end)
-    run_init("Protection Manager", function()
+
+    run("Protection Manager", function()
         require("client/protections/protection_manager").initialize()
     end)
-    run_init("Blue Screen", function()
+
+    run("Blue Screen", function()
         require("client/core/blue_screen").initialize()
     end)
-    
+
     Citizen.CreateThread(function()
         Wait(2000)
         TriggerServerEvent("SecureServe:CheckWhitelist")
@@ -34,7 +43,7 @@ function ClientInit.initialize()
 end
 
 CreateThread(function()
-    Wait(1000) 
+    Wait(1000)
     ClientInit.initialize()
 end)
 

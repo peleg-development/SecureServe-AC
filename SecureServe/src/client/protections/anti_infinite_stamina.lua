@@ -1,4 +1,5 @@
 local ProtectionManager = require("client/protections/protection_manager")
+local ProtectionHelper = require("client/core/protection_helper")
 
 local Cache = require("client/core/cache")
 
@@ -49,7 +50,7 @@ function AntiInfiniteStamina.initialize()
                         stamina_flags = stamina_flags + 1
                         
                         if stamina_flags >= 3 then
-                            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Infinite Stamina", webhook, time)
+                            ProtectionHelper.punish('Anti Infinite Stamina', "Anti Infinite Stamina")
                             stamina_flags = 0
                             consecutive_checks = 0
                             sprint_start_time = 0

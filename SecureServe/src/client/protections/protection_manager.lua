@@ -1,311 +1,195 @@
-
-local Utils = require("shared/lib/utils")
+local Utils  = require("shared/lib/utils")
 local logger = require("client/core/client_logger")
-local ScreenshotHelper = require("shared/lib/screenshot_helper")
 
----@class ProtectionManagerModule
 local ProtectionManager = {
-    protections = {},
-    initialized = {},
-    memory_check_thread = nil,
-    last_gc_time = 0,
-    gc_interval = 45000 
+    protections      = {},
+    initialized      = {},
+    memory_thread    = nil,
+    last_gc_time     = 0,
+    gc_interval      = 60000,
+    is_initialized   = false,
+    player_spawned   = false,
+    heartbeat_thread = nil,
+    proofs_thread    = nil,
+    fallback_image   = "https://i.imgur.com/HNILNpA.png",
 }
 
----@description Register a protection with the manager
----@param name string The protection module name
----@param init_function function The function to initialize the protection
 function ProtectionManager.register_protection(name, init_function)
     ProtectionManager.protections[name] = init_function
     logger.info("Registered protection module: " .. name)
 end
 
----@description Create a stub protection module
----@param module_name string The protection module name
----@return table The stub module
 function ProtectionManager.create_stub_module(module_name)
-    local clean_name = module_name:gsub("anti_", "")
-    local pascal_case_name = clean_name:gsub("_(%l)", function(l) return l:upper() end):gsub("^%l", string.upper)
-    
-    local stub_module = {
-        initialize = function()
-            logger.debug(pascal_case_name .. " protection module is a stub")
-        end
-    }
-    
-    ProtectionManager.register_protection(clean_name, stub_module.initialize)
-    
-    return stub_module
+    local clean = module_name:gsub("anti_", "")
+    ProtectionManager.register_protection(clean, function()
+        logger.debug(clean .. " stub")
+    end)
 end
 
 function ProtectionManager.start_memory_manager()
-    if ProtectionManager.memory_check_thread then
-        TerminateThread(ProtectionManager.memory_check_thread)
+    if ProtectionManager.memory_thread then
+        TerminateThread(ProtectionManager.memory_thread)
     end
-    
     ProtectionManager.last_gc_time = GetGameTimer()
-    
-    ProtectionManager.memory_check_thread = Citizen.CreateThread(function()
+
+    ProtectionManager.memory_thread = Citizen.CreateThread(function()
         while true do
-            Citizen.Wait(15000) 
-            
-            local current_time = GetGameTimer()
-            if (current_time - ProtectionManager.last_gc_time) < ProtectionManager.gc_interval then
-                if logger.debug_enabled then
-                    local memory_usage = collectgarbage("count") -- Returns KB
-                    logger.debug(string.format("Memory usage: %.2f KB", memory_usage))
-                end
-                goto continue
+            Citizen.Wait(15000)
+            local now = GetGameTimer()
+            if (now - ProtectionManager.last_gc_time) >= ProtectionManager.gc_interval then
+                collectgarbage("step", 200)
+                ProtectionManager.last_gc_time = now
             end
-            
-            collectgarbage("step", 200)
-            ProtectionManager.last_gc_time = current_time
-            
-            Citizen.Wait(10000)
-            
-            local stagger = math.random(5000, 15000)
-            Citizen.Wait(stagger)
-            
-            ::continue::
         end
     end)
 end
 
-local function groupProtectionModules(modules)
-    local groups = {
-        entity = {}, -- Entity-related protections
-        weapon = {}, -- Weapon-related protections
-        movement = {}, -- Movement-related protections
-        resource = {}, -- Resource-related protections
-        other = {}  
-    }
-    
-    for _, name in ipairs(modules) do
-        if name:match("entity") or name:match("ai") or name:match("invisible") then
-            table.insert(groups.entity, name)
-        elseif name:match("weapon") or name:match("damage") or name:match("bullet") or name:match("reload") or name:match("recoil") then
-            table.insert(groups.weapon, name)
-        elseif name:match("speed") or name:match("teleport") or name:match("noclip") or name:match("freecam") then
-            table.insert(groups.movement, name)
-        elseif name:match("resource") or name:match("event") then
-            table.insert(groups.resource, name)
-        else
-            table.insert(groups.other, name)
-        end
-    end
-    
-    return groups
-end
-
----@description Initialize protections in groups to optimize loading
 function ProtectionManager.initialize()
-    logger.info("Loaded Cache system")
-    
+    if ProtectionManager.is_initialized then
+        return
+    end
+    ProtectionManager.is_initialized = true
+
+    logger.info("Initializing Protection Manager")
     ProtectionManager.start_memory_manager()
-    ProtectionManager.initialize_heartbeat() 
+    ProtectionManager.initialize_heartbeat()
 
     local protection_modules = {
-        "anti_load_resource_file",
-        "anti_ocr",
-        "anti_invisible",
-        "anti_no_reload",
-        "anti_explosion_bullet",
-        "anti_entity_security",
-        "anti_magic_bullet",
-        "anti_aim_assist",
-        "anti_noclip",
-        "anti_resource_stop",
-        "anti_god_mode",
-        "anti_spectate",
-        "anti_freecam",
-        "anti_teleport",
-        "anti_weapon_damage_modifier",
-        "anti_afk_injection",
-        "anti_ai",
-        "anti_bigger_hitbox",
-        "anti_no_recoil",
-        "anti_player_blips",
-        "anti_give_weapon",
-        "anti_speed_hack",
-        "anti_state_bag_overflow",
-        "anti_visions",
-        "anti_weapon_pickup"
+        "anti_load_resource_file", "anti_ocr", "anti_invisible", "anti_no_reload",
+        "anti_explosion_bullet", "anti_entity_security", "anti_magic_bullet",
+        "anti_aim_assist", "anti_noclip", "anti_resource_stop", "anti_god_mode",
+        "anti_spectate", "anti_freecam", "anti_teleport", "anti_weapon_damage_modifier",
+        "anti_afk_injection", "anti_ai", "anti_bigger_hitbox", "anti_no_recoil",
+        "anti_player_blips", "anti_give_weapon", "anti_speed_hack",
+        "anti_state_bag_overflow", "anti_visions", "anti_weapon_pickup",
+        "anti_super_jump", "anti_no_ragdoll", "anti_infinite_stamina",
     }
-    
-    local groups = groupProtectionModules(protection_modules)
-    
-    for category, modules in pairs(groups) do
-        logger.info("Loading " .. category .. " protection modules...")
-        
-        for _, module_name in ipairs(modules) do
-            local success, module = pcall(function() 
-                return require("client/protections/" .. module_name)
-            end)
-            
-            if success and module then
-                local clean_name = module_name:gsub("anti_", "")
-                if module.initialize then
-                    ProtectionManager.register_protection(clean_name, module.initialize)
-                else
-                    logger.warn("Protection module missing initialize function: " .. module_name)
-                    ProtectionManager.create_stub_module(module_name)
-                end
-            else
-                ProtectionManager.create_stub_module(module_name)
-            end
-            
-            Citizen.Wait(25)
+
+    for _, module_name in ipairs(protection_modules) do
+        local ok, mod = pcall(require, "client/protections/" .. module_name)
+        if ok and type(mod) == "table" and type(mod.initialize) == "function" then
+            ProtectionManager.register_protection(module_name:gsub("anti_", ""), mod.initialize)
+        else
+            logger.warn("Protection module " .. module_name .. " missing or invalid")
+            ProtectionManager.create_stub_module(module_name)
         end
-        
-        Citizen.Wait(100)
-        collectgarbage("step", 50)
+        Citizen.Wait(15)
     end
-    
-    logger.info("Initializing protection modules...")
-    
+
     for name, init_func in pairs(ProtectionManager.protections) do
-        if name:match("entity") or name:match("invisible") then
-            ProtectionManager.initialize_protection(name, init_func)
-            Citizen.Wait(50)
-        end
+        ProtectionManager.initialize_protection(name, init_func)
+        Citizen.Wait(35)
     end
-    
-    for name, init_func in pairs(ProtectionManager.protections) do
-        if name:match("weapon") or name:match("bullet") or name:match("damage") then
-            ProtectionManager.initialize_protection(name, init_func)
-            Citizen.Wait(50)
-        end
-    end
-    
-    for name, init_func in pairs(ProtectionManager.protections) do
-        if name:match("noclip") or name:match("teleport") or name:match("speed") then
-            ProtectionManager.initialize_protection(name, init_func)
-            Citizen.Wait(50)
-        end
-    end
-    
-    for name, init_func in pairs(ProtectionManager.protections) do
-        if not ProtectionManager.initialized[name] then
-            ProtectionManager.initialize_protection(name, init_func)
-            Citizen.Wait(50)
-        end
-    end
-    
-    local initialized_count = 0
-    for _ in pairs(ProtectionManager.initialized) do
-        initialized_count = initialized_count + 1
-    end
-    
-    logger.info("Initialized " .. initialized_count .. " out of " .. #protection_modules .. " protection modules")
-    
-    collectgarbage("step", 100)
+
+    local count = 0
+    for _ in pairs(ProtectionManager.initialized) do count = count + 1 end
+    logger.info(("Initialized %d/%d protection modules"):format(count, #protection_modules))
 end
 
 function ProtectionManager.initialize_protection(name, init_func)
     if ProtectionManager.initialized[name] then return end
-    
-    local success, error_msg = pcall(function()
-        init_func()
-    end)
-    
-    if success then
+
+    local ok, err = pcall(init_func)
+    if ok then
         ProtectionManager.initialized[name] = true
-        logger.info("Protection module initialized: " .. name)
+        logger.info("Protection initialized: " .. name)
     else
-        logger.error("Failed to initialize protection module: " .. name .. " - " .. tostring(error_msg))
+        logger.error(("Failed to initialize %s: %s"):format(name, tostring(err)))
     end
 end
 
----@param reason string Reason for taking the screenshot
----@param id string|nil Optional ID for the screenshot
----@param webhook string Webhook URL to send the screenshot to
----@param time number Ban time in seconds
 function ProtectionManager.take_screenshot(reason, id, webhook, time)
-    logger.info("Taking screenshot for " .. reason)
-    local fallback_url = "https://media.discordapp.net/attachments/1234504751173865595/1237372961263190106/screenshot.jpg?ex=663b68df&is=663a175f&hm=52ec8f2d1e6e012e7a8282674b7decbd32344d85ba57577b12a136d34469ee9a&=&format=webp&width=810&height=456"
+    logger.info("Taking screenshot for: " .. tostring(reason))
 
-    local success, error = pcall(function()
-        local started = ScreenshotHelper.request_upload('https://canary.discord.com/api/webhooks/1237780232036155525/kUDGaCC8SRewCy5fC9iQpDFICxbqYgQS9Y7mj8EhRCv91nqpAyADkhaApGNHa3jZ9uMF', 'files[]', {
-            encoding = 'webp'
+    if not exports['screenshot-basic'] or type(exports['screenshot-basic'].requestScreenshotUpload) ~= "function"
+        or not webhook or webhook == "" then
+        logger.warn("Screenshot export/webhook not available")
+        TriggerServerEvent('SecureServe:Server:Methods:Upload',
+            ProtectionManager.fallback_image, reason, id, webhook or "", time)
+        return
+    end
+
+    local ok, err = pcall(function()
+        exports['screenshot-basic']:requestScreenshotUpload(webhook, 'files[]', {
+            encoding = 'jpg',
+            quality = 0.85,
         }, function(data)
-            local screenshot_url = ScreenshotHelper.extract_uploaded_url(data)
-            if screenshot_url then
-                logger.info("Screenshot uploaded successfully")
-                TriggerServerEvent('SecureServe:Server:Methods:Upload', screenshot_url, reason, id, webhook, time)
-            else
-                logger.error("Failed to upload screenshot, using fallback")
-                TriggerServerEvent('SecureServe:Server:Methods:Upload', fallback_url, reason, id, time)
+            local resp = data and data ~= "" and json.decode(data) or nil
+            local url
+            if resp and resp.attachments and resp.attachments[1] and resp.attachments[1].proxy_url then
+                url = resp.attachments[1].proxy_url
             end
-            ForceSocialClubUpdate()
+            if url then
+                logger.info("Screenshot uploaded successfully")
+                TriggerServerEvent('SecureServe:Server:Methods:Upload', url, reason, id, webhook, time)
+            else
+                logger.error("Failed to parse screenshot response")
+                TriggerServerEvent('SecureServe:Server:Methods:Upload',
+                    ProtectionManager.fallback_image, reason, id, webhook, time)
+            end
         end)
-
-        if not started then
-            logger.error("Failed to take screenshot: no compatible screenshot export available")
-            TriggerServerEvent('SecureServe:Server:Methods:Upload', fallback_url, reason, id, time)
-        end
     end)
-
-    if not success then
-        logger.error("Error taking screenshot: " .. tostring(error))
-        TriggerServerEvent('SecureServe:Server:Methods:Upload', fallback_url, reason, id, time)
+    if not ok then
+        logger.error("requestScreenshotUpload threw: " .. tostring(err))
+        TriggerServerEvent('SecureServe:Server:Methods:Upload',
+            ProtectionManager.fallback_image, reason, id, webhook, time)
     end
 end
 
 function ProtectionManager.initialize_heartbeat()
-    player_spawned = false
-    
     AddEventHandler('playerSpawned', function()
-        if player_spawned then return end
-        player_spawned = true
-        
-        Citizen.SetTimeout(1500, function()
-            ProtectionManager.initialize()
-        end)
-        
-        Citizen.CreateThread(function()
+        if ProtectionManager.player_spawned then return end
+        ProtectionManager.player_spawned = true
+
+        ProtectionManager.proofs_thread = Citizen.CreateThread(function()
             while true do
-                Citizen.Wait(5000) 
-                local player_ped = PlayerPedId()
-                if DoesEntityExist(player_ped) then
-                    SetEntityProofs(player_ped, false, false, true, false, false, false, false, false)
+                Citizen.Wait(5000)
+                local ped = PlayerPedId()
+                if DoesEntityExist(ped) then
+                    SetEntityProofs(ped, false, false, true, false, false, false, false, false)
                 end
             end
         end)
-        
+
         TriggerServerEvent("playerSpawneda")
         TriggerEvent('allowed')
     end)
-    
+
     RegisterNetEvent('SecureServe:checkTaze', function()
         if not HasPedGotWeapon(PlayerPedId(), GetHashKey("WEAPON_STUNGUN"), false) then
             logger.warn("Detected taze through menu attempt")
-            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Tried To taze through menu", webhook, 2147483647)
-        end
-    end)
-    
-    AddEventHandler("gameEventTriggered", function(name, args)
-        if name == 'CEventNetworkPlayerCollectedPickup' then
-            logger.debug("Canceled CEventNetworkPlayerCollectedPickup event")
-            CancelEvent()
-        end
-    end)
-    
-    local heartbeat_token = Utils.random_key(math.random(15, 35))
-    TriggerServerEvent('mMkHcvct3uIg04STT16I:cbnF2cR9ZTt8NmNx2jQS', heartbeat_token)
-    
-    Citizen.CreateThread(function()
-        while true do
-            Citizen.Wait(1000)
-            heartbeat_token = Utils.random_key(math.random(15, 35))
-            TriggerServerEvent('mMkHcvct3uIg04STT16I:cbnF2cR9ZTt8NmNx2jQS', heartbeat_token)
+            local webhook = ConfigLoader.get_protection_setting("Anti Taze", "webhook") or ""
+            local time = ConfigLoader.get_protection_setting("Anti Taze", "time") or 2147483647
+            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil,
+                "Tried To taze through menu", webhook, time)
         end
     end)
 
-    RegisterNUICallback(GetCurrentResourceName(), function()
-        logger.warn("NUI Dev Tool usage detected")
-        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Tried To Use Nui Dev Tool", webhook, 2147483647)
+    AddEventHandler("gameEventTriggered", function(name)
+        if name == 'CEventNetworkPlayerCollectedPickup' then
+            CancelEvent()
+        end
     end)
-    
+
+    ProtectionManager.heartbeat_thread = Citizen.CreateThread(function()
+        TriggerServerEvent('mMkHcvct3uIg04STT16I:cbnF2cR9ZTt8NmNx2jQS',
+            Utils.random_key(math.random(15, 35)))
+        while true do
+            Citizen.Wait(2000)
+            TriggerServerEvent('mMkHcvct3uIg04STT16I:cbnF2cR9ZTt8NmNx2jQS',
+                Utils.random_key(math.random(15, 35)))
+        end
+    end)
+
+    RegisterNUICallback(GetCurrentResourceName(), function(_, cb)
+        logger.warn("NUI Dev Tool usage detected")
+        local webhook = ConfigLoader.get_protection_setting("Anti Extended NUI Devtools", "webhook") or ""
+        local time = ConfigLoader.get_protection_setting("Anti Extended NUI Devtools", "time") or 2147483647
+        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil,
+            "Tried To Use Nui Dev Tool", webhook, time)
+        cb('ok')
+    end)
+
     Citizen.CreateThread(function()
         TriggerServerEvent('playerLoaded')
     end)
@@ -313,16 +197,14 @@ end
 
 AddEventHandler('onResourceStop', function(resourceName)
     if GetCurrentResourceName() ~= resourceName then return end
-    
-    if ProtectionManager.memory_check_thread then
-        TerminateThread(ProtectionManager.memory_check_thread)
-        ProtectionManager.memory_check_thread = nil
-    end
-    
+
+    if ProtectionManager.memory_thread    then TerminateThread(ProtectionManager.memory_thread) end
+    if ProtectionManager.heartbeat_thread then TerminateThread(ProtectionManager.heartbeat_thread) end
+    if ProtectionManager.proofs_thread    then TerminateThread(ProtectionManager.proofs_thread) end
+
     ProtectionManager.protections = {}
     ProtectionManager.initialized = {}
-    
-    collectgarbage("collect")
+    collectgarbage("step", 100)
 end)
 
 RegisterNetEvent('SecureServe:Server:Methods:GetScreenShot', ProtectionManager.take_screenshot)

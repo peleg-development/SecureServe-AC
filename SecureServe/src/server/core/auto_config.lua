@@ -97,14 +97,13 @@ function AutoConfig.add_entity_resource(config_content, table_name, resource_nam
         return config_content, false
     end
     
-    local escaped_resource = resource_name:gsub('%-', '%%-'):gsub('%.', '%%%.')
-    local resource_pattern = string.format('resource%%s*=%%s*["\']*%s["\']*', escaped_resource)
+    local resource_pattern = string.format('resource%s*=%s*["\']*%s["\']*', resource_name:gsub('%-', '%%-'):gsub('%.', '%%%.'))
     if table_content:find(resource_pattern) then
         logger.debug("Resource " .. resource_name .. " already exists in table " .. table_name)
         return config_content, false
     end
     
-    local entity_entry = '{ resource = "' .. resource_name .. '", whitelist = true }'
+    local entity_entry = '{ resource = "' .. resource_name .. '" }'
     local updated_content
     
     if table_content:match("[^%s,]$") then
@@ -194,7 +193,7 @@ function AutoConfig.process_auto_whitelist(src, reason, webhook, time)
             return true
         end
         
-        local newConfig, success = AutoConfig.add_entity_resource(configFile, "SecureServe.Module.Entity.SecurityWhitelist", isSuspiciousEntity)
+        local newConfig, success = AutoConfig.add_entity_resource(configFile, "SecureServe.EntitySecurity", isSuspiciousEntity)
         if success then
             SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
             logger.info("Added resource " .. isSuspiciousEntity .. " to entity whitelist")
@@ -210,7 +209,7 @@ function AutoConfig.process_auto_whitelist(src, reason, webhook, time)
             return true
         end
         
-        local newConfig, success = AutoConfig.add_entity_resource(configFile, "SecureServe.Module.Entity.SecurityWhitelist", detectedResource)
+        local newConfig, success = AutoConfig.add_entity_resource(configFile, "SecureServe.EntitySecurity", detectedResource)
         if success then
             SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
             logger.info("Added resource " .. detectedResource .. " to whitelist")
@@ -238,17 +237,8 @@ function AutoConfig.is_event_whitelisted(event_name)
     end
     
     local config = SecureServe
-    if config and config.Module and config.Module.Events and config.Module.Events.Whitelist then
-        local whitelist = config.Module.Events.Whitelist
-        if whitelist[event_name] then
-            return true
-        end
-
-        for _, whitelisted_event in pairs(whitelist) do
-            if whitelisted_event == event_name then
-                return true
-            end
-        end
+    if config and config.Module and config.Module.Events and config.Module.Events.Whitelist and config.Module.Events.Whitelist[event_name] then
+        return true
     end
     
     return false
@@ -311,10 +301,6 @@ end
 function AutoConfig.get_whitelist(protection_type)
     local config = SecureServe
     local whitelist = {}
-
-    if type(config) ~= "table" then
-        return whitelist
-    end
     
     if protection_type == "events" then
         whitelist = config.Module and config.Module.Events and config.Module.Events.Whitelist or {}
@@ -330,20 +316,11 @@ end
 ---@param protection_type string The protection type to check whitelist for
 ---@return boolean is_whitelisted Whether the resource is whitelisted
 function AutoConfig.is_resource_whitelisted(resource_name, protection_type)
+    local config = SecureServe
     local whitelist = AutoConfig.get_whitelist(protection_type)
     
     if protection_type == "events" then
-        if whitelist[resource_name] == true then
-            return true
-        end
-
-        for _, whitelisted_event in pairs(whitelist) do
-            if whitelisted_event == resource_name then
-                return true
-            end
-        end
-
-        return false
+        return whitelist[resource_name] == true
     elseif protection_type == "entity" then
         for _, entry in pairs(whitelist) do
             if entry.resource == resource_name and entry.whitelist then
@@ -370,4 +347,4 @@ function AutoConfig.ban_with_auto_config(src, reason, webhook, time)
     return ban_manager.ban_player(src, reason, webhook, time)
 end
 
-return AutoConfig
+return AutoConfig 

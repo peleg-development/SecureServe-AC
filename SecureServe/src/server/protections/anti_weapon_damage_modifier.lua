@@ -1,67 +1,67 @@
----@class AntiWeaponDamageModifierModule
 local AntiWeaponDamageModifier = {
     weapon_damage_history = {},
-    weapon_damage_baseline = {}
 }
 
-local ban_manager = require("server/core/ban_manager")
+local ban_manager    = require("server/core/ban_manager")
+local config_manager = require("server/core/config_manager")
 
----@description Initialize anti-weapon damage modifier protection
+local SAMPLES_BEFORE_DECISION = 3
+local HISTORY_CAP             = 10
+
 function AntiWeaponDamageModifier.initialize()
     AddEventHandler("weaponDamageEvent", function(sender, data)
-        if not sender or sender == 0 then
-            return
-        end
+        if not sender or sender == 0 then return end
 
         local weapon_hash = data.weaponType
-        local damage = data.weaponDamage
-        local is_headshot = data.isHeadshot or false
+        if not weapon_hash then return end
 
-        if not AntiWeaponDamageModifier.weapon_damage_history[sender] then
-            AntiWeaponDamageModifier.weapon_damage_history[sender] = {}
+        local baseline = config_manager.get_weapon_max_damage(weapon_hash)
+        if not baseline then return end
+
+        local damage     = data.weaponDamage or 0
+        local is_headshot = data.isHeadshot == true
+
+        local hist = AntiWeaponDamageModifier.weapon_damage_history[sender]
+        if not hist then
+            hist = {}
+            AntiWeaponDamageModifier.weapon_damage_history[sender] = hist
+        end
+        local entries = hist[weapon_hash]
+        if not entries then
+            entries = {}
+            hist[weapon_hash] = entries
         end
 
-        if not AntiWeaponDamageModifier.weapon_damage_history[sender][weapon_hash] then
-            AntiWeaponDamageModifier.weapon_damage_history[sender][weapon_hash] = {}
+        entries[#entries + 1] = damage
+        if #entries > HISTORY_CAP then
+            table.remove(entries, 1)
         end
 
-        table.insert(AntiWeaponDamageModifier.weapon_damage_history[sender][weapon_hash], damage)
+        if #entries < SAMPLES_BEFORE_DECISION then return end
 
-        if #AntiWeaponDamageModifier.weapon_damage_history[sender][weapon_hash] > 10 then
-            table.remove(AntiWeaponDamageModifier.weapon_damage_history[sender][weapon_hash], 1)
+        local max_damage = 0
+        for _, dmg in ipairs(entries) do
+            if dmg > max_damage then max_damage = dmg end
         end
 
-        if not AntiWeaponDamageModifier.weapon_damage_baseline[weapon_hash] or damage > AntiWeaponDamageModifier.weapon_damage_baseline[weapon_hash] then
-            AntiWeaponDamageModifier.weapon_damage_baseline[weapon_hash] = damage
+        local allowed_overhead = is_headshot and 2.0 or 1.5
+        if max_damage > baseline * allowed_overhead then
+            ban_manager.ban_player(sender, "Weapon Damage Modifier", {
+                admin     = "Anti-Cheat System",
+                time      = 2147483647,
+                detection = ("Abnormal weapon damage: %s (baseline %s)"):format(max_damage, baseline),
+            })
         end
+    end)
 
-        if #AntiWeaponDamageModifier.weapon_damage_history[sender][weapon_hash] >= 3 then
-            local min_damage = 999999
-            local max_damage = 0
-
-            for _, dmg in ipairs(AntiWeaponDamageModifier.weapon_damage_history[sender][weapon_hash]) do
-                if dmg < min_damage then
-                    min_damage = dmg
-                end
-
-                if dmg > max_damage then
-                    max_damage = dmg
-                end
-            end
-
-            local max_normal_damage = AntiWeaponDamageModifier.weapon_damage_baseline[weapon_hash] or max_damage
-            local allowed_overhead = is_headshot and 2.0 or 1.5
-
-            if max_damage > max_normal_damage * allowed_overhead then
-                ban_manager.ban_player(sender, "Weapon Damage Modifier",
-                "Abnormal weapon damage: " .. max_damage .. " (expected max: " .. max_normal_damage .. ")")
-                return
-            end
+    AddEventHandler("playerDropped", function()
+        local src = source
+        if src then
+            AntiWeaponDamageModifier.weapon_damage_history[src] = nil
         end
     end)
 end
 
----@param player_id number The player ID to clear history for
 function AntiWeaponDamageModifier.clear_player_history(player_id)
     AntiWeaponDamageModifier.weapon_damage_history[player_id] = nil
 end

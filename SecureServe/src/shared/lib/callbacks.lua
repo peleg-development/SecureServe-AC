@@ -196,10 +196,15 @@ else
         
         local prom = promise.new()
         local eventCallback = args.callback
-        local eventData = RegisterNetEvent(('smp__client_callback_response:%s:%s'):format(args.eventName, SERVER_ID),
+        local eventData
+        eventData = RegisterNetEvent(('smp__client_callback_response:%s:%s'):format(args.eventName, SERVER_ID),
         function(packed)
             if eventCallback and prom.state == PENDING then eventCallback(table_unpack(msgpack_unpack(packed))) end
             prom:resolve(table_unpack(msgpack_unpack(packed)))
+            if eventCallback and eventData then
+                RemoveEventHandler(eventData)
+                eventData = nil
+            end
         end)
 
         TriggerServerEvent('smp__server_callback:'..args.eventName, msgpack_pack(args.args))

@@ -4,8 +4,6 @@ local bluescreenActive = false
 
 ---@description Initialize the blue screen module
 function BlueScreen.initialize()
-    local bluescreenActive = false
-
     RegisterNetEvent("SecureServe:ShowWindowsBluescreen", function()
         if bluescreenActive then return end
         bluescreenActive = true

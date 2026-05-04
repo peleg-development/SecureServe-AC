@@ -1,887 +1,478 @@
----@class BanManagerModule
-
--- This is really bad, but it works for now. it will be improved and fixed in the future.
-
 local BanManager = {
-    bans = {},
-    pending_bans = {},
-    ban_file = "bans.json",
-    load_attempts = 0,
-    max_load_attempts = 5,
-    next_ban_id = 1, 
+    bans               = {},
+    bans_index         = {},
+    pending_bans       = {},
+    ban_file           = "bans.json",
+    load_attempts      = 0,
+    max_load_attempts  = 5,
+    next_ban_id        = 1,
     active_connections = {},
-    last_file_modified = 0
+    dirty              = false,
 }
 
 local config_manager = require("server/core/config_manager")
-local logger = require("server/core/logger")
+local logger         = require("server/core/logger")
 
----@description Initialize the ban manager
-function BanManager.initialize()
-    BanManager.load_bans()
-    
+local function rebuild_index()
+    BanManager.bans_index = {}
     for _, ban in ipairs(BanManager.bans) do
-        local numeric_id = tonumber(ban.id)
-        if numeric_id and numeric_id >= BanManager.next_ban_id then
-            BanManager.next_ban_id = numeric_id + 1
+        if ban.identifiers then
+            for _, id_value in pairs(ban.identifiers) do
+                if type(id_value) == "string" then
+                    BanManager.bans_index[id_value] = ban
+                end
+            end
         end
     end
-    
-    RegisterCommand("reloadbans", function(source, args, rawCommand)
-        if source > 0 then 
-            return
+end
+
+function BanManager.initialize()
+    BanManager.load_bans()
+
+    for _, ban in ipairs(BanManager.bans) do
+        local n = tonumber(ban.id)
+        if n and n >= BanManager.next_ban_id then
+            BanManager.next_ban_id = n + 1
         end
-        
-        logger.info("Manually reloading ban list...")
+    end
+
+    RegisterCommand("reloadbans", function(source)
+        if source > 0 then return end
+        logger.info("Manually reloading ban list")
         BanManager.load_bans()
         logger.info("Ban list reloaded. " .. #BanManager.bans .. " bans loaded.")
     end, true)
-    
-    RegisterCommand("clearbans", function(source, args, rawCommand)
-        if source > 0 then 
-            return
-        end
-        
+
+    RegisterCommand("clearbans", function(source)
+        if source > 0 then return end
         local count = #BanManager.bans
-        logger.warn("CLEARING ALL BANS FROM THE SERVER!")
-        
+        logger.warn("CLEARING ALL BANS")
         local backupName = BanManager.ban_file .. ".backup.clear." .. os.time()
-        SaveResourceFile(GetCurrentResourceName(), backupName, json.encode(BanManager.bans, { indent = true }), -1)
-        logger.info("Created backup of bans before clearing: " .. backupName)
-        
+        SaveResourceFile(GetCurrentResourceName(), backupName,
+            json.encode(BanManager.bans, { indent = true }), -1)
         BanManager.bans = {}
+        BanManager.bans_index = {}
+        BanManager.dirty = true
         BanManager.save_bans()
-        
-        logger.info("Cleared " .. count .. " bans from the server")
+        logger.info("Cleared " .. count .. " bans")
     end, true)
 
     BanManager.clean_expired_bans()
-    
-    AddEventHandler("playerConnecting", function(name, setKickReason, deferrals)
+
+    AddEventHandler("playerConnecting", function(name, _, deferrals)
         local src = source
         deferrals.defer()
-        
-        BanManager.load_bans()
-        
-        logger.debug("Player connecting: " .. name .. " (ID: " .. src .. ")")
-    
-        local tokens = {}
-        for i = 1, 5 do
-            if GetPlayerToken then
-                table.insert(tokens, GetPlayerToken(src, i))
-            end
-        end
-        
+
         Citizen.Wait(0)
-        
+
         local identifiers = GetPlayerIdentifiers(src)
-        local hasSteam = false
-        
-        for _, identifier in ipairs(identifiers) do
-            if string.match(identifier, "steam:") then
-                hasSteam = true
+        local has_steam = false
+
+        for _, id in ipairs(identifiers) do
+            if string.match(id, "^steam:") then
+                has_steam = true
                 break
             end
         end
-        
-        if SecureServe.RequireSteam and not hasSteam then
-            local steamCard = [[
-                {
-                    "type": "AdaptiveCard",
-                    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-                    "version": "1.3",
-                    "backgroundImage": {
-                        "url": "https://www.transparenttextures.com/patterns/black-linen.png"
-                    },
-                    "body": [
-                        {
-                            "type": "Container",
-                            "style": "emphasis",
-                            "bleed": true,
-                            "items": [
-                                {
-                                    "type": "Image",
-                                    "url": "https://img.icons8.com/color/452/error.png",
-                                    "horizontalAlignment": "Center",
-                                    "size": "Large",
-                                    "spacing": "Large"
-                                },
-                                {
-                                    "type": "TextBlock",
-                                    "text": "Steam Account Required",
-                                    "wrap": true,
-                                    "horizontalAlignment": "Center",
-                                    "size": "ExtraLarge",
-                                    "weight": "Bolder",
-                                    "color": "Attention",
-                                    "spacing": "Medium"
-                                },
-                                {
-                                    "type": "TextBlock",
-                                    "text": "You need to have Steam open and linked to your FiveM account to join this server.",
-                                    "wrap": true,
-                                    "horizontalAlignment": "Center",
-                                    "size": "Large",
-                                    "weight": "Bolder",
-                                    "color": "Attention",
-                                    "spacing": "Small"
-                                },
-                                {
-                                    "type": "TextBlock",
-                                    "text": "Make sure Steam is running before launching FiveM, then try again.",
-                                    "wrap": true,
-                                    "horizontalAlignment": "Center",
-                                    "size": "Medium",
-                                    "spacing": "Medium"
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ]]
-            deferrals.presentCard(steamCard)
-            deferrals.done("You need to have Steam open and linked to your FiveM account to join this server.")
+
+        if SecureServe.RequireSteam and not has_steam then
+            deferrals.done("Steam is required. Please open Steam and try again.")
             return
         end
-        
-        local identifiersTable = {}
-        for _, identifier in ipairs(identifiers) do
-            local idType = string.match(identifier, "^([^:]+):")
-            if idType then
-                identifiersTable[idType] = identifier
+
+        local ids_table = {}
+        for _, id in ipairs(identifiers) do
+            local t = string.match(id, "^([^:]+):")
+            if t then ids_table[t] = id end
+        end
+
+        local tokens = {}
+        if GetPlayerToken then
+            local count = GetNumPlayerTokens and GetNumPlayerTokens(src) or 5
+            for i = 0, count - 1 do
+                local tok = GetPlayerToken(src, i)
+                if tok then tokens[#tokens + 1] = tok end
             end
         end
-        
-        identifiersTable.tokens = tokens
-        
+        ids_table.tokens = tokens
+
         if src and tonumber(src) > 0 then
-            BanManager.active_connections[tostring(src)] = identifiersTable
+            BanManager.active_connections[tostring(src)] = ids_table
         end
-        
-        local is_banned, ban_data = BanManager.check_ban(identifiersTable)
-        
+
+        local is_banned, ban_data = BanManager.check_ban(ids_table)
         if is_banned then
-            logger.info("Blocked banned player connection: " .. name .. " (ID: " .. src .. ")")
-            logger.info("Ban ID: " .. (ban_data.id or "Unknown") .. ", License: " .. (identifiersTable.license or "unknown"))
-            logger.info("Ban reason: " .. (ban_data.reason or "Unknown"))
-    
+            logger.info(("Blocked banned player: %s (id %s, banId %s)"):format(
+                name, src, ban_data.id or "?"))
             local id = ban_data.id or "Unknown"
             local discord_link = SecureServe.AppealURL or "Contact server administration"
             if not discord_link:find("http") then
                 discord_link = "https://discord.gg/" .. discord_link:gsub("discord.gg/", "")
             end
-            
-            deferrals.done("You have been banned from this server.\nBan ID: " .. id .. "\nAppeal: " .. discord_link)
+            deferrals.done(("You have been banned from this server.\nBan ID: %s\nAppeal: %s"):format(id, discord_link))
             return
-        else
-            logger.debug("Player " .. name .. " (ID: " .. src .. ") is not banned, allowing connection")
         end
+
         deferrals.done()
     end)
-    
-    AddEventHandler("playerDropped", function(reason)
-        local source = source
-        
-        if not source or tonumber(source) <= 0 then
-            return
+
+    AddEventHandler("playerDropped", function()
+        local src = source
+        if src and tonumber(src) > 0 then
+            BanManager.active_connections[tostring(src)] = nil
         end
-        
-        BanManager.active_connections[tostring(source)] = nil
     end)
-    
+
     CreateThread(function()
         while true do
             Wait(60000)
-            BanManager.check_and_reload_bans()
             BanManager.clean_expired_bans()
-            BanManager.save_bans()
+            if BanManager.dirty then
+                BanManager.save_bans()
+            end
         end
     end)
-    
+
     logger.info("^5[SUCCESS] ^3Ban Manager^7 initialized")
 end
 
----@description Load bans from file
 function BanManager.load_bans()
-    local file_content = LoadResourceFile(GetCurrentResourceName(), BanManager.ban_file)
-    
-    if not file_content or file_content == "" then
+    local content = LoadResourceFile(GetCurrentResourceName(), BanManager.ban_file)
+
+    if not content or content == "" then
         BanManager.bans = {}
-        logger.warn("No bans.json found or file is empty. Starting with empty ban list.")
+        BanManager.bans_index = {}
+        logger.warn("No bans.json found or empty. Starting empty.")
         return
     end
-    
-    local success, result = pcall(function()
-        return json.decode(file_content)
-    end)
-    
-    if success and result then
-        BanManager.bans = {}
-        
-        for i, ban in ipairs(result) do
-            logger.debug("LOAD DEBUG: Processing ban " .. i .. " - ID: " .. tostring(ban.id) .. ", Player: " .. tostring(ban.player_name))
-            if ban.id and ban.identifiers then
-                table.insert(BanManager.bans, ban)
-                logger.debug("LOAD DEBUG: Successfully loaded ban with ID: " .. tostring(ban.id))
-            else
-                logger.warn("LOAD DEBUG: Skipping invalid ban entry: " .. json.encode(ban))
-            end
-        end
-        
-        logger.info("Loaded " .. #BanManager.bans .. " bans from file")
-        BanManager.last_file_modified = os.time()
-    else
+
+    local ok, result = pcall(json.decode, content)
+    if not ok or not result then
         BanManager.load_attempts = BanManager.load_attempts + 1
-        logger.error("Failed to load bans from file. Attempt " .. BanManager.load_attempts)
-        
+        logger.error("Failed to load bans (attempt " .. BanManager.load_attempts .. ")")
         if BanManager.load_attempts < BanManager.max_load_attempts then
-            local backup_name = BanManager.ban_file .. ".backup." .. os.time()
-            SaveResourceFile(GetCurrentResourceName(), backup_name, file_content, -1)
-            logger.warn("Created backup of corrupted bans file: " .. backup_name)
-            
-            SetTimeout(5000, function()
-                BanManager.load_bans()
-            end)
+            local backup = BanManager.ban_file .. ".backup." .. os.time()
+            SaveResourceFile(GetCurrentResourceName(), backup, content, -1)
+            logger.warn("Created backup: " .. backup)
+            SetTimeout(5000, BanManager.load_bans)
         else
             BanManager.bans = {}
-            logger.error("Maximum load attempts reached. Starting with empty ban list.")
+            BanManager.bans_index = {}
+        end
+        return
+    end
+
+    BanManager.bans = {}
+    for _, ban in ipairs(result) do
+        if ban.id and ban.identifiers then
+            BanManager.bans[#BanManager.bans + 1] = ban
+        else
+            logger.warn("Skipping invalid ban entry")
         end
     end
+    rebuild_index()
+    logger.info("Loaded " .. #BanManager.bans .. " bans")
 end
 
----@description Check if bans file was modified and reload if needed
-function BanManager.check_and_reload_bans()
-        BanManager.load_bans()
-        return true
-end
-
----@description Save bans to file with formatting for readability
 function BanManager.save_bans()
     if #BanManager.pending_bans > 0 then
-        for _, ban in ipairs(BanManager.pending_bans) do
-            table.insert(BanManager.bans, ban)
+        for _, b in ipairs(BanManager.pending_bans) do
+            BanManager.bans[#BanManager.bans + 1] = b
+            if b.identifiers then
+                for _, id_value in pairs(b.identifiers) do
+                    if type(id_value) == "string" then
+                        BanManager.bans_index[id_value] = b
+                    end
+                end
+            end
         end
         BanManager.pending_bans = {}
     end
-    
-    local file_content = json.encode(BanManager.bans)
-    
-    file_content = BanManager.format_json(file_content)
-    
-    local success = SaveResourceFile(GetCurrentResourceName(), BanManager.ban_file, file_content, -1)
-    
-    if success then
-        logger.debug("Saved " .. #BanManager.bans .. " bans to file")
-    else
-        logger.error("Failed to save bans to file")
+
+    local ok, content = pcall(json.encode, BanManager.bans, { indent = true })
+    if not ok or not content then
+        logger.error("Failed to encode bans to JSON")
+        return false
     end
+
+    local saved = SaveResourceFile(GetCurrentResourceName(), BanManager.ban_file, content, -1)
+    if saved then
+        BanManager.dirty = false
+        logger.debug("Saved " .. #BanManager.bans .. " bans")
+        return true
+    end
+    logger.error("Failed to write bans file")
+    return false
 end
 
----@description Format JSON string to be more readable
----@param json_str string The JSON string to format
----@return string The formatted JSON string
-function BanManager.format_json(json_str)
-    local success, parsed_data = pcall(json.decode, json_str)
-    if not success or not parsed_data then
-        logger.error("Failed to parse JSON for formatting")
-        return json_str
-    end
-
-    local function pretty_json(obj, indent_level)
-        indent_level = indent_level or 0
-        local indent_str = string.rep("    ", indent_level) 
-        local result = ""
-        
-        if type(obj) == "table" then
-            local is_array = true
-            local max_index = 0
-            for k, _ in pairs(obj) do
-                if type(k) ~= "number" or k < 1 or math.floor(k) ~= k then
-                    is_array = false
-                    break
-                end
-                max_index = math.max(max_index, k)
-            end
-            is_array = is_array and max_index == #obj
-            
-            if is_array then
-                if #obj == 0 then
-                    result = "[]"
-                else
-                    result = "[\n"
-                    for i, v in ipairs(obj) do
-                        result = result .. indent_str .. "    " .. pretty_json(v, indent_level + 1)
-                        if i < #obj then
-                            result = result .. ","
-                        end
-                        result = result .. "\n"
-                    end
-                    result = result .. indent_str .. "]"
-                end
-            else
-                local count = 0
-                for _, _ in pairs(obj) do count = count + 1 end
-                
-                if count == 0 then
-                    result = "{}"
-                else
-                    result = "{\n"
-                    local current = 0
-                    for k, v in pairs(obj) do
-                        current = current + 1
-                        result = result .. indent_str .. "    \"" .. tostring(k) .. "\": " .. pretty_json(v, indent_level + 1)
-                        if current < count then
-                            result = result .. ","
-                        end
-                        result = result .. "\n"
-                    end
-                    result = result .. indent_str .. "}"
-                end
-            end
-        elseif type(obj) == "string" then
-            local escaped = obj:gsub("\\", "\\\\"):gsub("\"", "\\\""):gsub("\n", "\\n"):gsub("\r", "\\r"):gsub("\t", "\\t")
-            result = "\"" .. escaped .. "\""
-        elseif type(obj) == "number" or type(obj) == "boolean" or obj == nil then
-            result = tostring(obj)
+function BanManager.clean_expired_bans()
+    if not BanManager.bans or #BanManager.bans == 0 then return end
+    local now = os.time()
+    local kept = {}
+    local removed = false
+    for _, ban in ipairs(BanManager.bans) do
+        if ban.expires and ban.expires > 0 and now > ban.expires then
+            removed = true
         else
-            result = "\"" .. tostring(obj) .. "\""
-        end
-        
-        return result
-    end
-    
-    local formatted = pretty_json(parsed_data)
-    return formatted
-end
-
----@description Format a ban message for display
----@param ban_data table The ban data
----@return string message The formatted ban message
-function BanManager.format_ban_message(ban_data)
-    if not ban_data then
-        return "You are banned from this server."
-    end
-    
-    local message = "You are banned from this server."
-    
-    if ban_data.expires and ban_data.expires > 0 then
-        local remaining = ban_data.expires - os.time()
-        if remaining > 0 then
-            message = message .. "\nTime Remaining: " .. BanManager.format_time_remaining(remaining)
+            kept[#kept + 1] = ban
         end
     end
-    
-    return message
+    if removed then
+        BanManager.bans = kept
+        BanManager.dirty = true
+        rebuild_index()
+    end
 end
 
----@description Format time remaining in a readable format
----@param seconds number Time in seconds
----@return string Formatted time string
 function BanManager.format_time_remaining(seconds)
-    if seconds < 60 then
-        return seconds .. " seconds"
-    elseif seconds < 3600 then
-        return math.floor(seconds / 60) .. " minutes"
-    elseif seconds < 86400 then
-        return math.floor(seconds / 3600) .. " hours"
-    else
-        return math.floor(seconds / 86400) .. " days"
-    end
+    if seconds < 60 then return seconds .. " seconds"
+    elseif seconds < 3600 then return math.floor(seconds / 60) .. " minutes"
+    elseif seconds < 86400 then return math.floor(seconds / 3600) .. " hours"
+    else return math.floor(seconds / 86400) .. " days" end
 end
 
----@description Get all identifiers for a player
----@param source number The player source
----@return table identifiers Table of identifiers
 function BanManager.get_player_identifiers(source)
     local identifiers = {}
-    
-    if not source or tonumber(source) <= 0 then
-        logger.error("Invalid player source provided to get_player_identifiers: " .. tostring(source))
-        return identifiers
+    local src = tonumber(source)
+    if not src or src <= 0 then return identifiers end
+
+    for _, t in ipairs({"steam", "license", "xbl", "live", "discord", "fivem", "ip"}) do
+        local id = GetPlayerIdentifierByType(src, t)
+        if id then identifiers[t] = id end
     end
-    
-    source = tonumber(source)
-    
-    for _, id_type in ipairs({"steam", "license", "xbl", "live", "discord", "fivem", "ip"}) do
-        local identifier = GetPlayerIdentifierByType(source, id_type)
-        if identifier then
-            identifiers[id_type] = identifier
-        end
-    end
-    
+
     if GetNumPlayerTokens then
         identifiers.tokens = {}
-        for i = 0, GetNumPlayerTokens(source) - 1 do
-            table.insert(identifiers.tokens, GetPlayerToken(source, i))
+        for i = 0, GetNumPlayerTokens(src) - 1 do
+            identifiers.tokens[#identifiers.tokens + 1] = GetPlayerToken(src, i)
         end
     end
-    
-    if GetPlayerEndpoint then
-        identifiers.endpoint = GetPlayerEndpoint(source)
-    end
-    
-    if GetPlayerGuid then
-        identifiers.guid = GetPlayerGuid(source)
-    end
-    
+    if GetPlayerEndpoint then identifiers.endpoint = GetPlayerEndpoint(src) end
+    if GetPlayerGuid     then identifiers.guid     = GetPlayerGuid(src)     end
+
     return identifiers
 end
 
----@description Check if a player is banned
----@param identifiers table The player identifiers
----@return boolean is_banned Whether the player is banned
----@return table|nil ban_data The ban data if banned
 function BanManager.check_ban(identifiers)
-    if config_manager.is_debug_mode_enabled() then
-        logger.debug("Checking ban status for identifiers: " .. json.encode(identifiers))
-        logger.debug("Current ban list has " .. #BanManager.bans .. " entries")
-    end
-    
-    for _, ban in ipairs(BanManager.bans) do
-        if ban.expires and ban.expires > 0 and os.time() > ban.expires then
-            goto continue
-        end
-        
-        if not ban.identifiers then
-            goto continue
-        end
-        
-        for id_type, id_value in pairs(identifiers) do
-            if id_type ~= "tokens" and type(id_value) == "string" and ban.identifiers[id_type] then
-                if ban.identifiers[id_type] == id_value then
-                    if config_manager.is_debug_mode_enabled() then
-                        logger.debug("Ban match found on " .. id_type .. ": " .. id_value)
-                    end
+    if not identifiers then return false, nil end
+
+    for id_type, id_value in pairs(identifiers) do
+        if id_type ~= "tokens" and type(id_value) == "string" then
+            local ban = BanManager.bans_index[id_value]
+            if ban then
+                if not (ban.expires and ban.expires > 0 and os.time() > ban.expires) then
                     return true, ban
                 end
             end
         end
-        
-        if identifiers.license and ban.identifiers.license then
-            local clean_id1 = identifiers.license:gsub("license:", "")
-            local clean_id2 = ban.identifiers.license:gsub("license:", "")
-            if clean_id1 == clean_id2 then
-                if config_manager.is_debug_mode_enabled() then
-                    logger.debug("Ban match found on license (cleaned): " .. clean_id1)
-                end
-                return true, ban
-            end
-        end
-        
-        if identifiers.tokens and ban.identifiers.tokens then
-            for _, token in ipairs(identifiers.tokens) do
-                for _, ban_token in ipairs(ban.identifiers.tokens) do
-                    if token == ban_token then
-                        if config_manager.is_debug_mode_enabled() then
-                            logger.debug("Ban match found on token: " .. token)
-                        end
+    end
+
+    if identifiers.license then
+        local clean_a = identifiers.license:gsub("license2?:", "")
+        for _, ban in ipairs(BanManager.bans) do
+            if ban.identifiers and ban.identifiers.license then
+                local clean_b = ban.identifiers.license:gsub("license2?:", "")
+                if clean_a == clean_b then
+                    if not (ban.expires and ban.expires > 0 and os.time() > ban.expires) then
                         return true, ban
                     end
                 end
             end
         end
-        
-        ::continue::
     end
-    
+
+    if identifiers.tokens then
+        for _, ban in ipairs(BanManager.bans) do
+            if ban.identifiers and ban.identifiers.tokens then
+                for _, t in ipairs(identifiers.tokens) do
+                    for _, bt in ipairs(ban.identifiers.tokens) do
+                        if t == bt then
+                            if not (ban.expires and ban.expires > 0 and os.time() > ban.expires) then
+                                return true, ban
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
     return false, nil
 end
 
----@description Check if a specific identifier is banned
----@param identifier string The identifier to check
----@return boolean is_banned Whether the identifier is banned
----@return table|nil ban_data The ban data if banned
 function BanManager.is_banned(identifier)
     if not identifier then return false end
-    
-    for _, ban in ipairs(BanManager.bans) do
-        if ban.expires and ban.expires > 0 and os.time() > ban.expires then
-            goto continue
-        end
-        
-        if ban.identifiers then
-            for id_type, id_value in pairs(ban.identifiers) do
-                if type(id_value) == "string" then
-                    if id_value == identifier then
-                        return true, ban
-                    end
-                    
-                    if id_type == "license" or (identifier:find("license:") == 1) then
-                        local clean_id1 = id_value:gsub("license:", "")
-                        local clean_id2 = identifier:gsub("license:", "")
-                        if clean_id1 == clean_id2 then
-                            return true, ban
-                        end
-                    end
-                end
-            end
-        end
-        
-        ::continue::
+    local ban = BanManager.bans_index[identifier]
+    if ban and not (ban.expires and ban.expires > 0 and os.time() > ban.expires) then
+        return true, ban
     end
-    
     return false, nil
 end
 
----@description Ban a player with the given details
----@param player_id number The player ID to ban
----@param reason string The reason for the ban
----@param details table Additional ban details (admin, time, etc.)
----@return boolean success Whether the ban was successful
 function BanManager.ban_player(player_id, reason, details)
-    if not player_id or not reason then
-        return false
-    end
-    
-    if not tonumber(player_id) or tonumber(player_id) <= 0 then
+    if not player_id or not reason then return false end
+
+    local pid = tonumber(player_id)
+    if not pid or pid <= 0 then
         logger.error("Invalid player ID: " .. tostring(player_id))
         return false
     end
-    
-    local identifiers = BanManager.get_player_identifiers(player_id)
-    if not identifiers or not next(identifiers) then
-        logger.error("No identifiers found for player: " .. tostring(player_id))
+
+    local identifiers = BanManager.get_player_identifiers(pid)
+    if not next(identifiers) then
+        logger.error("No identifiers for player " .. pid)
         return false
     end
-    
-    local is_banned, existing_ban = BanManager.check_ban(identifiers)
-    if is_banned then
-        logger.info("Player " .. player_id .. " is already banned (Ban ID: " .. (existing_ban.id or "unknown") .. ")")
+
+    local already_banned, existing = BanManager.check_ban(identifiers)
+    if already_banned then
+        logger.info("Player " .. pid .. " already banned (banId " .. (existing.id or "?") .. ")")
         return false
     end
-    
-    local ban_reason = reason
+
+    if type(details) ~= "table" then
+        details = { detection = tostring(details or reason) }
+    end
+    details.detection = details.detection or reason
+
     local expires = 0
-    
-    if details then
-        if type(details) == "table" then
-            details.detection = details.detection or reason
-            
-            if details.time and tonumber(details.time) then
-                local banTimeMinutes = tonumber(details.time)
-                if banTimeMinutes >= 2147483647 or banTimeMinutes <= 0 then
-                    expires = 0
-                else
-                    expires = os.time() + (banTimeMinutes * 60)
-                end
-            end
-        else
-            local detection_reason = details
-            details = {
-                detection = detection_reason
-            }
+    if details.time and tonumber(details.time) then
+        local mins = tonumber(details.time)
+        if mins == -1 then
+            DropPlayer(tostring(pid), "Kicked: " .. reason)
+            return false
+        end
+        if mins > 0 and mins < 2147483647 then
+            expires = os.time() + (mins * 60)
         end
     end
-    
-    local admin = "System"
-    if details and type(details) == "table" and details.admin then
-        admin = details.admin
-    end
-    
-    local player_name = GetPlayerName(player_id) or "Unknown"
+
+    local admin = details.admin or "System"
+    local player_name = GetPlayerName(pid) or "Unknown"
+
     local ban_data = {
-        id = tostring(BanManager.next_ban_id),
+        id          = tostring(BanManager.next_ban_id),
         player_name = player_name,
-        reason = ban_reason,
+        reason      = reason,
         identifiers = identifiers,
-        timestamp = os.time(),
-        expires = expires,
-        admin = admin,
-        detection = details and details.detection or reason,
-        screenshot = details and details.screenshot or nil
+        timestamp   = os.time(),
+        expires     = expires,
+        admin       = admin,
+        detection   = details.detection,
+        screenshot  = details.screenshot,
     }
-    
+
     BanManager.next_ban_id = BanManager.next_ban_id + 1
-    
-    table.insert(BanManager.pending_bans, ban_data)
-    
+    BanManager.pending_bans[#BanManager.pending_bans + 1] = ban_data
+    BanManager.dirty = true
     BanManager.save_bans()
-    
-    local detection_text = ""
-    if details and type(details) == "table" and details.detection then
-        detection_text = "\nDetection: " .. tostring(details.detection)
-    end
-    
+
+    logger.warn(("Banned %s (id %s, banId %s) reason: %s"):format(player_name, pid, ban_data.id, reason))
+
     Citizen.CreateThread(function()
-        -- Leave a short window so screenshot capture/upload callbacks can complete before drop.
-        Citizen.Wait(12000)
-        if GetPlayerPing(player_id) > 0 then
-            local expire_text = ""
-            if expires > 0 then
-                expire_text = "\nExpires: " .. os.date("%Y-%m-%d %H:%M:%S", expires)
-            end
-            DropPlayer(player_id, "You have been banned from this server.\nReason: " .. tostring(ban_reason) .. expire_text .. detection_text)
+        Citizen.Wait(3000)
+        if GetPlayerName(pid) then
+            local expire_text = expires > 0 and ("\nExpires: " .. os.date("%Y-%m-%d %H:%M:%S", expires)) or ""
+            DropPlayer(pid, "You have been banned.\nReason: " .. reason .. expire_text)
         end
     end)
 
-    print("Banned player " .. player_name .. " (ID: " .. player_id .. ") for: " .. reason)
-    print("Ban ID: " .. ban_data.id)
-    print("Ban type: " .. (expires > 0 and "Temporary (" .. BanManager.format_time_remaining(expires - os.time()) .. ")" or "Permanent"))
-    
-    local function save_screenshot_if_url(screenshot_url)
-        if type(screenshot_url) == "string" and screenshot_url:find("^https?://") then
-            ban_data.screenshot = screenshot_url
-            BanManager.save_bans()
+    if DiscordLogger and type(DiscordLogger.log_ban) == "function" then
+        local screenshot = ban_data.screenshot
+        if type(screenshot) ~= "string" or not screenshot:find("^https?://") then
+            screenshot = nil
+        end
+
+        if screenshot then
+            DiscordLogger.log_ban(pid, reason, ban_data, screenshot)
+        elseif type(DiscordLogger.request_screenshot) == "function" then
+            DiscordLogger.request_screenshot(pid, "Ban: " .. reason, function(url)
+                if url and url ~= "" then
+                    ban_data.screenshot = url
+                    BanManager.dirty = true
+                end
+                DiscordLogger.log_ban(pid, reason, ban_data, ban_data.screenshot)
+            end, 10)
+        else
+            DiscordLogger.log_ban(pid, reason, ban_data, nil)
         end
     end
 
-    local function log_ban_with_valid_screenshot()
-        if not DiscordLogger or type(DiscordLogger.log_ban) ~= "function" then
-            logger.error("BAN DEBUG: DiscordLogger.log_ban unavailable, skipping Discord ban log")
-            return
-        end
+    TriggerEvent("playerBanned", pid, reason, admin)
 
-        local screenshot_for_log = ban_data.screenshot
-        if type(screenshot_for_log) ~= "string" or not screenshot_for_log:find("^https?://") then
-            screenshot_for_log = nil
-        end
-        DiscordLogger.log_ban(player_id, reason, ban_data, screenshot_for_log)
-    end
-
-    -- Debug: Check screenshot availability and attempt
-    logger.debug("BAN DEBUG: Checking screenshot availability for player " .. player_id)
-    logger.debug("BAN DEBUG: ban_data.screenshot exists: " .. tostring(ban_data.screenshot ~= nil))
-    local has_screenshot_url = type(ban_data.screenshot) == "string" and ban_data.screenshot:find("^https?://") ~= nil
-    logger.debug("BAN DEBUG: ban_data.screenshot is URL: " .. tostring(has_screenshot_url))
-
-    if has_screenshot_url then
-        log_ban_with_valid_screenshot()
-    elseif DiscordLogger and type(DiscordLogger.request_screenshot) == "function" then
-        logger.debug("BAN DEBUG: Requesting uploaded screenshot URL for player " .. player_id)
-        DiscordLogger.request_screenshot(player_id, "Ban: " .. reason, function(screenshot_url)
-            if screenshot_url and screenshot_url ~= "" then
-                logger.debug("BAN DEBUG: Screenshot URL received for player " .. player_id)
-                save_screenshot_if_url(screenshot_url)
-            else
-                logger.debug("BAN DEBUG: No screenshot URL received for player " .. player_id)
-            end
-            log_ban_with_valid_screenshot()
-        end, 10)
-    else
-        logger.debug("BAN DEBUG: Screenshot request helper unavailable, logging without screenshot URL")
-        log_ban_with_valid_screenshot()
-    end
-    
-    TriggerEvent("playerBanned", player_id, ban_reason, admin)
-    
-    local discord_link = SecureServe.AppealURL or "Contact server administration"
-    if not discord_link:find("http") then
-        discord_link = "https://discord.gg/" .. discord_link:gsub("discord.gg/", "")
-    end
-    
     Citizen.CreateThread(function()
-        TriggerClientEvent("SecureServe:ShowWindowsBluescreen", player_id)
+        TriggerClientEvent("SecureServe:ShowWindowsBluescreen", pid)
         Wait(3000)
-
-        TriggerClientEvent("SecureServe:ForceSocialClubUpdate", player_id)
+        TriggerClientEvent("SecureServe:ForceSocialClubUpdate", pid)
         Wait(500)
-        
-        TriggerClientEvent("SecureServe:ForceUpdate", player_id)
-        Wait(500)
-                
-        BanManager.active_connections[tostring(player_id)] = nil
+        TriggerClientEvent("SecureServe:ForceUpdate", pid)
+        BanManager.active_connections[tostring(pid)] = nil
     end)
-    
+
     return true
 end
 
----@description Unban a player by identifier
----@param identifier string The identifier to unban
----@return boolean success Whether the unban was successful
 function BanManager.unban_player(identifier)
-    logger.debug("UNBAN DEBUG: BanManager.unban_player called with identifier: " .. tostring(identifier) .. " (type: " .. type(identifier) .. ")")
-    
-    if not identifier then
-        logger.error("UNBAN DEBUG: No identifier provided for unban")
-        return false
-    end
-    BanManager.load_bans()
-    logger.debug("UNBAN DEBUG: Current ban list has " .. #BanManager.bans .. " entries")
-    
-    local available_ids = {}
-    for i, ban in ipairs(BanManager.bans) do
-        table.insert(available_ids, tostring(ban.id))
-    end
-    logger.debug("UNBAN DEBUG: Available ban IDs: " .. table.concat(available_ids, ", "))
-    
+    if not identifier then return false end
+
     local found = false
-    local new_bans = {}
-    local matched_ban = nil
-    
-    for i, ban in ipairs(BanManager.bans) do
-        local match = false
-        
-        logger.debug("UNBAN DEBUG: Checking ban " .. i .. " - ID: " .. tostring(ban.id) .. " (type: " .. type(ban.id) .. "), Player: " .. tostring(ban.player_name))
-        
-        -- Check if ban ID matches (handle both string and number comparisons)
-        if ban.id then
-            local ban_id_str = tostring(ban.id)
-            local identifier_str = tostring(identifier)
-            
-            logger.debug("UNBAN DEBUG: Comparing ban ID '" .. ban_id_str .. "' with identifier '" .. identifier_str .. "'")
-            
-            if ban_id_str == identifier_str then
-                match = true
-                logger.debug("UNBAN DEBUG: Found match by ban ID: " .. ban_id_str)
-            end
+    local kept  = {}
+
+    for _, ban in ipairs(BanManager.bans) do
+        local is_match = false
+
+        if ban.id and tostring(ban.id) == tostring(identifier) then
+            is_match = true
         end
-        
-        -- Check if any identifier matches
-        if not match and ban.identifiers then
-            logger.debug("UNBAN DEBUG: Checking identifiers for ban " .. i)
+
+        if not is_match and ban.identifiers then
             for id_type, id_value in pairs(ban.identifiers) do
-                if type(id_value) == "string" then
-                    logger.debug("UNBAN DEBUG: Comparing " .. id_type .. ": " .. tostring(id_value) .. " with " .. tostring(identifier))
-                    
-                    if id_value == identifier then
-                        match = true
-                        logger.debug("UNBAN DEBUG: Found match by identifier " .. id_type .. ": " .. tostring(id_value))
-                        break
-                    end
-                    
-                    if id_type == "license" or identifier:find("license:") == 1 then
-                        local clean_id1 = id_value:gsub("license:", "")
-                        local clean_id2 = identifier:gsub("license:", "")
-                        logger.debug("UNBAN DEBUG: Comparing cleaned license IDs: " .. clean_id1 .. " vs " .. clean_id2)
-                        if clean_id1 == clean_id2 then
-                            match = true
-                            logger.debug("UNBAN DEBUG: Found match by cleaned license ID")
+                if type(id_value) == "string" and id_value == identifier then
+                    is_match = true
+                    break
+                end
+                if id_type == "license" or (type(identifier) == "string" and identifier:find("license:") == 1) then
+                    if type(id_value) == "string" then
+                        local a = id_value:gsub("license2?:", "")
+                        local b = (type(identifier) == "string" and identifier or ""):gsub("license2?:", "")
+                        if a == b and a ~= "" then
+                            is_match = true
                             break
                         end
                     end
                 end
             end
         end
-        
-        if match then
+
+        if is_match then
             found = true
-            matched_ban = ban
-            logger.info("UNBAN DEBUG: Found matching ban - ID: " .. tostring(ban.id) .. ", Player: " .. tostring(ban.player_name) .. ", Reason: " .. tostring(ban.reason))
         else
-            table.insert(new_bans, ban)
+            kept[#kept + 1] = ban
         end
     end
-    
+
     if found then
-        logger.debug("UNBAN DEBUG: Removing ban from list and saving")
-        BanManager.bans = new_bans
+        BanManager.bans = kept
+        rebuild_index()
+        BanManager.dirty = true
         BanManager.save_bans()
-        logger.info("UNBAN DEBUG: Successfully unbanned player with identifier: " .. identifier .. " (Ban ID: " .. tostring(matched_ban.id) .. ")")
         return true
-    else
-        logger.warn("UNBAN DEBUG: No ban found for identifier: " .. identifier)
-        logger.debug("UNBAN DEBUG: Available ban IDs: " .. table.concat(BanManager.get_ban_ids(), ", "))
-        return false
     end
+    return false
 end
 
----@description Send ban information to a webhook
----@param ban_data table The ban data
----@param webhook string The webhook URL
-function BanManager.send_to_webhook(ban_data, webhook)
-    if not webhook or webhook == "" then
-        return
-    end
-    
-    local identifiers_text = ""
-    if ban_data.identifiers then
-        for id_type, id_value in pairs(ban_data.identifiers) do
-            if id_type ~= "tokens" and type(id_value) == "string" then
-                identifiers_text = identifiers_text .. id_type .. ": " .. id_value .. "\n"
-            end
-        end
-    end
-    
-    local embeds = {
-        {
-            title = "Player Banned",
-            description = "A player has been banned from the server",
-            color = 16711680, -- Red
-            fields = {
-                {name = "Player", value = ban_data.player_name or "Unknown", inline = true},
-                {name = "Ban ID", value = ban_data.id or "Unknown", inline = true},
-                {name = "Reason", value = ban_data.reason or "No reason specified", inline = false},
-                {name = "Expires", value = (ban_data.expires and ban_data.expires > 0) and 
-                    os.date("%Y-%m-%d %H:%M:%S", ban_data.expires) or "Never", inline = true},
-                {name = "Detection", value = ban_data.detection or "Manual", inline = true},
-                {name = "Identifiers", value = identifiers_text ~= "" and identifiers_text or "None available", inline = false}
-            },
-            footer = {
-                text = "SecureServe Anti-Cheat"
-            },
-            timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
-        }
-    }
-    
-    if ban_data.screenshot then
-        table.insert(embeds[1].fields, {name = "Screenshot", value = ban_data.screenshot, inline = false})
-    end
-    
-    PerformHttpRequest(webhook, function() end, "POST", json.encode({
-        username = "SecureServe Ban System",
-        embeds = embeds
-    }), {["Content-Type"] = "application/json"})
-end
-
----@description Get all bans
----@return table bans All ban records
 function BanManager.get_all_bans()
     return BanManager.bans
 end
 
----@description Get most recent bans
----@param count number Number of recent bans to get
----@return table recent_bans The most recent bans
 function BanManager.get_recent_bans(count)
-    count = count or 10
+    count = tonumber(count) or 10
     local result = {}
-    local start_index = #BanManager.bans - count + 1
-    
-    if start_index < 1 then
-        start_index = 1
+    local total = #BanManager.bans
+    for i = math.max(1, total - count + 1), total do
+        result[#result + 1] = BanManager.bans[i]
     end
-    
-    for i = start_index, #BanManager.bans do
-        table.insert(result, BanManager.bans[i])
-    end
-    
     return result
 end
 
----@description Get all ban IDs for debugging
----@return table ban_ids Array of ban IDs
-function BanManager.get_ban_ids()
-    local ids = {}
-    for _, ban in ipairs(BanManager.bans) do
-        if ban.id then
-            table.insert(ids, tostring(ban.id))
-        end
-    end
-    return ids
-end
-
----@description Remove expired bans from the ban list
-function BanManager.clean_expired_bans()
-    local current_time = os.time()
-    local original_count = #BanManager.bans
-    local new_bans = {}
-    local removed = 0
-    
-    for _, ban in ipairs(BanManager.bans) do
-        if ban.expires and ban.expires > 0 and current_time > ban.expires then
-            removed = removed + 1
-        else
-            table.insert(new_bans, ban)
-        end
-    end
-    
-    if removed > 0 then
-        logger.info("Removed " .. removed .. " expired bans from ban list")
-        BanManager.bans = new_bans
-        BanManager.save_bans() 
-    end
-    
-    return removed
-end
-
-return BanManager 
+return BanManager

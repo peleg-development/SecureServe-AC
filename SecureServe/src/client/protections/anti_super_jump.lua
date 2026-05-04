@@ -1,74 +1,84 @@
 local ProtectionManager = require("client/protections/protection_manager")
-
+local ProtectionHelper = require("client/core/protection_helper")
 local Cache = require("client/core/cache")
 
----@class AntiSuperJumpModule
 local AntiSuperJump = {}
 
----@description Initialize Anti Super Jump protection
 function AntiSuperJump.initialize()
     if not ConfigLoader.get_protection_setting("Anti Super Jump", "enabled") then return end
-    
+
     local jump_flags = 0
-    local last_height = 0
-    local normal_jump_height = 1.2  
-    
+    local NORMAL_JUMP_HEIGHT = 2.5
+
     Citizen.CreateThread(function()
         while true do
             Citizen.Wait(1000)
-            
-            if Cache.Get("hasPermission", "superjump") or Cache.Get("hasPermission", "all") or Cache.Get("isAdmin") then
+
+            if Cache.Get("hasPermission", "superjump")
+                or Cache.Get("hasPermission", "all")
+                or Cache.Get("isAdmin")
+            then
                 jump_flags = 0
                 goto continue
             end
-            
+
             local ped = Cache.Get("ped")
-            local current_pos = Cache.Get("coords")
-            
-            if Cache.Get("isInVehicle") or Cache.Get("isSwimming") or Cache.Get("isSwimmingUnderWater") then
-                last_height = current_pos.z
+            if not ped or not DoesEntityExist(ped) then goto continue end
+
+            if Cache.Get("isInVehicle")
+                or Cache.Get("isSwimming")
+                or Cache.Get("isSwimmingUnderWater")
+                or IsPedRagdoll(ped)
+                or IsPedClimbing(ped)
+                or IsPedDiving(ped)
+                or IsPedInParachuteFreeFall(ped)
+                or IsPedOnVehicle(ped)
+            then
                 goto continue
             end
-            
+
+            local current_pos = Cache.Get("coords")
+
             if IsPedJumping(ped) then
                 Citizen.CreateThread(function()
                     local start_z = current_pos.z
                     local max_height = start_z
-                    
+                    local interrupted = false
+
                     for i = 1, 20 do
                         Citizen.Wait(50)
-                        local pos = GetEntityCoords(ped)
-                        if pos.z > max_height then
-                            max_height = pos.z
-                        end
-                        
-                        if not IsPedJumping(ped) then
+                        if not DoesEntityExist(ped) then return end
+
+                        if IsPedRagdoll(ped) or IsPedClimbing(ped)
+                            or IsPedDiving(ped) or IsPedInParachuteFreeFall(ped)
+                            or IsPedOnVehicle(ped) or Cache.Get("isInVehicle")
+                        then
+                            interrupted = true
                             break
                         end
+
+                        local pos = GetEntityCoords(ped)
+                        if pos.z > max_height then max_height = pos.z end
+                        if not IsPedJumping(ped) then break end
                     end
-                    
+
+                    if interrupted then return end
+
                     local jump_height = max_height - start_z
-                    
-                    if jump_height > normal_jump_height and not IsPedFalling(ped) then
+
+                    if jump_height > NORMAL_JUMP_HEIGHT and not IsPedFalling(ped) and not IsPedRagdoll(ped) then
                         jump_flags = jump_flags + 1
-                        
-                        if jump_flags >= 3 then
-                            local webhook = ConfigLoader.get_protection_setting("Anti Super Jump", "webhook") or ""
-                            local time = ConfigLoader.get_protection_setting("Anti Super Jump", "time") or 0
-                            
-                            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Super Jump", webhook, time)
+                        if jump_flags >= 4 then
+                            ProtectionHelper.punish('Anti Super Jump',
+                                ("Anti Super Jump (height: %.2f)"):format(jump_height))
                             jump_flags = 0
                         end
                     else
-                        if jump_flags > 0 then
-                            jump_flags = jump_flags - 1
-                        end
+                        if jump_flags > 0 then jump_flags = jump_flags - 1 end
                     end
                 end)
             end
-            
-            last_height = current_pos.z
-            
+
             ::continue::
         end
     end)
@@ -76,4 +86,4 @@ end
 
 ProtectionManager.register_protection("super_jump", AntiSuperJump.initialize)
 
-return AntiSuperJump 
+return AntiSuperJump

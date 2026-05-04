@@ -1,4 +1,5 @@
 local ProtectionManager = require("client/protections/protection_manager")
+local ProtectionHelper = require("client/core/protection_helper")
 
 local Cache = require("client/core/cache")
 
@@ -16,7 +17,7 @@ function AntiAfkInjection.initialize()
                 or (GetIsTaskActive(pid, 151))
                 or (GetIsTaskActive(pid, 221))
                 or (GetIsTaskActive(pid, 222)) then
-                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti AFK Injection", webhook, time)
+                ProtectionHelper.punish('Anti AFK Injection', "Anti AFK Injection")
             end
             Citizen.Wait(5000)
         end

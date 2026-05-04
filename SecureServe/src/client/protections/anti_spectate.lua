@@ -1,4 +1,5 @@
 local ProtectionManager = require("client/protections/protection_manager")
+local ProtectionHelper = require("client/core/protection_helper")
 
 local Cache = require("client/core/cache")
 
@@ -18,7 +19,7 @@ function AntiSpectate.initialize()
             end
             
             if NetworkIsInSpectatorMode() then
-                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Spectate", webhook, time)
+                ProtectionHelper.punish('Anti Spectate', "Anti Spectate")
             end
             
             ::continue::

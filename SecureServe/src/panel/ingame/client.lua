@@ -166,28 +166,65 @@ function toggleGodMode(enable)
 end
 
 local noclip = false
+noclip_thread_running = noclip_thread_running or false
+
 function toggleNoClip(enable)
     noclip = enable
+
     if not enable then
         local me = PlayerPedId()
+        local veh = GetVehiclePedIsIn(me, false)
+
+        if veh and veh ~= 0 then
+            FreezeEntityPosition(veh, false)
+            SetEntityCollision(veh, true, true)
+            SetEntityInvincible(veh, false)
+            SetEntityVisible(veh, true, false)
+            SetEntityVelocity(veh, 0.0, 0.0, 0.0)
+        end
+
+        FreezeEntityPosition(me, false)
+        SetEntityCollision(me, true, true)
+        SetEntityInvincible(me, false)
         SetEntityVisible(me, true, false)
         SetLocalPlayerVisibleLocally(true)
-        FreezeEntityPosition(me, false, false)
-        SetEntityInvincible(me, false)
-        SetEntityCollision(me, true, true)
+        SetPlayerInvincible(PlayerId(), false)
+        SetEntityAlpha(me, 255, false)
+        ResetEntityAlpha(me)
+        SetEntityVelocity(me, 0.0, 0.0, 0.0)
+        ClearPedTasksImmediately(me)
+
+        Citizen.CreateThread(function()
+            local deadline = GetGameTimer() + 1500
+            while GetGameTimer() < deadline do
+                Citizen.Wait(50)
+                local p = PlayerPedId()
+                local v = GetVehiclePedIsIn(p, false)
+                if v and v ~= 0 then
+                    FreezeEntityPosition(v, false)
+                    SetEntityCollision(v, true, true)
+                    SetEntityVisible(v, true, false)
+                end
+                FreezeEntityPosition(p, false)
+                SetEntityCollision(p, true, true)
+                SetEntityVisible(p, true, false)
+                SetLocalPlayerVisibleLocally(true)
+                SetEntityAlpha(p, 255, false)
+                ResetEntityAlpha(p)
+            end
+        end)
         return
     end
-    
-    Citizen.CreateThread(function()
-        local me = PlayerPedId()
 
+    if noclip_thread_running then return end
+    noclip_thread_running = true
+
+    Citizen.CreateThread(function()
         while noclip and playerOptions["No Clip"] do
             Citizen.Wait(0)
             local me = PlayerPedId()
-            local lastVehicle = nil
-            local isInVehicle = false
             local vehicle = GetVehiclePedIsIn(me, false)
-            isInVehicle = vehicle ~= nil and vehicle ~= 0
+            local isInVehicle = vehicle ~= nil and vehicle ~= 0
             SetLocalPlayerVisibleLocally(true)
             FreezeEntityPosition(me, true, false)
 
@@ -315,11 +352,8 @@ function toggleNoClip(enable)
                 SetEntityHeading(vehicle, heading)
             end
         end
-        SetEntityVisible(PlayerPedId(), true, false)
-        SetLocalPlayerVisibleLocally(true)
-        FreezeEntityPosition(me, false, false)
-        SetEntityInvincible(PlayerPedId(), false)
-        SetEntityCollision(PlayerPedId(), true, true)
+
+        noclip_thread_running = false
     end)
 end
 
@@ -410,16 +444,12 @@ end
 
 RegisterNUICallback('unbanPlayer', function(data, cb)
     local banId = data.banId
-    print("UNBAN DEBUG: Client NUI callback triggered with data: " .. json.encode(data))
-    print("UNBAN DEBUG: Extracted banId: " .. tostring(banId) .. " (type: " .. type(banId) .. ")")
-    
+
     if not banId then
-        print("UNBAN DEBUG: No banId provided in data")
         cb('error')
         return
     end
-    
-    print("UNBAN DEBUG: Triggering server event 'unbanPlayer' with banId: " .. tostring(banId))
+
     TriggerServerEvent('unbanPlayer', banId)
     cb('ok')
 end)

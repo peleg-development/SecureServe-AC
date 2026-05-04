@@ -20,6 +20,8 @@ Cache.Values = {
     permissionsLastUpdate = 0
 }
 
+Cache.bootstrapping = true
+
 Cache.UpdateIntervals = {
     coords = 1000,       
     selectedWeapon = 2500, 
@@ -58,6 +60,11 @@ function Cache.initialize()
     
     -- Request permission check on initialization
     Cache.RequestPermissionCheck()
+
+    Citizen.CreateThread(function()
+        Citizen.Wait(60000)
+        Cache.bootstrapping = false
+    end)
 end
 
 function Cache.UpdateAll()
@@ -82,7 +89,9 @@ function Cache.UpdateAll()
     Cache.Values.isSwimmingUnderWater = IsPedSwimmingUnderWater(ped)
     Cache.Values.isFalling = IsPedFalling(ped)
     Cache.Values.isInvisible = IsEntityVisible(ped) == 0
-    Cache.Values.isAdmin = ConfigLoader.is_whitelisted(GetPlayerServerId(PlayerId())) 
+    if _G.SecureServeAdminList then
+        Cache.Values.isAdmin = _G.SecureServeAdminList[tostring(GetPlayerServerId(PlayerId()))] == true
+    end
     
     for k, v in pairs(Cache.Values) do
         Cache.LastValues[k] = v
@@ -96,6 +105,7 @@ function Cache.Get(key, subKey)
     
     if key == "hasPermission" and subKey then
         Cache.CheckPermission(subKey)
+        if Cache.bootstrapping then return true end
         return Cache.Values.permissions[subKey] or false
     end
     
@@ -139,7 +149,9 @@ function Cache.ForceUpdate(key, currentTime, ped)
     elseif key == "selectedWeapon" then
         Cache.Values.selectedWeapon = GetSelectedPedWeapon(ped)
     elseif key == "isAdmin" then
-        Cache.Values.isAdmin = ConfigLoader.is_whitelisted(GetPlayerServerId(PlayerId()))
+        if _G.SecureServeAdminList then
+            Cache.Values.isAdmin = _G.SecureServeAdminList[tostring(GetPlayerServerId(PlayerId()))] == true
+        end
     elseif key == "permissions" then
         Cache.RequestPermissionCheck()
     end
@@ -213,6 +225,7 @@ RegisterNetEvent("SecureServe:ReceivePermissions", function(permissions)
     Cache.Values.permissions = permissions or {}
     Cache.Values.permissionsLastUpdate = GetGameTimer()
     Cache.LastUpdated["permissions"] = GetGameTimer()
+    Cache.bootstrapping = false
 end)
 
 AddEventHandler("gameEventTriggered", function(name, args)

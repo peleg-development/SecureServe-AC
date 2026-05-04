@@ -1,74 +1,91 @@
 local ProtectionManager = require("client/protections/protection_manager")
+local ProtectionHelper  = require("client/core/protection_helper")
+local Cache             = require("client/core/cache")
 
-local Cache = require("client/core/cache")
-
----@class AntiTeleportModule
 local AntiTeleport = {}
 
----@description Initialize Anti Teleport protection
-function AntiTeleport.initialize()
-    if not ConfigLoader.get_protection_setting("Anti Teleport", "enabled") then return end
-    
-    ---@description Resolve Anti Teleport whitelisting with radius support
+local last_spawn_time = 0
+local last_death_time = 0
 
-    if Cache.Get("hasPermission", "teleport") or Cache.Get("hasPermission", "all") or Cache.Get("isAdmin") then
+function AntiTeleport.initialize()
+    if not ConfigLoader.get_protection_setting("Anti Teleport", "enabled") then
         return
     end
 
-    local function get_whitelist()
-        local cfg = ConfigLoader.get_secureserve()
-        if not cfg or not cfg.Protection or not cfg.Protection.Simple then return {} end
-        for _, v in pairs(cfg.Protection.Simple) do
-            if v.protection == "Anti Teleport" then
-                return v.whitelisted_coords or {}
+    AddEventHandler("playerSpawned", function()
+        last_spawn_time = GetGameTimer()
+    end)
+
+    AddEventHandler('gameEventTriggered', function(event, data)
+        if event == 'CEventNetworkEntityDamage' then
+            local victim, victim_died = data[1], data[4]
+            if victim == PlayerPedId() and victim_died then
+                last_death_time = GetGameTimer()
             end
-        end
-        return {}
-    end
-
-    local function is_whitelisted(coords)
-        local list = get_whitelist()
-        for _, entry in ipairs(list) do
-            local ex, ey, ez = entry.x, entry.y, entry.z
-            local radius = tonumber(entry.radius) or 0.0
-            if ex and ey and ez and radius > 0 then
-                local dist = #(coords - vector3(ex, ey, ez))
-                if dist <= radius then
-                    return true
-                end
-            end
-        end
-        return false
-    end
-
-    Citizen.CreateThread(function()
-        local last_pos = nil
-        while true do
-            Citizen.Wait(1000)
-
-            local ped = Cache.Get("ped")
-            local current_pos = Cache.Get("coords")
-
-            if Cache.Get("isInVehicle") or Cache.Get("isSwimming") or Cache.Get("isSwimmingUnderWater") then
-                goto continue
-            end
-
-            if not IsPedFalling(ped) then
-                if last_pos and #(current_pos - last_pos) > 150.0 and not is_whitelisted(current_pos) then
-                    local webhook = ConfigLoader.get_protection_setting("Anti Teleport", "webhook") or ""
-                    local time = ConfigLoader.get_protection_setting("Anti Teleport", "time") or 0
-                    
-                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Teleport", webhook, time)
-                end
-            end
-
-            last_pos = current_pos
-            ::continue::
         end
     end)
 
+    Citizen.CreateThread(function()
+        local last_pos = nil
+        local strikes = 0
+        local STRIKE_LIMIT = 2
+        local SPAWN_GRACE = 10000
+
+        while true do
+            Citizen.Wait(1000)
+
+            if Cache.Get("hasPermission", "teleport")
+                or Cache.Get("hasPermission", "all")
+                or Cache.Get("isAdmin")
+            then
+                last_pos = nil
+                strikes = 0
+                goto continue
+            end
+
+            local ped = Cache.Get("ped")
+            if not ped or not DoesEntityExist(ped) then
+                last_pos = nil
+                goto continue
+            end
+
+            local now = GetGameTimer()
+            if (now - last_spawn_time) < SPAWN_GRACE
+                or (now - last_death_time) < SPAWN_GRACE
+            then
+                last_pos = Cache.Get("coords")
+                goto continue
+            end
+
+            local current = Cache.Get("coords")
+
+            if Cache.Get("isInVehicle")
+                or Cache.Get("isSwimming")
+                or Cache.Get("isSwimmingUnderWater")
+                or IsPedFalling(ped)
+                or IsPedRagdoll(ped)
+                or IsPedDeadOrDying(ped, true)
+                or NetworkIsInSpectatorMode()
+            then
+                last_pos = current
+                goto continue
+            end
+
+            if last_pos and #(current - last_pos) > 150.0 then
+                strikes = strikes + 1
+                if strikes >= STRIKE_LIMIT then
+                    strikes = 0
+                    ProtectionHelper.punish("Anti Teleport")
+                end
+            else
+                if strikes > 0 then strikes = strikes - 1 end
+            end
+
+            last_pos = current
+            ::continue::
+        end
+    end)
 end
 
 ProtectionManager.register_protection("teleport", AntiTeleport.initialize)
-
-return AntiTeleport 
+return AntiTeleport

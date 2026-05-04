@@ -1,4 +1,5 @@
 local ProtectionManager = require("client/protections/protection_manager")
+local ProtectionHelper = require("client/core/protection_helper")
 
 local Cache = require("client/core/cache")
 
@@ -21,17 +22,30 @@ function AntiNoRagdoll.initialize()
             end
             
             local ped = Cache.Get("ped")
+            if not ped or not DoesEntityExist(ped) then goto continue end
             
             if Cache.Get("isInVehicle") then
                 ragdoll_flags = 0
                 goto continue
             end
-            
+
+            local in_anim = IsEntityPlayingAnim(ped, "anim@heists@", "", 3)
+                or GetIsTaskActive(ped, 152)
+                or GetIsTaskActive(ped, 151)
+                or IsPedUsingAnyScenario(ped)
+                or IsPedInCover(ped, false)
+                or IsPedRagdoll(ped)
+
+            if in_anim then
+                ragdoll_flags = 0
+                goto continue
+            end
+
             if not CanPedRagdoll(ped) then
                 ragdoll_flags = ragdoll_flags + 1
                 
-                if ragdoll_flags >= 3 then
-                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti No Ragdoll", webhook, time)
+                if ragdoll_flags >= 6 then
+                    ProtectionHelper.punish('Anti No Ragdoll', "Anti No Ragdoll")
                     ragdoll_flags = 0
                     
                     SetPedCanRagdoll(ped, true)

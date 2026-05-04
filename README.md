@@ -1,36 +1,3 @@
-### Fiveguard
-
-[Fiveguard.net](https://fiveguard.net/) is best paid FiveM Anticheat providing unique features such as Anti Aimbot, Objects-AI detection, Cheats-AI detection, Safe-Events and many more. This product is developed to eliminate cheats and at the same time provide smooth gaming experience!
-
-<p align='center'>
-  For an enhanced <b>paid anticheat</b>, visit <a href="https://store.fiveguard.ac">https://store.fiveguard.ac</a>.
-</p>
-<p align='center'>
-  We are able to provide this <strong>free product</strong> thanks to the support of <a href="https://fiveguard.net">https://fiveguard.net</a>.
-</p>
-<p align='center'>
-  <strong>Fiveguard</strong> - Elevating your FiveM server security.
-</p>
-
-<b>SecureServe-AC is only free version containing basic checks if you want FULL PROTECTION you need to purchase this <a href="https://fiveguard.net/" rel="dofollow">FiveM Anticheat</a>
----
-
-# SecureServe - Free & Open Source Fivem Anti-Cheat
-<div align="center">
-
-[![Support Discord](https://img.shields.io/badge/Support%20Discord-5865F2?logo=discord&logoColor=white)](https://discord.gg/ZVWbpqfYj5)
-[![Tebex Store](https://img.shields.io/badge/Tebex%20Store-111111)](https://peleg-development.tebex.io/)
-
-</div>
-
-- **Discord:** [Join Our Server](https://discord.gg/9AuTeZPgrX) for live support and updates.
-- **Docs:** [SecureServe Documentation](https://peleg.gitbook.io/secureserve/)
-- **Support the anticheat for future updates:** [KOFI](https://ko-fi.com/peleg)
-
-SecureServe is a state-of-the-art anti-cheat solution designed specifically for FiveM servers. Combining advanced detection techniques with comprehensive server protection, it ensures a fair and secure gaming environment. This open-source script is completely free to use, modify, and extend.
-
----
-
 ## 🚀 **Getting Started**
 
 ### Step-by-Step Installation
@@ -42,7 +9,7 @@ SecureServe is a state-of-the-art anti-cheat solution designed specifically for 
    - Add the event name to the **whitelisted events list** in the config.
 3. **Still Have Issues?**
    - Read our docs: [SecureServe Documentation](https://peleg.gitbook.io/secureserve/)
-   - Join our [Discord](https://discord.gg/z6qGGtbcr4) and open a ticket for personalized support.
+   - Join our [Discord](https://discord.gg/STXXenjkbp) and open a ticket for personalized support.
 
 ---
 
@@ -82,14 +49,6 @@ SecureServe is a state-of-the-art anti-cheat solution designed specifically for 
 exports['SecureServe']:banPlayer(source, 'Detected Cheat Activity')
 ```
 
----
-
-## 🌐 **Upcoming Enhancements**
-- **Anti Internal Module:** Returning soon with optimized performance.
-- **Standalone Admin Panel:** Features added for ESX, QBCore, and standalone frameworks.
-
----
-
 ## 🤝 **Contributing to SecureServe**
 We value contributions! If you encounter issues, have suggestions, or want to contribute code, submit a pull request or report issues on our GitHub.
 
@@ -109,11 +68,6 @@ We value contributions! If you encounter issues, have suggestions, or want to co
    ![Image 10](https://github.com/user-attachments/assets/788300fa-0c1b-4361-bf84-c0d066af9cba)
    ![Image 11](https://github.com/user-attachments/assets/74bbe83a-1967-4f2f-8ec6-0b9bc85604eb)
 
-### Video Previews
-- **[Watch Preview 1](https://www.youtube.com/watch?v=xgFFfGNQehk)**
-- **[Watch Preview 2](https://youtu.be/BfSHgVtE3eE)**
-
----
 
 ## 🏷️ **License**
 SecureServe is licensed under the [GNU Affero General Public License v3.0](https://www.gnu.org/licenses/agpl-3.0.en.html). You are free to use, modify, and share it under the terms of this license.
@@ -121,7 +75,7 @@ SecureServe is licensed under the [GNU Affero General Public License v3.0](https
 ---
 
 ## 📞 **Contact & Support**
-- **Join Us on Discord:** [Get Help Here](https://discord.gg/z6qGGtbcr4)
+- **Join Us on Discord:** [Get Help Here](https://discord.gg/STXXenjkbp)
 
 --- 
 

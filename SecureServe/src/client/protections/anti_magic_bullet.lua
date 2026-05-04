@@ -1,54 +1,68 @@
 local ProtectionManager = require("client/protections/protection_manager")
+local ProtectionHelper  = require("client/core/protection_helper")
+local Cache             = require("client/core/cache")
 
-local Cache = require("client/core/cache")
-
----@class AntiMagicBulletModule
 local AntiMagicBullet = {}
 
----@description Initialize Anti Magic Bullet protection
 function AntiMagicBullet.initialize()
-    if not ConfigLoader.get_protection_setting("Anti Magic Bullet", "enabled") then return end
-    
-    local tolerance = ConfigLoader.get_protection_setting("Anti Magic Bullet", "tolerance") or 3
-    
-    local function check_killer_has_los(attacker, victim, killer_client_id)
-        if Cache.Get("hasPermission", "magicbullet") or Cache.Get("hasPermission", "all") or Cache.Get("isAdmin") then
+    if not ConfigLoader.get_protection_setting("Anti Magic Bullet", "enabled") then
+        return
+    end
+
+    local tolerance = tonumber(ConfigLoader.get_protection_setting("Anti Magic Bullet", "tolerance")) or 3
+
+    local function check_killer_has_los(attacker, victim)
+        if Cache.Get("hasPermission", "magicbullet")
+            or Cache.Get("hasPermission", "all")
+            or Cache.Get("isAdmin")
+        then
             return
         end
-        
-        local attempt = 0
-        for i = 0, 3, 1 do
-            if not HasEntityClearLosToEntityInFront(attacker, victim) and not HasEntityClearLosToEntity(attacker, victim, 17) and HasEntityClearLosToEntity_2(attacker, victim, 17) == 0 then
-                attempt = attempt + 1
+
+        Citizen.CreateThread(function()
+            local missed_los = 0
+            for _ = 1, 4 do
+                if not DoesEntityExist(attacker) or not DoesEntityExist(victim) then
+                    return
+                end
+                local los_front = HasEntityClearLosToEntityInFront(attacker, victim)
+                local los_any = HasEntityClearLosToEntity(attacker, victim, 17)
+                if not los_front and not los_any then
+                    missed_los = missed_los + 1
+                end
+                Wait(1500)
             end
-            Wait(1500)
-        end
-        
-        if (attempt >= tolerance) then
-            TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Magic Bullet Detected", webhook, time)
-        end
+
+            if missed_los >= tolerance then
+                ProtectionHelper.punish("Anti Magic Bullet", "Magic Bullet Detected")
+            end
+        end)
     end
 
     AddEventHandler('gameEventTriggered', function(event, data)
         if event ~= 'CEventNetworkEntityDamage' then return end
         local victim, victim_died = data[1], data[4]
         if not IsPedAPlayer(victim) then return end
-        
-        local player = PlayerId()
+
+        local local_player = PlayerId()
+        if NetworkGetPlayerIndexFromPed(victim) ~= local_player then return end
+        if not victim_died then return end
+
         local player_ped = Cache.Get("ped")
-        
-        if victim_died and NetworkGetPlayerIndexFromPed(victim) == player and (IsPedDeadOrDying(victim, true) or IsPedFatallyInjured(victim)) then
-            local killer_entity, death_cause = GetPedSourceOfDeath(player_ped), GetPedCauseOfDeath(player_ped)
-            local killer_client_id = NetworkGetPlayerIndexFromPed(killer_entity)
-            
-            if killer_entity ~= player_ped and killer_client_id and NetworkIsPlayerActive(killer_client_id) then
-                local attacker = GetPlayerPed(killer_client_id)
-                check_killer_has_los(attacker, victim, killer_client_id)
-            end
+        if not IsPedDeadOrDying(victim, true) and not IsPedFatallyInjured(victim) then
+            return
+        end
+
+        local killer_entity = GetPedSourceOfDeath(player_ped)
+        if killer_entity == player_ped or killer_entity == 0 then return end
+
+        local killer_client_id = NetworkGetPlayerIndexFromPed(killer_entity)
+        if killer_client_id and NetworkIsPlayerActive(killer_client_id) then
+            local attacker = GetPlayerPed(killer_client_id)
+            check_killer_has_los(attacker, victim)
         end
     end)
 end
 
 ProtectionManager.register_protection("magic_bullet", AntiMagicBullet.initialize)
-
 return AntiMagicBullet

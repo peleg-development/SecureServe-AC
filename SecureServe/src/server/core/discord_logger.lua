@@ -51,20 +51,6 @@ function DiscordLogger.initialize()
         
         DiscordLogger.enabled = config.Logs.Enabled ~= false
     end
-
-    if config and config.Detections and type(config.Detections.Webhook) == "string" and config.Detections.Webhook ~= "" then
-        if not DiscordLogger.webhooks.detection or DiscordLogger.webhooks.detection == "" then
-            DiscordLogger.webhooks.detection = config.Detections.Webhook
-        end
-    end
-
-    if (not DiscordLogger.webhooks.detection or DiscordLogger.webhooks.detection == "") and DiscordLogger.webhooks.ban ~= "" then
-        DiscordLogger.webhooks.detection = DiscordLogger.webhooks.ban
-    end
-
-    if (not DiscordLogger.webhooks.ban or DiscordLogger.webhooks.ban == "") and DiscordLogger.webhooks.detection ~= "" then
-        DiscordLogger.webhooks.ban = DiscordLogger.webhooks.detection
-    end
     
     DiscordLogger.registerEventHandlers()
     
@@ -163,9 +149,9 @@ function DiscordLogger.process_queue()
                     if err ~= 200 and err ~= 204 then
                         logger.error("Discord webhook failed with error code: " .. tostring(err) .. ", response: " .. tostring(text))
                     end
-                    
+
+                    Citizen.Wait(1000)
                     DiscordLogger.processing = false
-                    Citizen.Wait(1000) 
                 end, "POST", payload, { ["Content-Type"] = "application/json" })
             end
         end
@@ -185,19 +171,6 @@ end
 ---@param player_id number The player ID
 ---@return string|nil avatar_url The player's avatar URL or nil
 function DiscordLogger.get_player_avatar(player_id)
-    local discord_id = nil
-    
-    for _, identifier in pairs(GetPlayerIdentifiers(player_id) or {}) do
-        if string.find(identifier, "discord:") then
-            discord_id = string.gsub(identifier, "discord:", "")
-            break
-        end
-    end
-    
-    if discord_id then
-        return "https://cdn.discordapp.com/avatars/" .. discord_id .. ".png?size=128"
-    end
-    
     return nil
 end
 

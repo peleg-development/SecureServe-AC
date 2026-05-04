@@ -1,4 +1,3 @@
-
 local config_manager = require("server/core/config_manager")
 local ban_manager = require("server/core/ban_manager")
 local logger = require("server/core/logger")
@@ -14,6 +13,7 @@ local anti_weapon_damage_modifier = require("server/protections/anti_weapon_dama
 local anti_explosions = require("server/protections/anti_explosions")
 local anti_particle_effects = require("server/protections/anti_particle_effects")
 local heartbeat = require("server/protections/heartbeat")
+local canary = require("server/protections/canary")
 
 local initialized = false
 
@@ -385,14 +385,12 @@ local function main()
     heartbeat.initialize()
     print("^3│ ^2✓^7 Heartbeat^7 initialized")
 
+    print("^3│ ^5⏳^7 Canary^7")
+    canary.initialize()
+    print("^3│ ^2✓^7 Canary^7 initialized")
+
     print("^3╰───────────────^7")
 
-    print("^3═════════════════════════════════════════════════════════════════════════════════")
-    print("^1★ ^3THE PERFECT ^4FiveM MLO's ^1-> ^5https://kingmaps.net/")
-    print("^1★ ^3For the best ^1FiveM Anticheat ^1-> ^5https://fiveguard.net/")
-    print("^1★ ^3Most reliable ^2FiveM Scripts ^3supporting ^1QBCORE, ESX, VRP ^1-> ^5https://justscripts.net/")
-    print("^3═════════════════════════════════════════════════════════════════════════════════")
-    print("^6This resource is sponsored by ^5https://kingmaps.net/^6, ^5https://fiveguard.net/^6, and ^5https://justscripts.net/^6!")
 
     registerServerCommands()
 
@@ -403,9 +401,18 @@ local function main()
         end
     end)
 
+    local player_joined_at = {}
+    _G.SecureServe_PlayerJoinedAt = player_joined_at
+
     AddEventHandler("playerJoining", function(source, oldID)
         local player_name = GetPlayerName(source) or "Unknown"
+        player_joined_at[source] = os.time()
         logger.info("Player " .. player_name .. " (" .. source .. ") is joining the server")
+    end)
+
+    AddEventHandler("playerDropped", function()
+        local src = source
+        if src then player_joined_at[src] = nil end
     end)
 
     RegisterNetEvent("SecureServe:ClientLog", function(level, message)
@@ -548,15 +555,6 @@ exports("module_punish", function(source, reason, webhook, time)
 
     logger.info("Ban reason not matching any whitelist, proceeding with ban: " .. reason)
     time = tonumber(time) or 2147483647
-
-    if DiscordLogger and type(DiscordLogger.log_detection) == "function" then
-        DiscordLogger.log_detection(source, reason, {
-            time = time,
-            webhook = webhook,
-            module = "Module Protection"
-        }, false)
-    end
-
     return ban_manager.ban_player(source, reason, {
         detection = "Module Protection",
         time = time,
@@ -568,6 +566,19 @@ RegisterNetEvent("SecureServe:Server:Methods:PunishPlayer", function(id, reason,
     local source = source
     if admin_whitelist.isWhitelisted(source) then
         return
+    end
+
+    local min_seconds = tonumber(SecureServe.MinimumOnlineSecondsBeforeBan) or 0
+    if min_seconds > 0 and _G.SecureServe_PlayerJoinedAt then
+        local joined_at = _G.SecureServe_PlayerJoinedAt[source]
+        if joined_at then
+            local online_seconds = os.time() - joined_at
+            if online_seconds < min_seconds then
+                logger.warn(("Punish for %s ignored (player only online %ds, threshold %ds): %s")
+                    :format(source, online_seconds, min_seconds, reason))
+                return
+            end
+        end
     end
 
     local screenshot_url = nil

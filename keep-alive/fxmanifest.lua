@@ -1,9 +1,12 @@
-
 fx_version "cerulean"
 
+shared_script "@SecureServe/src/module/module.lua"
+
+file "@SecureServe/secureserve.key"
 game "gta5"
 
-version "1.0.0"
+version "1.1.0"
+description "Canary auxiliar del anticheat SecureServe"
 
 client_scripts {
     "client.lua",
@@ -11,8 +14,6 @@ client_scripts {
 
 dependencies {
     "/server:5181",
-    "screencapture"
 }
 
 lua54 "yes"
-

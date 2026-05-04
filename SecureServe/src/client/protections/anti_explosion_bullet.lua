@@ -1,27 +1,37 @@
 local ProtectionManager = require("client/protections/protection_manager")
+local ProtectionHelper  = require("client/core/protection_helper")
+local Cache             = require("client/core/cache")
 
-local Cache = require("client/core/cache")
-
----@class AntiExplosionBulletModule
 local AntiExplosionBullet = {}
 
----@description Initialize Anti Explosion Bullet protection
 function AntiExplosionBullet.initialize()
-    if not ConfigLoader.get_protection_setting("Anti Explosion Bullet", "enabled") then return end
-    
+    if not ConfigLoader.get_protection_setting("Anti Explosion Bullet", "enabled") then
+        return
+    end
+
     Citizen.CreateThread(function()
         while true do
-            Citizen.Wait(50)
-            local weapon = Cache.Get("selectedWeapon")
-            local damage_type = GetWeaponDamageType(weapon)
-            if damage_type == 4 or damage_type == 5 then
-                TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Explosive ammo", webhook, time)
+            Citizen.Wait(1500)
+
+            if Cache.Get("hasPermission", "explosionbullet")
+                or Cache.Get("hasPermission", "all")
+                or Cache.Get("isAdmin")
+            then
+                goto continue
             end
-            SetWeaponDamageModifier(GetHashKey("WEAPON_EXPLOSION"), 0.0)
+
+            local weapon = Cache.Get("selectedWeapon")
+            if weapon and weapon ~= 0 then
+                local damage_type = GetWeaponDamageType(weapon)
+                if damage_type == 4 or damage_type == 5 then
+                    ProtectionHelper.punish("Anti Explosion Bullet", "Explosive ammo")
+                end
+            end
+
+            ::continue::
         end
     end)
 end
 
 ProtectionManager.register_protection("explosion_bullet", AntiExplosionBullet.initialize)
-
 return AntiExplosionBullet

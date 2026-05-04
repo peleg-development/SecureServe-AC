@@ -2,7 +2,6 @@
 ConfigLoader = {}
 
 local ClientLogger = require("client/core/client_logger")
-local ScreenshotHelper = require("shared/lib/screenshot_helper")
 local menu_admin_requests = {}
 local menu_admin_request_id = 0
 local blacklist_model_hashes = {
@@ -19,26 +18,17 @@ SecureServeInitCalled = false
 SecureServeAdminList = {}
 SecureServeLastAdminUpdate = 0
 
----@description Initialize the client-side config loader
 function ConfigLoader.initialize()
     if SecureServeInitCalled then return end
     SecureServeInitCalled = true
-    
+
     ClientLogger.info("^5[LOADING] ^3Client Config^7")
-    
+
     TriggerServerEvent("requestConfig")
-    
-    RegisterNetEvent("receiveConfig", function(serverConfig)
-        SecureServeConfig = serverConfig
-        SecureServe = serverConfig
-        ConfigLoader.process_config(serverConfig)
-        SecureServeLoaded = true
-        ClientLogger.info("^5[SUCCESS] ^3Client Config^7 received from server")
-    end)
-    
+
     local attempts = 0
     local maxAttempts = 10
-    
+
     while not SecureServeLoaded and attempts < maxAttempts do
         Wait(1000)
         attempts = attempts + 1
@@ -47,6 +37,15 @@ function ConfigLoader.initialize()
         end
     end
 end
+
+RegisterNetEvent("receiveConfig", function(serverConfig)
+    if not serverConfig then return end
+    SecureServeConfig = serverConfig
+    SecureServe = serverConfig
+    ConfigLoader.process_config(serverConfig)
+    SecureServeLoaded = true
+    ClientLogger.info("^5[SUCCESS] ^3Client Config^7 received from server")
+end)
 
 ---@description Get config value with optional default
 ---@param key string The config key to get
@@ -392,17 +391,59 @@ RegisterClientCallback({
     eventName = 'SecureServe:RequestScreenshotUpload',
     eventCallback = function(quality, webhookUrl)
         local p = promise.new()
-        local started = ScreenshotHelper.request_upload(webhookUrl, 'files[]', {
+
+        if not exports['screenshot-basic'] or type(exports['screenshot-basic'].requestScreenshotUpload) ~= "function" then
+            p:resolve(nil)
+            return Citizen.Await(p)
+        end
+
+        exports['screenshot-basic']:requestScreenshotUpload(webhookUrl, 'files[]', {
             encoding = 'jpg',
             quality = quality or 0.95
         }, function(data)
-            p:resolve(ScreenshotHelper.extract_uploaded_url(data))
+            if data and data ~= "" then
+                local success, resp = pcall(json.decode, data)
+                
+                if success and resp and resp.attachments and resp.attachments[1] and resp.attachments[1].proxy_url then
+                    local screenshot_url = resp.attachments[1].proxy_url
+                    p:resolve(screenshot_url)
+                else
+                    p:resolve(nil)
+                end
+            else
+                p:resolve(nil)
+            end
+        end)
+        
+        return Citizen.Await(p)
+    end
+})
+
+
+RegisterClientCallback({
+    eventName = 'SecureServe:CaptureClientScreenshot',
+    eventCallback = function(encoding, quality)
+        local p = promise.new()
+
+        if not exports['screenshot-basic'] or type(exports['screenshot-basic'].requestScreenshot) ~= "function" then
+            p:resolve(nil)
+            return Citizen.Await(p)
+        end
+
+        local ok = pcall(function()
+            exports['screenshot-basic']:requestScreenshot({
+                encoding = encoding or 'jpg',
+                quality  = quality or 0.85,
+            }, function(data)
+                if data and data ~= "" then
+                    p:resolve(data)
+                else
+                    p:resolve(nil)
+                end
+            end)
         end)
 
-        if not started then
-            p:resolve(nil)
-        end
-        
+        if not ok then p:resolve(nil) end
         return Citizen.Await(p)
     end
 })

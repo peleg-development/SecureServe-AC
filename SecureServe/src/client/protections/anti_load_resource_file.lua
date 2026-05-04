@@ -1,4 +1,5 @@
 local ProtectionManager = require("client/protections/protection_manager")
+local ProtectionHelper  = require("client/core/protection_helper")
 local Cache = require("client/core/cache")
 
 ---@class AntiLoadResourceFileModule
@@ -31,13 +32,8 @@ function AntiLoadResourceFile.initialize()
             if playerLoaded then
                 for resourceName, _ in pairs(pendingResourceChecks) do
                     if loaded_keys[resourceName] then
-                        TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, 
-                            {
-                                reason = "Anti Load Resource File",
-                                details = "Resource " .. resourceName .. " attempted to load key multiple times without restart"
-                            }, 
-                            webhook, 
-                            2147483647)
+                        ProtectionHelper.punish('Anti Load Resource File',
+                            "Resource " .. resourceName .. " attempted to load key multiple times without restart")
                     end
                     loaded_keys[resourceName] = true
                 end

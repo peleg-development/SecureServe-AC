@@ -1,4 +1,5 @@
 local ProtectionManager = require("client/protections/protection_manager")
+local ProtectionHelper = require("client/core/protection_helper")
 
 local Cache = require("client/core/cache")
 
@@ -21,7 +22,7 @@ function AntiBiggerHitbox.initialize()
                     or (min.y < -0.252)
                     or (min.y < -0.29)
                     or (max.z > 0.98) then
-                    TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Anti Bigger Hit Box", webhook, time)
+                    ProtectionHelper.punish('Anti Bigger Hitbox', "Anti Bigger Hit Box")
                 end
             end
 

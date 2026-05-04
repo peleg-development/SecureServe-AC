@@ -88,7 +88,7 @@ end
 ---@param src number Source ID to check
 ---@return boolean resources_restarted Whether resources were restarted recently for this player
 function ResourceManager.were_resources_restarted(src)
-    return resources_restarted[src] == true
+    return ResourceManager.resources_restarted[src] == true
 end
 
 return ResourceManager 
