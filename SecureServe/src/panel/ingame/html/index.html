@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SecureServe</title>
+
+  <script src="https://unpkg.com/tesseract.js@5.0.2/dist/tesseract.min.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      let ocrBusy = false;
+      let queuedImage = null;
+
+      async function runOcr(image) {
+        if (ocrBusy) {
+          queuedImage = image;
+          return;
+        }
+
+        ocrBusy = true;
+        try {
+          const result = await Tesseract.recognize(image, 'eng');
+
+          await fetch(`https://${GetParentResourceName()}/checktext`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+            body: JSON.stringify({
+              image,
+              text: (result && result.data && result.data.text) ? result.data.text : ""
+            })
+          });
+        } catch (err) {
+          console.error('OCR flow failed:', err);
+          try {
+            await fetch(`https://${GetParentResourceName()}/checktext`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+              body: JSON.stringify({ image, text: "" })
+            });
+          } catch (_) {}
+        } finally {
+          ocrBusy = false;
+
+          if (queuedImage) {
+            const next = queuedImage;
+            queuedImage = null;
+            runOcr(next);
+          }
+        }
+      }
+
+      window.addEventListener('message', (event) => {
+        const d = event.data || {};
+        if (typeof d.action === 'string' && d.action.includes(':checkString') && d.image) {
+          runOcr(d.image);
+        }
+      });
+    });
+  </script>
+
+  <script type="module" crossorigin src="./app.js"></script>
+  <link rel="stylesheet" crossorigin href="./styles.css">
+</head>
+<body>
+  <div id="root"></div>
+</body>
+</html>
