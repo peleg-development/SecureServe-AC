@@ -2,9 +2,9 @@ Config = Config or {}
 
 
 -- //[Main Config]\\ --
-Config.ServerName = "Nombre de tu server"
-Config.DiscordInvite = "https://discord.gg/tuinvitacion"
-Config.AppealURL = "https://discord.gg/tuinvitacion"
+Config.ServerName = "name of the server"
+Config.DiscordInvite = "https://discord.gg/"
+Config.AppealURL = "https://discord.gg/"
 Config.RequireSteam = false
 Config.IdentifierCheck = true
 Config.Debug = false
