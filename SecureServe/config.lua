@@ -1,16 +1,16 @@
 Config = Config or {}
 
-Config.ServerName = "Descartes RP"
-Config.DiscordInvite = "https://discord.gg/tuinvitacion"
-Config.AppealURL = "https://discord.gg/tuinvitacion"
+Config.ServerName = "Your Server"
+Config.DiscordInvite = "https://discord.gg/???"
+Config.AppealURL = "https://discord.gg/???"
 Config.RequireSteam = false
 Config.IdentifierCheck = true
 Config.Debug = false
 Config.MinimumOnlineSecondsBeforeBan = 55
 
 Config.AdminLicenses = {
-    "license:c796f63aba3e4421ee37548ad2b315abf245df25",
-    "license:0c01fe84b46fedaefc92405655a5027459cba824",
+    "license:xxxxxxxxxxxxxxxxxxxx",
+    "license:xxxxxxxxxxxxxxxxxxxx",
 }
 
 Config.AdminMenuRefresh = {
@@ -395,17 +395,17 @@ Config.OCR = {
 Config.Webhooks = {
     Enabled    = true,
 
-    System     = "https://discord.com/api/webhooks/1497863529062203534/rtqiciHwp2cqqpkU-lAEYs8F---wqteN7LeI8P6xrOEWh67UYfk-8J3AKEqj4GYLCp8l",
-    Detection  = "https://discord.com/api/webhooks/1497863597995331626/dDYlOtc-6cpwW7ysxY5T0GZX3rXBLwe81ZI-Tjf2SMOSkYltmeYKWO1EnGEo6ndaRtzp",
-    Ban        = "https://discord.com/api/webhooks/1497864020013879376/EYJJbve643WgP1C_mFcNAcZwsIvQ1WjQDd0WbS27B35fr9TQcuO5407sj3LM6UsprbAu",
-    Kick       = "https://discord.com/api/webhooks/1497863975587545170/ux3WEu6T8ggXot3FcLeQnXo6GGXOxXwNS6To4Vc5CbJNcgZGeiLY3SjrzyhWS5YnODZ9",
-    Screenshot = "https://discord.com/api/webhooks/1497863933720133734/5ndGJ1QT6qGVmwR31yKun8npZviksp3KXd84TLRJwL94eNMlg-HtcsTJuXmQwpbudRuW",
-    Admin      = "https://discord.com/api/webhooks/1497863664651468944/eSNZhVt0LEGjyku94IQkXVYpHF6oQzVKBE8Y4Hj0sPflwVla4APXFw50MFpiFY0DuNKZ",
+    System     = "https://discord.com/api/webhooks/",
+    Detection  = "https://discord.com/api/webhooks/",
+    Ban        = "https://discord.com/api/webhooks/",
+    Kick       = "https://discord.com/api/webhooks/",
+    Screenshot = "https://discord.com/api/webhooks/",
+    Admin      = "https://discord.com/api/webhooks/",
     Debug      = "",
 
-    Join       = "https://discord.com/api/webhooks/1497863781618024519/i2JqX3mbb962oyE1wW89cdswdHclbu-tf0K-poYcvqmO88FA-NLoKuriG6QQHybULUWz",
-    Leave      = "https://discord.com/api/webhooks/1497863838199185692/NsG2NhQSb3IpfuLIA8qHFNWkZsjSY4cVs7klvOOWIDdCaOSs_nNVD04VPA3RPl4dwJIT",
-    Kill       = "https://discord.com/api/webhooks/1497863737351082194/7ReKYe74l6MoqnVJBF0AR6sTrWxfbTLQICQlaFK_wn5qvzXYnu7WRnzfmq9Xndx49tqI",
+    Join       = "https://discord.com/api/webhooks/",
+    Leave      = "https://discord.com/api/webhooks/",
+    Kill       = "https://discord.com/api/webhooks/",
     Resource   = "",
 
     Simple                = "",
