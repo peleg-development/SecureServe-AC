@@ -1,5 +1,3 @@
-
-
 RegisterCommand('ssm', function()
     local Perms = Perms or require("client/core/perms")
     if Perms.IsMenuAdmin(GetPlayerServerId(PlayerId())) then
@@ -10,15 +8,14 @@ RegisterCommand('ssm', function()
     end
 end, false)
 
-function ac_notify(message) 
+function ac_notify(message)
     SendNUIMessage({ action = 'notification', message = message })
-end 
+end
 
 RegisterNUICallback('close', function(data, cb)
     SetNuiFocus(false, false)
     cb('ok')
 end)
-
 
 RegisterNUICallback("clearAllEntities", function(data, cb)
     TriggerServerEvent('anticheat:clearAllEntities')
@@ -93,7 +90,7 @@ function toggleESP(enable)
                                 color.r, color.g, color.b, 200)
                             DrawRect(_x - width / 2 / Distance, _y + height / 2 / Distance, 0.001, height / Distance,
                                 color.r, color.g, color.b, 200)
-                            -- DrawText3Ds(x,y,z-0.5,("%s"):format("hello"))
+                            
                             local health = GetEntityHealth(curplayerped)
                             if health > 200 then
                                 health = 200
@@ -129,7 +126,7 @@ function DrawText3Ds(x, y, z, text)
     SetDrawOrigin(x, y, z, 0)
     DrawText(0.0, 0.0)
     local factor = (string.len(text)) / 370
-    -- DrawRect(0.0, 0.0+0.0125, 0.017+ factor, 0.03, 0, 0, 0, 75)
+    
     ClearDrawOrigin()
 end
 
@@ -248,43 +245,43 @@ function toggleNoClip(enable)
 
                 SetEntityVelocity(me, 0.0001, 0.0001, 0.0001)
 
-                if IsControlPressed(0, 21) then 
+                if IsControlPressed(0, 21) then
                     speed = speed + 1
                 end
 
-                if IsControlPressed(0, 19) then 
+                if IsControlPressed(0, 19) then
                     speed = 0.25
                 end
 
-                if IsControlPressed(0, 32) then 
+                if IsControlPressed(0, 32) then
                     x = x + speed * dx
                     y = y + speed * dy
                     z = z + speed * dz
                 end
 
-                if IsControlPressed(0, 34) then 
+                if IsControlPressed(0, 34) then
                     local leftVector = vector3(-dy, dx, 0.0)
                     x = x + speed * leftVector.x
                     y = y + speed * leftVector.y
                 end
 
-                if IsControlPressed(0, 269) then 
+                if IsControlPressed(0, 269) then
                     x = x - speed * dx
                     y = y - speed * dy
                     z = z - speed * dz
                 end
 
-                if IsControlPressed(0, 9) then 
+                if IsControlPressed(0, 9) then
                     local rightVector = vector3(dy, -dx, 0.0)
                     x = x + speed * rightVector.x
                     y = y + speed * rightVector.y
                 end
 
-                if IsControlPressed(0, 22) then 
+                if IsControlPressed(0, 22) then
                     z = z + speed
                 end
 
-                if IsControlPressed(0, 62) then 
+                if IsControlPressed(0, 62) then
                     z = z - speed
                 end
 
@@ -308,11 +305,11 @@ function toggleNoClip(enable)
 
                 local speed = 0.5
 
-                if IsControlPressed(0, 21) then 
+                if IsControlPressed(0, 21) then
                     speed = speed + 1
                 end
 
-                if IsControlPressed(0, 19) then 
+                if IsControlPressed(0, 19) then
                     speed = 0.25
                 end
 
@@ -322,19 +319,19 @@ function toggleNoClip(enable)
                     z = z + speed * dz
                 end
 
-                if IsControlPressed(0, 34) then 
+                if IsControlPressed(0, 34) then
                     local leftVector = vector3(-dy, dx, 0.0)
                     x = x + speed * leftVector.x
                     y = y + speed * leftVector.y
                 end
 
-                if IsControlPressed(0, 269) then 
+                if IsControlPressed(0, 269) then
                     x = x - speed * dx
                     y = y - speed * dy
                     z = z - speed * dz
                 end
 
-                if IsControlPressed(0, 9) then 
+                if IsControlPressed(0, 9) then
                     local rightVector = vector3(dy, -dx, 0.0)
                     x = x + speed * rightVector.x
                     y = y + speed * rightVector.y
@@ -344,7 +341,7 @@ function toggleNoClip(enable)
                     z = z + speed
                 end
 
-                if IsControlPressed(0, 62) then 
+                if IsControlPressed(0, 62) then
                     z = z - speed
                 end
 
@@ -423,7 +420,6 @@ function toggleBones(enable)
     end
 end
 
-
 function DrawText3D(x, y, z, text)
     local onScreen, _x, _y = World3dToScreen2d(x, y, z)
     local px, py, pz = table.unpack(GetGameplayCamCoords())
@@ -438,9 +434,6 @@ function DrawText3D(x, y, z, text)
     local factor = (string.len(text)) / 370
     DrawRect(_x, _y + 0.0125, 0.015 + factor, 0.03, 41, 11, 41, 68)
 end
-
-
-
 
 RegisterNUICallback('unbanPlayer', function(data, cb)
     local banId = data.banId
@@ -543,7 +536,6 @@ RegisterNUICallback('changePed', function(data, cb)
     cb('ok')
 end)
 
-
 local pendingPlayersPromise = nil
 RegisterNetEvent('receivePlayers', function(playerList, requestId)
     SendNUIMessage({
@@ -597,7 +589,7 @@ RegisterNUICallback('spectatePlayer', function(data, cb)
         Citizen.CreateThread(function()
             while NetworkIsInSpectatorMode() do
                 Citizen.Wait(0)
-                if IsControlJustReleased(0, 177) then -- 177 = Backspace
+                if IsControlJustReleased(0, 177) then
                     NetworkSetInSpectatorMode(false, playerPed)
                     ac_notify("Exited spectating mode.")
                     break
@@ -611,11 +603,9 @@ RegisterNUICallback('spectatePlayer', function(data, cb)
     end
 end)
 
--- old receivePlayers kept for backward compatibility in case server doesn't send requestId
 RegisterNetEvent('receivePlayers', function(playerList)
     SendNUIMessage({ action = 'players', players = playerList })
 end)
-
 
 local pendingStatsPromise = nil
 RegisterNetEvent("secureServe:returnStats", function(stats)
@@ -645,7 +635,6 @@ RegisterNUICallback("getDashboardStats", function(data, cb)
     })
 end)
     
-
 RegisterNUICallback('screenshotPlayer', function(data, cb)
     local playerId = data.playerId
     TriggerServerEvent('SecureServe:screenshotPlayer', playerId)
@@ -688,8 +677,6 @@ RegisterNUICallback('getBans', function(data, cb)
     TriggerServerEvent('SecureServe:Panel:RequestBans', reqId)
     
     local bans = Citizen.Await(p)
-    
-
     
     cb({ bans = bans })
 end)

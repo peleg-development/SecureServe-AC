@@ -19,7 +19,7 @@ function BlacklistedCommands.initialize()
                 for _, v in pairs(registered_commands) do
                     if k.command == v.name then
                         if v.resource and (v.resource == GetCurrentResourceName() or v.resource == "_cfx_internal") then
-                            -- Comandos del propio AC o de cfx, ignorar
+                            
                         else
                             detected_command = k.command
                             detected_webhook = k.webhook

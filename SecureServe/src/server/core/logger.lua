@@ -1,4 +1,3 @@
----@class LoggerModule
 local Logger = {
     levels = {
         DEBUG = 0,
@@ -15,7 +14,7 @@ local Logger = {
         FATAL = "^1",
         RESET = "^7"
     },
-    level = 1, 
+    level = 1,
     use_webhook = false,
     log_webhook = "",
     history = {},
@@ -25,8 +24,6 @@ local Logger = {
 
 local config_manager
 
----@description Initialize the logger
----@param config table The configuration table
 function Logger.initialize(config)
     config_manager = require("server/core/config_manager")
     
@@ -41,8 +38,6 @@ function Logger.initialize(config)
     Logger.info("Logger initialized with debug mode: " .. tostring(Logger.debug_enabled))
 end
 
----@description Set debug mode
----@param enabled boolean Whether debug mode is enabled
 function Logger.set_debug_mode(enabled)
     Logger.debug_enabled = enabled
     Logger.info("Debug mode " .. (enabled and "enabled" or "disabled"))
@@ -50,20 +45,15 @@ function Logger.set_debug_mode(enabled)
     TriggerClientEvent("SecureServe:UpdateDebugMode", -1, enabled)
 end
 
----@description Format a log message
----@param level string The log level
----@param message string The message to log
----@param ... any Additional values to include in the log
----@return string formatted_message The formatted log message
 function Logger.format(level, message, ...)
     local timestamp = os.date("%Y-%m-%d %H:%M:%S")
     local color = Logger.colors[level] or Logger.colors.INFO
     local reset = Logger.colors.RESET
     
-    local final_message = string.format("[%s] %s[%s]%s %s", 
-        timestamp, 
-        color, 
-        level, 
+    local final_message = string.format("[%s] %s[%s]%s %s",
+        timestamp,
+        color,
+        level,
         reset,
         message
     )
@@ -82,10 +72,6 @@ function Logger.format(level, message, ...)
     return final_message
 end
 
----@description Convert a table to a string for logging
----@param t table The table to convert
----@param indent number The indentation level
----@return string result The string representation of the table
 function Logger.table_to_string(t, indent)
     if not t or type(t) ~= "table" then
         return tostring(t)
@@ -125,9 +111,6 @@ function Logger.table_to_string(t, indent)
     return result
 end
 
----@description Add a log entry to the history
----@param level string The log level
----@param message string The message to log
 function Logger.add_to_history(level, message)
     table.insert(Logger.history, {
         level = level,
@@ -140,9 +123,6 @@ function Logger.add_to_history(level, message)
     end
 end
 
----@description Send a log to Discord webhook
----@param level string The log level
----@param message string The message to log
 function Logger.send_to_webhook(level, message)
     if not Logger.use_webhook or Logger.log_webhook == "" then
         return
@@ -150,13 +130,13 @@ function Logger.send_to_webhook(level, message)
     
     local color
     if level == "ERROR" or level == "FATAL" then
-        color = 16711680 -- Red
+        color = 16711680
     elseif level == "WARN" then
-        color = 16776960 -- Yellow
+        color = 16776960
     elseif level == "INFO" then
-        color = 65280 -- Green
+        color = 65280
     else
-        color = 255 -- Blue
+        color = 255
     end
     
     local embeds = {
@@ -177,9 +157,6 @@ function Logger.send_to_webhook(level, message)
     }), {["Content-Type"] = "application/json"})
 end
 
----@description Log a debug message
----@param message string The message to log
----@param ... any Additional values to include in the log
 function Logger.debug(message, ...)
 
     local formatted = Logger.format("DEBUG", message, ...)
@@ -190,9 +167,6 @@ function Logger.debug(message, ...)
     end
 end
 
----@description Log an info message
----@param message string The message to log
----@param ... any Additional values to include in the log
 function Logger.info(message, ...)
     if Logger.levels.INFO < Logger.level then
         return
@@ -208,9 +182,6 @@ function Logger.info(message, ...)
     Logger.send_to_webhook("INFO", message)
 end
 
----@description Log a warning message
----@param message string The message to log
----@param ... any Additional values to include in the log
 function Logger.warn(message, ...)
     if Logger.levels.WARN < Logger.level then
         return
@@ -226,9 +197,6 @@ function Logger.warn(message, ...)
     Logger.send_to_webhook("WARN", message)
 end
 
----@description Log an error message
----@param message string The message to log
----@param ... any Additional values to include in the log
 function Logger.error(message, ...)
     if Logger.levels.ERROR < Logger.level then
         return
@@ -242,9 +210,6 @@ function Logger.error(message, ...)
     Logger.send_to_webhook("ERROR", message)
 end
 
----@description Log a fatal error message
----@param message string The message to log
----@param ... any Additional values to include in the log
 function Logger.fatal(message, ...)
     if Logger.levels.FATAL < Logger.level then
         return
@@ -258,10 +223,6 @@ function Logger.fatal(message, ...)
     Logger.send_to_webhook("FATAL", message)
 end
 
----@description Get the log history
----@param count number The number of entries to retrieve (default: all)
----@param level string Optional filter by log level
----@return table log_entries The log entries
 function Logger.get_history(count, level)
     local result = {}
     local start_index = count and (#Logger.history - count + 1) or 1
@@ -277,10 +238,9 @@ function Logger.get_history(count, level)
     return result
 end
 
----@description Clear the log history
 function Logger.clear_history()
     Logger.history = {}
     Logger.debug("Log history cleared")
 end
 
-return Logger 
+return Logger

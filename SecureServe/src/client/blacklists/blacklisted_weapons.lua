@@ -1,10 +1,8 @@
 local ProtectionManager = require("client/protections/protection_manager")
 local Cache = require("client/core/cache")
 
----@class BlacklistedWeaponsModule
 local BlacklistedWeapons = {}
 
----@description Initialize Blacklisted Weapons check
 function BlacklistedWeapons.initialize()
     Citizen.CreateThread(function()
         while true do
@@ -24,4 +22,4 @@ end
 
 ProtectionManager.register_protection("blacklisted_weapons", BlacklistedWeapons.initialize)
 
-return BlacklistedWeapons 
+return BlacklistedWeapons

@@ -1,4 +1,3 @@
----@class AntiEntitySpamModule
 local AntiEntitySpam = {
     vehicleTracker = {},
     pedTracker = {},
@@ -9,7 +8,6 @@ local AntiEntitySpam = {
 local ban_manager = require("server/core/ban_manager")
 local config_manager = require("server/core/config_manager")
 
----@description Initialize anti-entity spam protection
 function AntiEntitySpam.initialize()
     AddEventHandler("entityCreating", function(entity)
         local entityType  = GetEntityType(entity)
@@ -43,7 +41,7 @@ function AntiEntitySpam.initialize()
             end
         end
         
-        if population == 7 or population == 0 then 
+        if population == 7 or population == 0 then
             if entityType == 2 then
                 AntiEntitySpam.handleAntiSpam(hwid, owner, AntiEntitySpam.vehicleTracker, "Vehicle", config_manager.get_max_vehicles_per_player())
             elseif entityType == 1 then
@@ -55,11 +53,6 @@ function AntiEntitySpam.initialize()
     end)
 end
 
----@param hwid string Hardware ID of the player
----@param owner number Player server ID
----@param tracker table Tracking table for the entity type
----@param entityType string Type of entity being tracked
----@param maxEntities number Maximum allowed entities of this type
 function AntiEntitySpam.handleAntiSpam(hwid, owner, tracker, entityType, maxEntities)
     local COOLDOWN_TIME = 10
     
@@ -103,8 +96,6 @@ function AntiEntitySpam.handleAntiSpam(hwid, owner, tracker, entityType, maxEnti
     end
 end
 
----@param entityType string Type of entity to get
----@return table entities List of entities of the specified type
 function AntiEntitySpam.getAllEntitiesByType(entityType)
     if entityType == "Vehicle" then return GetAllVehicles() end
     if entityType == "Ped" then return GetAllPeds() end
@@ -112,11 +103,10 @@ function AntiEntitySpam.getAllEntitiesByType(entityType)
     return {}
 end
 
----@description Clears all spam tracking tables
 function AntiEntitySpam.clearSpamTracking()
     AntiEntitySpam.vehicleTracker = {}
     AntiEntitySpam.pedTracker = {}
     AntiEntitySpam.objectTracker = {}
 end
 
-return AntiEntitySpam 
+return AntiEntitySpam

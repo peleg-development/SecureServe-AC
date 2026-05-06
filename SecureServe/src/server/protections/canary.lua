@@ -1,34 +1,14 @@
--- Canary: contraparte servidor del recurso keep-alive.
--- Valida los ticks que manda keep-alive (token + counter monotono) y banea
--- si el cliente deja de pingear, manda un token incorrecto, intenta replay
--- o avisa de que SecureServe se ha parado en su lado.
---
--- Tres mecanismos en paralelo:
---
---   1. Si un jugador conectado lleva mas de hello_window segundos sin haber
---      mandado un primer hello, asumimos que keep-alive no esta arrancando
---      en su cliente y baneamos.
---   2. Si una sesion establecida lleva mas de timeout segundos sin tick,
---      se acumula un strike. Tras silence_strikes consecutivos, ban.
---   3. Si un tick llega con token incorrecto, counter retrocedido o salto
---      sospechoso, baneamos (con tolerancia para hot-restart reciente).
---
--- Si el recurso se reinicia en caliente, las sesiones se pierden pero los
--- clientes ya conectados siguen mandando ticks con el viejo token. En ese
--- caso re-emitimos un token nuevo y damos un margen de gracia para evitar
--- baneos falsos durante la resincronizacion.
-
 local Canary = {
     sessions       = {},
     expected_hello = {},
-    grace_period   = 60,    -- segundos tras los que ya cuenta el timeout
-    timeout        = 60,    -- silencio tolerado antes de empezar a sumar strikes
-    hello_window   = 240,   -- margen para que el cliente termine de cargar resources
+    grace_period   = 60,
+    timeout        = 60,
+    hello_window   = 240,
     check_interval = 5000,
     max_skip       = 100,
-    silence_strikes = 2,    -- nº de comprobaciones consecutivas en silencio antes de banear
-    rotation_grace = 30,    -- ventana tras crear una sesion en la que toleramos
-                            -- token-mismatch y counter-skip (hot-restart, late assign)
+    silence_strikes = 2,
+    rotation_grace = 30,
+                            
     initialized    = false,
 }
 
@@ -103,8 +83,6 @@ function Canary.initialize()
         end
     end)
 
-    -- Inicializar a los jugadores que ya estaban conectados cuando el recurso
-    -- arranca (caso restart en caliente del SecureServe).
     for _, pid in ipairs(GetPlayers()) do
         local src = tonumber(pid)
         if src then Canary.expected_hello[src] = os.time() end
@@ -130,8 +108,6 @@ function Canary.initialize()
 
         local s = Canary.sessions[src]
 
-        -- Tick sin sesion en el servidor: probablemente restart en caliente
-        -- del recurso. Re-emitimos token para resincronizar al cliente.
         if not s then
             local new_token = open_session(src)
             TriggerClientEvent("keepalive:assign", src, new_token)
@@ -141,9 +117,7 @@ function Canary.initialize()
         local age = os.time() - s.established_at
 
         if s.token ~= token then
-            -- Si la sesion es muy reciente, el cliente puede tener todavia
-            -- en vuelo un tick con el token antiguo (caso hot-restart).
-            -- Re-enviamos el token actual y esperamos en lugar de banear.
+            
             if age < Canary.rotation_grace then
                 TriggerClientEvent("keepalive:assign", src, s.token)
                 return
@@ -154,9 +128,7 @@ function Canary.initialize()
         end
 
         if counter <= s.counter then
-            -- Replay tras token recien rotado: el cliente puede haber
-            -- reseteado su contador pero un tick anterior con counter alto
-            -- llega tarde. Ignorar en lugar de banear.
+            
             if age < Canary.rotation_grace then
                 return
             end
@@ -166,9 +138,7 @@ function Canary.initialize()
         end
 
         if (counter - s.counter) > Canary.max_skip then
-            -- Salto grande tras una sesion recien creada: el cliente puede
-            -- llevar el contador alto desde antes del restart. Re-baselineamos
-            -- en vez de banear.
+            
             if age < Canary.rotation_grace then
                 s.counter        = counter
                 s.last_tick      = os.time()

@@ -2,11 +2,7 @@ local AdminWhitelist = {}
 
 local logger = require("server/core/logger")
 
--- Cache por source. Cada entrada tiene los flags de admin/whitelist y un timestamp
--- para invalidar de forma blanda si pasa demasiado tiempo. El borrado real se hace
--- en playerDropped, pero conviene tener TTL por si en algun momento el ACE cambia
--- en runtime (por ejemplo el admin recibe un permiso nuevo).
-local CACHE_TTL = 60 -- segundos
+local CACHE_TTL = 60
 
 local source_cache = {}
 local pending_admin_checks = {}
@@ -38,9 +34,6 @@ local PERMISSION_LIST = {
     "norecoil", "aimassist",
 }
 
-
--- //[Helpers]\\ --
-
 local function normalize_identifier(identifier)
     if type(identifier) ~= "string" then return nil end
     local s = identifier:gsub("^%s+", ""):gsub("%s+$", ""):lower()
@@ -62,10 +55,10 @@ local function get_or_init_cache(src)
     if not entry or (os.time() - entry.created_at) > CACHE_TTL then
         entry = {
             created_at      = os.time(),
-            identifiers     = nil,   -- lazy
+            identifiers     = nil,
             is_admin        = nil,
             is_whitelisted  = nil,
-            permissions     = nil,   -- tabla de permisos resuelta
+            permissions     = nil,
         }
         source_cache[src] = entry
     end
@@ -79,18 +72,12 @@ local function get_identifiers(src)
     return entry.identifiers
 end
 
-
--- //[Permisos ACE]\\ --
-
 function AdminWhitelist.hasAcePermission(source, permission)
     if not source or source <= 0 or not IsPlayerAceAllowed then
         return false
     end
     return IsPlayerAceAllowed(source, permission)
 end
-
-
--- //[Admin manual (lista de licencias y admins)]\\ --
 
 function AdminWhitelist.getManualAdmin(source)
     if not _G.SecureServe then return false end
@@ -128,9 +115,6 @@ function AdminWhitelist.getTxAdminPerm(source)
     return IsPlayerAceAllowed(source, "command.tx")
         or IsPlayerAceAllowed(source, "command")
 end
-
-
--- //[Resolucion de admin/whitelist (con cache)]\\ --
 
 function AdminWhitelist.isAdmin(source)
     if not source or source <= 0 or not GetPlayerName(source) then
@@ -231,9 +215,6 @@ function AdminWhitelist.getPlayerPermissions(source)
     return permissions
 end
 
-
--- //[Sincronizacion del listado]\\ --
-
 function AdminWhitelist.checkAndAddAdmin(source)
     if not source or source <= 0 then return end
     local playerName = GetPlayerName(source)
@@ -278,9 +259,6 @@ function AdminWhitelist.setupAdminSync()
         logger.info("^2[SUCCESS] Admin whitelist refreshed^7")
     end, true)
 end
-
-
--- //[Inicializacion]\\ --
 
 function AdminWhitelist.initialize()
     logger.info("^3[INFO] ^7Initializing Admin Whitelist module with ACE permissions")

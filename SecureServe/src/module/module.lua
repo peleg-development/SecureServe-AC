@@ -1,9 +1,5 @@
--- if GetCurrentResourceName() == "SecureServe" then
---     return
--- end
 local encryption_key = ""
 
----@return string The encryption key from secureserve.key file
 local function getEncryptionKey()
     local keyFile = LoadResourceFile("SecureServe", "secureserve.key")
     if not keyFile or keyFile == "" then
@@ -20,46 +16,40 @@ if not IsDuplicityVersion() then
      TriggerEvent("SecureServe:Client:LoadedKey", GetCurrentResourceName())
 end
 
----@param input string|number The input string or number to encrypt
----@return string The encrypted string
 function encryptDecrypt(input)
     local output = {}
     for i = 1, #tostring(input) do
         local char = tostring(input):byte(i)
         local keyChar = encryption_key:byte((i - 1) % #encryption_key + 1)
-        local encryptedChar = (char + keyChar) % 256  
+        local encryptedChar = (char + keyChar) % 256
         output[i] = string.char(encryptedChar)
     end
     return table.concat(output)
 end
 
----@param input string The encrypted string to decrypt
----@return string The decrypted string
 function decrypt(input)
     local output = {}
     for i = 1, #tostring(input) do
         local char = tostring(input):byte(i)
         local keyChar = encryption_key:byte((i - 1) % #encryption_key + 1)
-        local decryptedChar = (char - keyChar) % 256  
+        local decryptedChar = (char - keyChar) % 256
         output[i] = string.char(decryptedChar)
     end
     return table.concat(output)
 end
 
----@param originalFunction function The original entity creation function
----@return function The wrapped entity creation function
 local function createEntity(originalFunction, ...)
     local entity = originalFunction(...)
     
     if not IsDuplicityVersion() then
         while not DoesEntityExist(entity) do
-            Wait(1) 
+            Wait(1)
         end
         TriggerServerEvent("SecureServe:Server:Methods:Entity:Create", entity, GetCurrentResourceName(), GetEntityModel(entity))
     else
         Citizen.CreateThread(function()
             while not DoesEntityExist(entity) do
-                Wait(1) 
+                Wait(1)
             end
             TriggerEvent("SecureServe:Server:Methods:Entity:CreateServer", entity, GetCurrentResourceName(), GetEntityModel(entity))
         end)
@@ -77,7 +67,7 @@ local _CreateRandomPed = CreateRandomPed
 local _CreateRandomPedAsDriver = CreateRandomPedAsDriver
 local _CreateScriptVehicleGenerator = CreateScriptVehicleGenerator
 local _CreateVehicleServerSetter = CreateVehicleServerSetter
-local _CreateAutomobile = CreateAutomobile 
+local _CreateAutomobile = CreateAutomobile
 
 _G.CreateObject = function(...) return createEntity(_CreateObject, ...) end
 _G.CreateObjectNoOffset = function(...) return createEntity(_CreateObjectNoOffset, ...) end
@@ -96,22 +86,22 @@ if IsDuplicityVersion() then
     local events_to_listen = {}
 
     _G.RegisterNetEvent = function(event_name, ...)
-        local enc_event_name = encryptDecrypt(event_name) 
-        events_to_listen[event_name] = enc_event_name 
+        local enc_event_name = encryptDecrypt(event_name)
+        events_to_listen[event_name] = enc_event_name
 
         _RegisterNetEvent(enc_event_name)
         return _RegisterNetEvent(event_name, ...)
     end
     
     _G.AddEventHandler = function(event_name, handler, ...)
-        local enc_event_name = events_to_listen[event_name] 
-        local handler_ref = _AddEventHandler(event_name, handler, ...) 
+        local enc_event_name = events_to_listen[event_name]
+        local handler_ref = _AddEventHandler(event_name, handler, ...)
     
         if enc_event_name then
             _AddEventHandler(enc_event_name, handler, ...)
         end
     
-        return handler_ref  
+        return handler_ref
     end
     
     Citizen.CreateThread(function()
@@ -139,14 +129,12 @@ else
         return _TriggerServerEvent(encryptedEvent, ...)
     end
 
-    ---@param resourceName string The name of the resource to check
-    ---@return boolean Whether the resource is valid
     local function isValidResource(resourceName)
         local invalidResources = {
-            nil, 
-            "fivem", 
-            "gta", 
-            "citizen", 
+            nil,
+            "fivem",
+            "gta",
+            "citizen",
             "system"
         }
     
@@ -183,7 +171,7 @@ else
     local weaponNatives = {
         { name = "GiveWeaponToPed",              argIndex = 2 },
         { name = "RemoveWeaponFromPed",          argIndex = 2 },
-        { name = "RemoveAllPedWeapons",          argIndex = nil }, 
+        { name = "RemoveAllPedWeapons",          argIndex = nil },
         { name = "SetCurrentPedWeapon",          argIndex = 2 },
     }
 

@@ -3,12 +3,10 @@ local ProtectionHelper  = require("client/core/protection_helper")
 
 local Cache = require("client/core/cache")
 
----@class AntiGiveWeaponModule
 local AntiGiveWeapon = {}
 local current_weapon = GetHashKey("WEAPON_UNARMED")
 local flag = 0
 
----@description Initialize Anti Give Weapon protection
 function AntiGiveWeapon.initialize()
     if not ConfigLoader.get_protection_setting("Anti Give Weapon", "enabled") then return end
 

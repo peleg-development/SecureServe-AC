@@ -1,9 +1,7 @@
 local ProtectionManager = require("client/protections/protection_manager")
 
----@class BlacklistedSpritesModule
 local BlacklistedSprites = {}
 
----@description Initialize Blacklisted Sprites check
 function BlacklistedSprites.initialize()
     Citizen.CreateThread(function()
         while true do
@@ -20,4 +18,4 @@ end
 
 ProtectionManager.register_protection("blacklisted_sprites", BlacklistedSprites.initialize)
 
-return BlacklistedSprites 
+return BlacklistedSprites

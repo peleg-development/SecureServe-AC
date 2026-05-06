@@ -133,4 +133,3 @@ function SpawnRow({ icon: Icon, placeholder, value, onChange, onSpawn }: {
     </div>
   )
 }
-

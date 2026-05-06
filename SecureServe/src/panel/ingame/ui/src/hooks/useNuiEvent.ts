@@ -5,9 +5,6 @@ interface NuiMessage<T = unknown> {
   [key: string]: T | string
 }
 
-/**
- * Hook to listen for NUI messages from the client
- */
 export function useNuiEvent<T = unknown>(action: string, handler: (data: NuiMessage<T>) => void) {
   const savedHandler = useRef(handler)
 
@@ -26,4 +23,3 @@ export function useNuiEvent<T = unknown>(action: string, handler: (data: NuiMess
     return () => window.removeEventListener('message', eventListener)
   }, [action])
 }
-

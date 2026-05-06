@@ -21,6 +21,7 @@ RegisterNetEvent("keepalive:assign", function(token)
     end
 end)
 
+
 CreateThread(function()
     Wait(2000)
     while not session_token do
@@ -29,6 +30,7 @@ CreateThread(function()
         Wait(backoff)
     end
 end)
+
 
 CreateThread(function()
     while true do
@@ -41,6 +43,7 @@ CreateThread(function()
         end
     end
 end)
+
 
 CreateThread(function()
     Wait(20000)
@@ -60,6 +63,7 @@ CreateThread(function()
         end
     end
 end)
+
 
 AddEventHandler("playerSpawned", function()
     TriggerServerEvent("allowedStop")

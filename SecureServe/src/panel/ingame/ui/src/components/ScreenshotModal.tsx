@@ -35,4 +35,3 @@ export function ScreenshotModal({ imageUrl, onClose }: ScreenshotModalProps) {
     </div>
   )
 }
-

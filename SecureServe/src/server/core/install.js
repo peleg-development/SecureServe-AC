@@ -1,88 +1,40 @@
-/**
- * SecureServe installation module
- * Handles key generation, resource discovery, and manifest modification
- * @module install
- * @author SecureServe Development Team
- */
-
 const fs = require('fs');
 const path = require('path');
 
-// Configuration constants
 const CURRENT_RESOURCE_NAME = GetCurrentResourceName();
 const RESOURCES_PATH = GetResourcePath(CURRENT_RESOURCE_NAME);
 const PARENT_PATH = path.dirname(RESOURCES_PATH);
 const DEFAULT_KEY_PATTERNS = [
-    "dont-touch-this-will-auto-update-next-restart", 
-    "Please Change this", 
-    "default", 
+    "dont-touch-this-will-auto-update-next-restart",
+    "Please Change this",
+    "default",
     "please-change"
 ];
 const MIN_KEY_LENGTH = 10;
 const MAX_RETRIES = 60;
 const SERVER_RESTART_DELAY = 500;
 
-/**
- * Logger utility to standardize console output
- * @namespace Logger
- */
 const Logger = {
-    /**
-     * Log an info message
-     * @param {string} message - The message to log
-     */
+    
     info: (message) => console.log(`[INFO] ${message}`),
     
-    /**
-     * Log a success message
-     * @param {string} message - The message to log
-     */
     success: (message) => console.log(`[SUCCESS] ${message}`),
     
-    /**
-     * Log a warning message
-     * @param {string} message - The message to log
-     */
     warning: (message) => console.log(`[WARNING] ${message}`),
     
-    /**
-     * Log an error message
-     * @param {string} message - The message to log
-     */
     error: (message) => console.error(`[ERROR] ${message}`),
     
-    /**
-     * Log a critical error message
-     * @param {string} message - The message to log
-     */
     critical: (message) => console.error(`[CRITICAL] ${message}`),
     
-    /**
-     * Log a debug message
-     * @param {string} message - The message to log
-     */
     debug: (message) => console.log(`[DEBUG] ${message}`),
     
-    /**
-     * Log a restart notice
-     * @param {string} message - The message to log
-     */
     restart: (message) => console.log(`[RESTART] ${message}`)
 };
 
-/**
- * Get the full path to a resource
- * @param {string} resourceName - Name of the resource to get path for
- * @return {string} Full path to the resource
- */
 function getResourcePath(resourceName) {
     return GetResourcePath(resourceName);
 }
 
-/**
- * Find all resources on the server
- * @return {Array<Object>} Array of resource objects with name, path, and manifest properties
- */
 function findAllResources() {
     const resourceDirs = [];
     
@@ -121,12 +73,6 @@ function findAllResources() {
     return resourceDirs;
 }
 
-/**
- * Recursively scan directories to find resource directories
- * @param {string} dirPath - Directory to scan
- * @param {Array} resourceDirs - Array to collect results
- * @param {number} [depth=0] - Current recursion depth
- */
 function scanDirectory(dirPath, resourceDirs, depth = 0) {
     if (depth > 3) return;
     
@@ -158,11 +104,6 @@ function scanDirectory(dirPath, resourceDirs, depth = 0) {
     }
 }
 
-/**
- * Read a manifest file
- * @param {string} filePath - Path to manifest file
- * @return {string|null} Content of the manifest file or null if read failed
- */
 function readManifestFile(filePath) {
     try {
         return fs.readFileSync(filePath, 'utf8');
@@ -172,12 +113,6 @@ function readManifestFile(filePath) {
     }
 }
 
-/**
- * Write to a manifest file
- * @param {string} filePath - Path to manifest file
- * @param {string} content - New content to write
- * @return {boolean} Success status
- */
 function writeManifestFile(filePath, content) {
     try {
         fs.writeFileSync(filePath, content, 'utf8');
@@ -188,40 +123,20 @@ function writeManifestFile(filePath, content) {
     }
 }
 
-/**
- * Check if manifest has old SecureServe include
- * @param {string} manifestContent - Content of manifest file
- * @return {boolean} Whether it has the old SecureServe include
- */
 function hasOldSecureServe(manifestContent) {
     return manifestContent.includes(`shared_script "@${CURRENT_RESOURCE_NAME}/module.lua"`);
 }
 
-/**
- * Check if manifest has new SecureServe includes
- * @param {string} manifestContent - Content of manifest file
- * @return {boolean} Whether it has the new SecureServe includes
- */
 function hasNewSecureServe(manifestContent) {
     return manifestContent.includes(`shared_script "@${CURRENT_RESOURCE_NAME}/src/module/module.lua"`);
 }
 
-/**
- * Check if manifest has key file reference
- * @param {string} manifestContent - Content of manifest file
- * @return {boolean} Whether it has the key file reference
- */
 function hasKeyFile(manifestContent) {
     return manifestContent.includes(`file "@${CURRENT_RESOURCE_NAME}/secureserve.key"`);
 }
 
-/**
- * Add SecureServe includes to manifest content
- * @param {string} manifestContent - Content of manifest file
- * @return {string} Updated manifest content
- */
 function addSecureServe(manifestContent) {
-    if (manifestContent.includes(`name "${CURRENT_RESOURCE_NAME}"`) || 
+    if (manifestContent.includes(`name "${CURRENT_RESOURCE_NAME}"`) ||
         manifestContent.includes(`name '${CURRENT_RESOURCE_NAME}'`)) {
         return manifestContent;
     }
@@ -267,28 +182,17 @@ function addSecureServe(manifestContent) {
     return manifestContent.slice(0, insertPosition) + insertion + manifestContent.slice(insertPosition);
 }
 
-/**
- * Remove SecureServe references from manifest content
- * @param {string} manifestContent - Content of manifest file
- * @return {string} Updated manifest content with SecureServe removed
- */
 function removeSecureServe(manifestContent) {
     manifestContent = manifestContent.replace(`shared_script "@${CURRENT_RESOURCE_NAME}/module.lua"`, '');
     manifestContent = manifestContent.replace(`shared_script "@${CURRENT_RESOURCE_NAME}/src/module/module.lua"`, '');
     manifestContent = manifestContent.replace(``, '');
     manifestContent = manifestContent.replace(`file "@${CURRENT_RESOURCE_NAME}/secureserve.key"`, '');
     
-    // Clean up excess newlines
     manifestContent = manifestContent.replace(/\n\s*\n\s*\n/g, '\n\n');
     
     return manifestContent;
 }
 
-/**
- * Update SecureServe references in manifest content
- * @param {string} manifestContent - Content of manifest file
- * @return {string} Updated manifest content
- */
 function updateSecureServe(manifestContent) {
     if (hasNewSecureServe(manifestContent) || !hasOldSecureServe(manifestContent)) {
         return manifestContent;
@@ -322,15 +226,10 @@ shared_script "@${CURRENT_RESOURCE_NAME}/src/module/module.lua"
     return manifestContent.slice(0, insertPosition) + insertion + manifestContent.slice(insertPosition);
 }
 
-/**
- * Generate a cryptographically secure random key
- * @param {number} [length] - Optional key length (defaults to a random length between 24-32)
- * @return {string} A secure random key
- */
 function generateSecureKey(length) {
     const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[{]}|;:,<.>/?";
     let result = "";
-    const randomLength = Math.floor(Math.random() * 9) + 24; 
+    const randomLength = Math.floor(Math.random() * 9) + 24;
     const finalLength = length || randomLength;
     
     try {
@@ -349,10 +248,6 @@ function generateSecureKey(length) {
     return result;
 }
 
-/**
- * Check and fix default key if needed
- * @return {boolean} Whether a key was created or fixed
- */
 function checkAndFixDefaultKey() {
     const keyPath = path.join(RESOURCES_PATH, 'secureserve.key');
     
@@ -408,14 +303,14 @@ function checkAndFixDefaultKey() {
                 Logger.info(`Existing key is not a default key, keeping it.`);
             }
             
-            return true; 
+            return true;
         } else {
             const newKey = generateSecureKey();
             fs.writeFileSync(keyPath, newKey, 'utf8');
             Logger.success(`Created new secureserve.key file with secure random key.`);
             Logger.restart(`The server will now restart to apply the new key.`);
             setTimeout(() => {
-                process.exit(0); 
+                process.exit(0);
             }, SERVER_RESTART_DELAY);
             return true;
         }
@@ -425,11 +320,6 @@ function checkAndFixDefaultKey() {
     }
 }
 
-/**
- * Ensure secureserve.key exists with a secure random key
- * @param {boolean} [forceNew=false] - Whether to force create a new key regardless of existing content
- * @return {boolean} Whether the key was created or already existed
- */
 function ensureKeyFileExists(forceNew = false) {
     const keyPath = path.join(RESOURCES_PATH, 'secureserve.key');
     
@@ -477,7 +367,7 @@ function ensureKeyFileExists(forceNew = false) {
                     Logger.success(`New key successfully written to file.`);
                     Logger.restart(`The server will now restart to apply the new key.`);
                     setTimeout(() => {
-                        process.exit(0); 
+                        process.exit(0);
                     }, SERVER_RESTART_DELAY);
                 } else {
                     Logger.error(`Key verification failed! File content doesn't match generated key.`);
@@ -503,11 +393,6 @@ function ensureKeyFileExists(forceNew = false) {
     }
 }
 
-/**
- * Find resource directories in the specified path
- * @param {string} dirPath - Directory to scan
- * @return {Array<Object>} Array of resource objects with name, path, and manifest properties
- */
 function findResourceDirectories(dirPath) {
     try {
         const items = fs.readdirSync(dirPath);
@@ -537,13 +422,6 @@ function findResourceDirectories(dirPath) {
     }
 }
 
-/**
- * Recursively search for server.cfg
- * @param {string} startDir - Directory to start searching from
- * @param {number} maxDepth - Maximum depth to search
- * @param {number} [currentDepth=0] - Current recursion depth
- * @returns {string|null} Path to server.cfg or null if not found
- */
 function findServerCfg(startDir, maxDepth, currentDepth = 0) {
     if (currentDepth > maxDepth) return null;
     
@@ -566,7 +444,7 @@ function findServerCfg(startDir, maxDepth, currentDepth = 0) {
         
         if (currentDepth < maxDepth) {
             const parentPath = path.dirname(startDir);
-            if (parentPath !== startDir) { 
+            if (parentPath !== startDir) {
                 return findServerCfg(parentPath, maxDepth, currentDepth + 1);
             }
         }
@@ -578,10 +456,6 @@ function findServerCfg(startDir, maxDepth, currentDepth = 0) {
     }
 }
 
-/**
- * Ensures SecureServe starts before other resources in server.cfg
- * @return {boolean} Success status
- */
 function ensureSecureServeStartsFirst() {
     const possibleLocations = [
         path.join(PARENT_PATH, 'server.cfg'),
@@ -606,7 +480,7 @@ function ensureSecureServeStartsFirst() {
     }
     
     if (!serverCfgPath) {
-        serverCfgPath = findServerCfg(PARENT_PATH, 4); 
+        serverCfgPath = findServerCfg(PARENT_PATH, 4);
         
         if (serverCfgPath) {
             Logger.debug(`Found server.cfg by searching: ${serverCfgPath}`);
@@ -627,8 +501,8 @@ function ensureSecureServeStartsFirst() {
         if (firstEnsurePos === -1) {
             content += `\n\nensure ${CURRENT_RESOURCE_NAME}\n`;
         } else {
-            content = content.slice(0, firstEnsurePos) + 
-                     `\nensure ${CURRENT_RESOURCE_NAME}\n\n` + 
+            content = content.slice(0, firstEnsurePos) +
+                     `\nensure ${CURRENT_RESOURCE_NAME}\n\n` +
                      content.slice(firstEnsurePos);
         }
         
@@ -641,10 +515,6 @@ function ensureSecureServeStartsFirst() {
     }
 }
 
-/**
- * Install SecureServe protection on all resources
- * @return {void}
- */
 function installSecureServe() {
     Logger.info(`Starting ${CURRENT_RESOURCE_NAME} installation...`);
     
@@ -671,7 +541,7 @@ function installSecureServe() {
         }
         
         if (hasNewSecureServe(content) && hasKeyFile(content)) {
-            // Logger.debug(`${resource.name} already has ${CURRENT_RESOURCE_NAME} protection.`);
+            
             successCount++;
             continue;
         }
@@ -692,10 +562,6 @@ function installSecureServe() {
     Logger.info(`${CURRENT_RESOURCE_NAME} installation complete. Success: ${successCount}, Failed: ${failCount}`);
 }
 
-/**
- * Uninstall SecureServe protection from all resources
- * @return {void}
- */
 function uninstallSecureServe() {
     Logger.info(`Starting ${CURRENT_RESOURCE_NAME} uninstallation...`);
     
@@ -717,7 +583,7 @@ function uninstallSecureServe() {
         }
         
         if (!hasOldSecureServe(content) && !hasNewSecureServe(content) && !hasKeyFile(content)) {
-            // Logger.debug(`${resource.name} doesn't have ${CURRENT_RESOURCE_NAME} protection.`);
+            
             successCount++;
             continue;
         }
@@ -725,7 +591,7 @@ function uninstallSecureServe() {
         const updatedContent = removeSecureServe(content);
         
         if (writeManifestFile(manifestPath, updatedContent)) {
-            // Logger.success(`Removed ${CURRENT_RESOURCE_NAME} from ${resource.name}`);
+            
             successCount++;
         } else {
             Logger.error(`Failed to remove ${CURRENT_RESOURCE_NAME} from ${resource.name}`);
@@ -736,10 +602,6 @@ function uninstallSecureServe() {
     Logger.info(`${CURRENT_RESOURCE_NAME} uninstallation complete. Success: ${successCount}, Failed: ${failCount}`);
 }
 
-/**
- * Update SecureServe protection on all resources
- * @return {void}
- */
 function updateSecureServe() {
     Logger.info(`Starting ${CURRENT_RESOURCE_NAME} update...`);
     
@@ -764,7 +626,7 @@ function updateSecureServe() {
         }
         
         if (hasNewSecureServe(content) && hasKeyFile(content)) {
-            // Logger.debug(`${resource.name} already has updated ${CURRENT_RESOURCE_NAME} protection.`);
+            
             alreadyUpdatedCount++;
             continue;
         }
@@ -785,10 +647,6 @@ function updateSecureServe() {
     Logger.info(`${CURRENT_RESOURCE_NAME} update complete. Updated: ${updatedCount}, Already updated: ${alreadyUpdatedCount}, Failed: ${failCount}`);
 }
 
-/**
- * Get the encryption key from secureserve.key
- * @return {string} The encryption key to use
- */
 function getEncryptionKey() {
     try {
         const keyFile = LoadResourceFile("SecureServe", "secureserve.key");
@@ -798,7 +656,7 @@ function getEncryptionKey() {
             return "temp_key_" + GetCurrentResourceName();
         }
         
-        if (keyFile === "Please Change this if u wont the ac just wont start until u do this delete this message and instead write a random combination of letters like a random password without any spaces" || 
+        if (keyFile === "Please Change this if u wont the ac just wont start until u do this delete this message and instead write a random combination of letters like a random password without any spaces" ||
             keyFile === "dont-touch-this-will-auto-update-next-restart") {
             
             Logger.critical("Default SecureServe key detected. Running ensureKeyFileExists() to create a new one.");
@@ -817,15 +675,10 @@ function getEncryptionKey() {
         return keyFile.trim();
     } catch (error) {
         Logger.error(`Failed to load SecureServe encryption key: ${error.message}`);
-        return "c4a2ec5dc103a3f730460948f2e3c01df39ea4212bc2c82f"; 
+        return "c4a2ec5dc103a3f730460948f2e3c01df39ea4212bc2c82f";
     }
 }
 
-/**
- * Encrypt or decrypt a string using XOR with the encryption key
- * @param {string|number} input - The input string or number to encrypt
- * @return {string} - The encrypted string
- */
 function encryptDecrypt(input) {
     const output = [];
     const inputStr = String(input);
@@ -838,11 +691,6 @@ function encryptDecrypt(input) {
     return output.join('');
 }
 
-/**
- * Decrypt a string using XOR with the encryption key
- * @param {string} input - The encrypted string to decrypt
- * @return {string} - The decrypted string
- */
 function decrypt(input) {
     const output = [];
     const inputStr = String(input);
@@ -903,9 +751,6 @@ const enc_key = getEncryptionKey();
 let key_loaded = false;
 let retry_count = 0;
 
-/**
- * Run installation after server has fully started
- */
 on('onServerResourceStart', (resourceName) => {
     if (resourceName === CURRENT_RESOURCE_NAME) {
         setTimeout(() => {

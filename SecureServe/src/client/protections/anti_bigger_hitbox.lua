@@ -3,10 +3,8 @@ local ProtectionHelper = require("client/core/protection_helper")
 
 local Cache = require("client/core/cache")
 
----@class AntiBiggerHitboxModule
 local AntiBiggerHitbox = {}
 
----@description Initialize Anti Bigger Hitbox protection
 function AntiBiggerHitbox.initialize()
     if not ConfigLoader.get_protection_setting("Anti Bigger Hitbox", "enabled") then return end
 

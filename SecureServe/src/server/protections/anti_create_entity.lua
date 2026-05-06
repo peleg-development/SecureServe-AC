@@ -1,28 +1,21 @@
----@class AntiCreateEntityModule
 local AntiCreateEntity = {
     entityRegistry = {},
     allowedHashes = {},
-    resourceWhitelist = {} 
+    resourceWhitelist = {}
 }
 
 local config_manager = require("server/core/config_manager")
 local ban_manager = require("server/core/ban_manager")
 local logger = require("server/core/logger")
 
----@param modelHash number Hash of the model to check
----@return boolean isAllowed Whether the model hash is allowed
 function AntiCreateEntity.isHashAllowed(modelHash)
     return AntiCreateEntity.allowedHashes[modelHash] == true
 end
 
----@param hash number Hash to allow
 function AntiCreateEntity.allowHash(hash)
     AntiCreateEntity.allowedHashes[hash] = true
 end
 
----@param resourceName string Name of the resource
----@param modelHash number Hash of the model
----@return boolean isWhitelisted Whether the resource is whitelisted for the model
 function AntiCreateEntity.isResourceWhitelisted(resourceName, modelHash)
     if resourceName == GetCurrentResourceName() then
         return true
@@ -53,14 +46,13 @@ function AntiCreateEntity.initialize()
             logger.info("Loaded " .. tostring(#SecureServe.Module.Entity.SecurityWhitelist) .. " whitelisted resources for entity security")
         end
 
-
     RegisterNetEvent("SecureServe:Server:Methods:ModulePunish", function(screenshot, reason, webhook, time)
         local src = source
         if not src or src <= 0 then return end
         
-        logger.warn(string.format("[SecureServe] Entity Security: Player %s (%s) %s", 
-            GetPlayerName(src) or "Unknown", 
-            GetPlayerIdentifier(src, 0) or "Unknown", 
+        logger.warn(string.format("[SecureServe] Entity Security: Player %s (%s) %s",
+            GetPlayerName(src) or "Unknown",
+            GetPlayerIdentifier(src, 0) or "Unknown",
             reason))
         
         local details = {
@@ -158,7 +150,7 @@ function AntiCreateEntity.initialize()
                 logger.info(json.encode(AntiCreateEntity.entityRegistry[owner]))
             end
             
-            if AntiCreateEntity.entityRegistry[owner] and (AntiCreateEntity.entityRegistry[owner][entity] or AntiCreateEntity.entityRegistry[owner][modelHash]) then 
+            if AntiCreateEntity.entityRegistry[owner] and (AntiCreateEntity.entityRegistry[owner][entity] or AntiCreateEntity.entityRegistry[owner][modelHash]) then
                 return
             elseif AntiCreateEntity.entityRegistry[0] and (AntiCreateEntity.entityRegistry[0][entity] or AntiCreateEntity.entityRegistry[0][modelHash]) then
                 return
@@ -168,10 +160,6 @@ function AntiCreateEntity.initialize()
         end
     end)
 
-    -- Function to get server entity data from registry
-    ---@param playerId number The ID of the player
-    ---@param entityId number The entity ID to look up
-    ---@return table|nil entityData The entity data or nil if not found
     function AntiCreateEntity.getEntityData(playerId, entityId)
         if AntiCreateEntity.entityRegistry[playerId] and AntiCreateEntity.entityRegistry[playerId][entityId] then
             return AntiCreateEntity.entityRegistry[playerId][entityId]
@@ -181,7 +169,7 @@ function AntiCreateEntity.initialize()
     
     Citizen.CreateThread(function()
         while true do
-            Citizen.Wait(60000) 
+            Citizen.Wait(60000)
             local currentTime = os.time()
             for playerId, entities in pairs(AntiCreateEntity.entityRegistry) do
                 for entityId, data in pairs(entities) do

@@ -1,4 +1,3 @@
----@class DiscordLoggerModule
 DiscordLogger = {
     webhooks = {
         system = "",
@@ -8,43 +7,42 @@ DiscordLogger = {
         screenshot = "",
         admin = "",
         debug = "",
-        join = "",         
-        leave = "",       
-        kill = "",        
-        resource = ""      
+        join = "",
+        leave = "",
+        kill = "",
+        resource = ""
     },
     colors = {
-        system = 3447003,     -- Blue
-        detection = 15105570, -- Orange
-        ban = 15158332,       -- Red
-        kick = 15844367,      -- Yellow
-        screenshot = 3066993, -- Green
-        admin = 10181046,     -- Purple
-        debug = 9807270,      -- Gray
-        join = 5763719,       -- Green-Blue
-        leave = 16525609,     -- Light Red
-        kill = 16711680,      -- Pure Red
-        resource = 2067276    -- Teal
+        system = 3447003,
+        detection = 15105570,
+        ban = 15158332,
+        kick = 15844367,
+        screenshot = 3066993,
+        admin = 10181046,
+        debug = 9807270,
+        join = 5763719,
+        leave = 16525609,
+        kill = 16711680,
+        resource = 2067276
     },
     enabled = true,
     message_queue = {},
     processing = false,
     rate_limit = {
         last_sent = {},
-        cooldown = 2         
+        cooldown = 2
     }
 }
 
 local logger = require("server/core/logger")
 
----@description Initialize the Discord logger
 function DiscordLogger.initialize()
     local config = SecureServe
     if config and config.Logs then
         for webhook_type, _ in pairs(DiscordLogger.webhooks) do
             if config.Logs and config.Logs[webhook_type] then
                 DiscordLogger.webhooks[webhook_type] = config.Logs[webhook_type]
-                logger.debug("Setting webhook for " .. webhook_type .. ": " .. 
+                logger.debug("Setting webhook for " .. webhook_type .. ": " ..
                     (config.Logs[webhook_type] ~= "" and config.Logs[webhook_type]:sub(1, 30) .. "..." or "Not configured"))
             end
         end
@@ -73,7 +71,7 @@ function DiscordLogger.initialize()
     
     if DiscordLogger.enabled then
         DiscordLogger.log_system(
-            "System Started", 
+            "System Started",
             "The SecureServe Anti-Cheat system has been initialized.",
             {
                 {name = "Status", value = "✅ Online", inline = true},
@@ -85,13 +83,12 @@ function DiscordLogger.initialize()
     logger.info("Discord logger initialized. Enabled: " .. tostring(DiscordLogger.enabled))
 end
 
----@description Register event handlers for the new webhook types
 function DiscordLogger.registerEventHandlers()
     AddEventHandler("playerJoining", function(source, oldID)
         local player_id = tonumber(source)
         if player_id then
             Citizen.SetTimeout(2000, function()
-                if GetPlayerName(player_id) then 
+                if GetPlayerName(player_id) then
                     DiscordLogger.log_join(player_id)
                 end
             end)
@@ -126,7 +123,6 @@ function DiscordLogger.registerEventHandlers()
     end)
 end
 
----@description Process the message queue to avoid rate limiting
 function DiscordLogger.process_queue()
     while true do
         Citizen.Wait(250)
@@ -158,25 +154,16 @@ function DiscordLogger.process_queue()
     end
 end
 
----@description Check if a message can be sent (rate limit check)
----@param webhook_type string The webhook type
----@return boolean can_send Whether the message can be sent
 function DiscordLogger.can_send(webhook_type)
     if not DiscordLogger.enabled then return false end
     if not DiscordLogger.webhooks[webhook_type] or DiscordLogger.webhooks[webhook_type] == "" then return false end
     return true
 end
 
----@description Get player avatar URL if available
----@param player_id number The player ID
----@return string|nil avatar_url The player's avatar URL or nil
 function DiscordLogger.get_player_avatar(player_id)
     return nil
 end
 
----@description Format player identifiers nicely
----@param player_id number The player ID
----@return string identifiers_text Formatted identifiers text
 function DiscordLogger.format_identifiers(player_id)
     local identifiers_text = ""
     local identifiers = {}
@@ -240,10 +227,6 @@ function DiscordLogger.format_identifiers(player_id)
     return table.concat(identifiers, "\n")
 end
 
----@description Add message to queue for rate-limited sending
----@param webhook_type string The webhook type
----@param payload string JSON payload to send
----@param webhook_url string The webhook URL
 function DiscordLogger.queue_message(webhook_type, payload, webhook_url)
     table.insert(DiscordLogger.message_queue, {
         webhook_type = webhook_type,
@@ -252,14 +235,6 @@ function DiscordLogger.queue_message(webhook_type, payload, webhook_url)
     })
 end
 
----@description Send a message to a Discord webhook
----@param webhook_type string The webhook type
----@param title string The title of the embed
----@param description string The description text
----@param fields table Optional fields to include
----@param image_url string Optional image URL to include
----@param footer_text string Optional footer text
----@param thumbnail_url string Optional thumbnail URL
 function DiscordLogger.send(webhook_type, title, description, fields, image_url, footer_text, thumbnail_url)
     if not DiscordLogger.enabled then
         return
@@ -314,22 +289,18 @@ function DiscordLogger.send(webhook_type, title, description, fields, image_url,
         return
     end
     
-    -- Check payload size (Discord limit is around 2000 characters for embeds)
     if #json_payload > 7000 then
-        -- Remove screenshot from embed to reduce size
+        
         if embed.image then
             embed.image = nil
         end
         
-        -- Re-encode without screenshot
         json_payload = json.encode(payload)
     end
     
     DiscordLogger.queue_message(webhook_type, json_payload, webhook_url)
 end
 
----@description Log a player join
----@param player_id number The player ID
 function DiscordLogger.log_join(player_id)
     if not DiscordLogger.can_send("join") then return end
     
@@ -382,9 +353,6 @@ function DiscordLogger.log_join(player_id)
     logger.info(player_name .. " (ID: " .. player_id .. ") joined the server")
 end
 
----@description Log a player leave
----@param player_id number The player ID
----@param reason string The reason for leaving
 function DiscordLogger.log_leave(player_id, reason)
     if not DiscordLogger.can_send("leave") then return end
     
@@ -392,7 +360,7 @@ function DiscordLogger.log_leave(player_id, reason)
     
     local identifiers_text = DiscordLogger.format_identifiers(player_id)
     
-    local sessionStart = 0 
+    local sessionStart = 0
     local sessionDuration = "Unknown"
     
     if sessionStart > 0 then
@@ -425,10 +393,6 @@ function DiscordLogger.log_leave(player_id, reason)
     logger.info(player_name .. " (ID: " .. player_id .. ") left the server: " .. reason)
 end
 
----@description Log a player death/kill
----@param player_id number The victim ID
----@param killer_id number|nil The killer ID (nil if suicide or NPC)
----@param data table Death data
 function DiscordLogger.log_death(player_id, killer_id, data)
     if not DiscordLogger.can_send("kill") then return end
     
@@ -443,7 +407,7 @@ function DiscordLogger.log_death(player_id, killer_id, data)
     
     if killer_id and killer_id > 0 then
         deathType = "Killed by Player"
-        deathIcon = "🔫" 
+        deathIcon = "🔫"
     elseif killer_id == 0 then
         deathType = "Killed by NPC"
         deathIcon = "🤖"
@@ -480,9 +444,6 @@ function DiscordLogger.log_death(player_id, killer_id, data)
     )
 end
 
----@description Log a resource event
----@param resource_name string The resource name
----@param action string The action (started, stopped)
 function DiscordLogger.log_resource(resource_name, action)
     if not DiscordLogger.can_send("resource") then return end
     
@@ -492,8 +453,8 @@ function DiscordLogger.log_resource(resource_name, action)
     }
     
     table.insert(fields, {
-        name = "Server Info", 
-        value = "Players Online: **" .. GetNumPlayerIndices() .. "**", 
+        name = "Server Info",
+        value = "Players Online: **" .. GetNumPlayerIndices() .. "**",
         inline = true
     })
     
@@ -505,11 +466,6 @@ function DiscordLogger.log_resource(resource_name, action)
     )
 end
 
----@description Request and process a screenshot
----@param player_id number The player ID
----@param reason string The reason for screenshot
----@param callback function Optional callback after screenshot is taken
----@param timeout_seconds number|nil Optional timeout (seconds), defaults to 15
 function DiscordLogger.request_screenshot(player_id, reason, callback, timeout_seconds)
     if not player_id or player_id <= 0 then
         logger.error("Cannot request screenshot: Invalid player ID")
@@ -518,7 +474,6 @@ function DiscordLogger.request_screenshot(player_id, reason, callback, timeout_s
     
     local player_name = GetPlayerName(player_id) or "Unknown"
     
-    -- Prefer dedicated screenshot webhook, fallback to ban webhook.
     local screenshot_webhook = DiscordLogger.webhooks.screenshot
     if not screenshot_webhook or screenshot_webhook == "" then
         screenshot_webhook = DiscordLogger.webhooks.ban
@@ -531,7 +486,6 @@ function DiscordLogger.request_screenshot(player_id, reason, callback, timeout_s
 
     local request_timeout = tonumber(timeout_seconds) or 15
     
-    -- Request screenshot upload from client
     TriggerClientCallback({
         source = player_id,
         eventName = 'SecureServe:RequestScreenshotUpload',
@@ -551,11 +505,6 @@ function DiscordLogger.request_screenshot(player_id, reason, callback, timeout_s
     })
 end
 
----@description Log a player detection
----@param player_id number The player ID
----@param detection string The detection type
----@param details table Additional details
----@param take_screenshot boolean Whether to take a screenshot
 function DiscordLogger.log_detection(player_id, detection, details, take_screenshot)
     if not DiscordLogger.can_send("detection") then return end
     
@@ -602,11 +551,6 @@ function DiscordLogger.log_detection(player_id, detection, details, take_screens
     end
 end
 
----@description Log a player ban
----@param player_id number The player ID
----@param reason string The ban reason
----@param ban_data table The ban data
----@param screenshot string|nil The screenshot URL
 function DiscordLogger.log_ban(player_id, reason, ban_data, screenshot)
     if not DiscordLogger.can_send("ban") then return end
     
@@ -697,7 +641,6 @@ function DiscordLogger.log_ban(player_id, reason, ban_data, screenshot)
         DiscordLogger.get_player_avatar(player_id)
     )
 
-    
     TriggerClientEvent("SecureServe:ShowWindowsBluescreen", player_id)
     Wait(3000)
 
@@ -708,11 +651,6 @@ function DiscordLogger.log_ban(player_id, reason, ban_data, screenshot)
     Wait(500)
 end
 
----@description Log a player kick
----@param player_id number The player ID
----@param reason string The kick reason
----@param admin string Who kicked the player
----@param take_screenshot boolean Whether to take a screenshot
 function DiscordLogger.log_kick(player_id, reason, admin, take_screenshot)
     if not DiscordLogger.can_send("kick") then return end
     
@@ -758,11 +696,6 @@ function DiscordLogger.log_kick(player_id, reason, admin, take_screenshot)
     end
 end
 
----@description Log a screenshot
----@param player_id number The player ID
----@param reason string The reason for the screenshot
----@param screenshot_url string The screenshot URL
----@param details table Additional details
 function DiscordLogger.log_screenshot(player_id, reason, screenshot_url, details)
     if not DiscordLogger.can_send("screenshot") then return end
     
@@ -793,11 +726,6 @@ function DiscordLogger.log_screenshot(player_id, reason, screenshot_url, details
     )
 end
 
----@description Log an admin action
----@param admin_id number The admin ID (or 0 for console)
----@param action string The action performed
----@param target string The target of the action
----@param details table Additional details
 function DiscordLogger.log_admin(admin_id, action, target, details)
     if not DiscordLogger.can_send("admin") then return end
     
@@ -829,10 +757,6 @@ function DiscordLogger.log_admin(admin_id, action, target, details)
     )
 end
 
----@description Log system information or errors
----@param title string The title of the message
----@param description string The message description
----@param fields table Optional fields to include
 function DiscordLogger.log_system(title, description, fields)
     if not DiscordLogger.can_send("system") then return end
     
@@ -841,8 +765,8 @@ function DiscordLogger.log_system(title, description, fields)
     local playerCount = GetNumPlayerIndices()
     
     table.insert(fields, {
-        name = "🖥️ Server Info", 
-        value = "Players Online: **" .. playerCount .. "**\nServer Time: **" .. os.date("%d/%m/%Y %H:%M:%S") .. "**", 
+        name = "🖥️ Server Info",
+        value = "Players Online: **" .. playerCount .. "**\nServer Time: **" .. os.date("%d/%m/%Y %H:%M:%S") .. "**",
         inline = true
     })
     
@@ -854,10 +778,6 @@ function DiscordLogger.log_system(title, description, fields)
     )
 end
 
----@description Log debug information
----@param title string The title of the message
----@param description string The message description
----@param fields table Optional fields to include
 function DiscordLogger.log_debug(title, description, fields)
     if not DiscordLogger.can_send("debug") then return end
     

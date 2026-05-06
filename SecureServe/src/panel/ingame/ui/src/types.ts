@@ -36,4 +36,3 @@ export interface Notification {
 }
 
 export type Section = 'dashboard' | 'players' | 'player-options' | 'server' | 'bans'
-

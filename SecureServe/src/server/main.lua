@@ -391,7 +391,6 @@ local function main()
 
     print("^3╰───────────────^7")
 
-
     registerServerCommands()
 
     AddEventHandler("onResourceStop", function(resource_name)
@@ -445,7 +444,6 @@ local function main()
     print("^8╚══════════════════════════════════════════════════════════════════════════╝^7")
     print("^6⚡ Support: ^3https://discord.gg/z6qGGtbcr4^7")
     print("^6⚡ Type ^3securehelp ^6in server console for commands^7")
-
 
     DiscordLogger.log_system(
         "AntiCheat Started",
@@ -527,7 +525,6 @@ exports("module_punish", function(source, reason, webhook, time)
         end
 
     end
-
 
     if event_name and config_manager.get("SafeEvents") then
         local safe_events = config_manager.get("SafeEvents")

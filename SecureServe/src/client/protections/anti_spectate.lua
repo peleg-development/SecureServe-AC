@@ -3,10 +3,8 @@ local ProtectionHelper = require("client/core/protection_helper")
 
 local Cache = require("client/core/cache")
 
----@class AntiSpectateModule
 local AntiSpectate = {}
 
----@description Initialize Anti Spectate protection
 function AntiSpectate.initialize()
     if not ConfigLoader.get_protection_setting("Anti Spectate", "enabled") then return end
     
@@ -29,4 +27,4 @@ end
 
 ProtectionManager.register_protection("spectate", AntiSpectate.initialize)
 
-return AntiSpectate 
+return AntiSpectate

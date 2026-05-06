@@ -7,37 +7,26 @@ local msgpack_pack = msgpack.pack
 local msgpack_unpack = msgpack.unpack
 local msgpack_pack_args = msgpack.pack_args
 
--- Deferred states
 local PENDING = 0
 local RESOLVING = 1
 local REJECTING = 2
 local RESOLVED = 3
 local REJECTED = 4
 
----@class CallbacksModule
 local Callbacks = {
     initialized = false
 }
 
----@description Initialize the callbacks module
----@param isServer boolean Whether the current environment is server or client
 function Callbacks.initialize(isServer)
     Callbacks.initialized = true
 end
 
----@description Register a server callback that can be triggered from clients
----@param name string The name of the callback
----@param cb function The callback function to execute
 function Callbacks.registerServerCallback(name, cb)
     if IS_SERVER and Callbacks.register_server_callback then
         return Callbacks.register_server_callback({ eventName = name, eventCallback = cb })
     end
 end
 
----@description Trigger a server callback from the client
----@param name string The name of the server callback to trigger
----@param cb function The callback function to execute with the result
----@param ... any Additional parameters to pass to the server callback
 function Callbacks.triggerServerCallback(name, cb, ...)
     if not IS_SERVER and Callbacks.trigger_server_callback then
         return Callbacks.trigger_server_callback({
@@ -48,10 +37,6 @@ function Callbacks.triggerServerCallback(name, cb, ...)
     end
 end
 
----@param obj any The object to check
----@param typeof string The expected type
----@param opt_typeof string|nil Optional expected type
----@param errMessage string|nil Optional error message
 local function ensure(obj, typeof, opt_typeof, errMessage)
     local objtype = type(obj)
     local di = debug_getinfo(2)
@@ -68,8 +53,7 @@ local function ensure(obj, typeof, opt_typeof, errMessage)
 end
 
 if IS_SERVER then
-    ---@param args {eventName: string, eventCallback: function} Register a server callback
-    ---@return any eventData The event data reference
+    
     function Callbacks.register_server_callback(args)
         ensure(args, 'table'); ensure(args.eventName, 'string'); ensure(args.eventCallback, 'function')
 
@@ -86,13 +70,10 @@ if IS_SERVER then
         return eventData
     end
 
-    ---@param eventData any The event data reference
     function Callbacks.unregister_server_callback(eventData)
         RemoveEventHandler(eventData)
     end
 
-    ---@param args {source: string|number, eventName: string, args: table|nil, timeout: number|nil, timedout: function|nil, callback: function|nil} Trigger a client callback
-    ---@return any result The callback result (if synchronous)
     function Callbacks.trigger_client_callback(args)
         ensure(args, 'table'); ensure(args.source, 'string', 'number'); ensure(args.eventName, 'string'); ensure(args.args, 'table', 'nil'); ensure(args.timeout, 'number', 'nil'); ensure(args.timedout, 'function', 'nil'); ensure(args.callback, 'function', 'nil')
 
@@ -132,8 +113,6 @@ if IS_SERVER then
         end
     end
 
-    ---@param args {source: string|number, eventName: string, args: table|nil, timeout: number|nil, timedout: function|nil, callback: function|nil} Simulate a client callback from server
-    ---@return any result The callback result (if synchronous)
     function Callbacks.trigger_server_callback_from_server(args)
         ensure(args, 'table'); ensure(args.source, 'string', 'number'); ensure(args.eventName, 'string'); ensure(args.args, 'table', 'nil'); ensure(args.timeout, 'number', 'nil'); ensure(args.timedout, 'function', 'nil'); ensure(args.callback, 'function', 'nil')
 
@@ -167,8 +146,6 @@ if IS_SERVER then
 else
     local SERVER_ID = GetPlayerServerId(PlayerId())
 
-    ---@param args {eventName: string, eventCallback: function} Register a client callback
-    ---@return any eventData The event data reference
     function Callbacks.register_client_callback(args)
         ensure(args, 'table'); ensure(args.eventName, 'string'); ensure(args.eventCallback, 'function')
         
@@ -184,13 +161,10 @@ else
         return eventData
     end
 
-    ---@param eventData any The event data reference
     function Callbacks.unregister_client_callback(eventData)
         RemoveEventHandler(eventData)
     end
 
-    ---@param args {eventName: string, args: table|nil, timeout: number|nil, timedout: function|nil, callback: function|nil} Trigger a server callback
-    ---@return any result The callback result (if synchronous)
     function Callbacks.trigger_server_callback(args)
         ensure(args, 'table'); ensure(args.args, 'table', 'nil'); ensure(args.eventName, 'string'); ensure(args.timeout, 'number', 'nil'); ensure(args.timedout, 'function', 'nil'); ensure(args.callback, 'function', 'nil')
         
@@ -231,8 +205,6 @@ else
         end
     end
 
-    ---@param args {eventName: string, args: table|nil, timeout: number|nil, timedout: function|nil, callback: function|nil} Simulate a server callback from client
-    ---@return any result The callback result (if synchronous)
     function Callbacks.trigger_client_callback_from_client(args)
         ensure(args, 'table'); ensure(args.eventName, 'string'); ensure(args.args, 'table', 'nil'); ensure(args.timeout, 'number', 'nil'); ensure(args.timedout, 'function', 'nil'); ensure(args.callback, 'function', 'nil')
 
@@ -245,7 +217,6 @@ else
             prom:resolve(table_unpack(msgpack_unpack(packed)))
         end)
 
-        -- timeout response
         if args.timeout ~= nil and args.timedout then
             local timedout = args.timedout
             SetTimeout(args.timeout * 1000, function()
@@ -285,4 +256,4 @@ _G.TriggerServerCallback = IS_SERVER and Callbacks.trigger_server_callback_from_
 _G.RegisterClientCallback = Callbacks.register_client_callback
 _G.UnregisterClientCallback = Callbacks.unregister_client_callback
 
-return Callbacks 
+return Callbacks

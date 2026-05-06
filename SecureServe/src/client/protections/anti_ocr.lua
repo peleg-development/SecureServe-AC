@@ -1,11 +1,9 @@
 local ProtectionManager = require("client/protections/protection_manager")
 
----@class AntiOcrModule
 local AntiOcr = {
     is_busy = false
 }
 
----@description Initialize Anti OCR protection
 function AntiOcr.initialize()
     if not SecureServe.OCR then return end
 

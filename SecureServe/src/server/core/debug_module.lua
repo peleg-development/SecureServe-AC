@@ -1,4 +1,3 @@
----@class DebugModule
 local DebugModule = {
     error_count = 0,
     recent_errors = {},
@@ -8,16 +7,12 @@ local DebugModule = {
 
 local logger = require("server/core/logger")
 
----@description Initialize the debug module
 function DebugModule.initialize()
     local config = SecureServe or {}
     DebugModule.max_errors = config.MaxErrorHistory or DebugModule.max_errors
         DebugModule.is_dev_mode = config.DevMode or false
 end
 
----@description Handle and log an error
----@param err string The error message
----@param trace string The stack trace
 function DebugModule.handle_error(err, trace)
     DebugModule.error_count = DebugModule.error_count + 1
     
@@ -42,14 +37,10 @@ function DebugModule.handle_error(err, trace)
     end
 end
 
----@description Enable or disable developer mode
----@param enabled boolean Whether developer mode should be enabled
 function DebugModule.set_dev_mode(enabled)
     DebugModule.is_dev_mode = enabled == true
 end
 
----@description Get error statistics
----@return table stats Error statistics
 function DebugModule.get_error_stats()
     return {
         total_errors = DebugModule.error_count,
@@ -58,4 +49,4 @@ function DebugModule.get_error_stats()
     }
 end
 
-return DebugModule 
+return DebugModule

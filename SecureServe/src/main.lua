@@ -8,8 +8,7 @@ if IsDuplicityVersion() then
 else
     local ClientInit = require("client/init")
         CreateThread(function()
-        Wait(1000) 
+        Wait(1000)
         ClientInit.initialize()
     end)
-end 
-
+end

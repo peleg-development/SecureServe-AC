@@ -29,7 +29,7 @@ export function Notifications({ notifications, onRemove }: NotificationsProps) {
           <div
             key={notification.id}
             className={`
-              animate-slide-in glass-panel rounded-xl p-3 flex items-start gap-2.5 
+              animate-slide-in glass-panel rounded-xl p-3 flex items-start gap-2.5
               border ${colors[notification.type]}
             `}
           >
@@ -49,4 +49,3 @@ export function Notifications({ notifications, onRemove }: NotificationsProps) {
     </div>
   )
 }
-

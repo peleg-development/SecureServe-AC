@@ -1,4 +1,3 @@
----@class AutoConfigModule
 local AutoConfig = {
     is_modifying_config = false,
     fx_events = {
@@ -37,16 +36,10 @@ local ban_manager = require("server/core/ban_manager")
 local logger = require("server/core/logger")
 local debug_module = require("server/core/debug_module")
 
----@description Initialize the auto-config module
 function AutoConfig.initialize()
     logger.info("Auto-config module initialized")
 end
 
----@description Append a value to a table in the config file
----@param config_content string The content of the config file
----@param table_name string The name of the table to append to
----@param value_to_add string The value to add to the table
----@return string, boolean The updated config content and success status
 function AutoConfig.append_to_table(config_content, table_name, value_to_add)
     if not config_content or not table_name or not value_to_add then
         logger.error("Invalid parameters for append_to_table")
@@ -78,11 +71,6 @@ function AutoConfig.append_to_table(config_content, table_name, value_to_add)
     return updated_content, true
 end
 
----@description Add entity data to the config
----@param config_content string The content of the config file
----@param table_name string The name of the table to append to
----@param resource_name string The resource name to whitelist
----@return string, boolean The updated config content and success status
 function AutoConfig.add_entity_resource(config_content, table_name, resource_name)
     if not config_content or not table_name or not resource_name then
         logger.error("Invalid parameters for add_entity_resource")
@@ -116,12 +104,6 @@ function AutoConfig.add_entity_resource(config_content, table_name, resource_nam
     return updated_content, true
 end
 
----@description Process a potential auto-whitelist for an event or entity
----@param src number The source of the detection
----@param reason string The detection reason
----@param webhook string The webhook to send notifications to
----@param time number The ban duration
----@return boolean handled Whether the detection was handled by auto-config
 function AutoConfig.process_auto_whitelist(src, reason, webhook, time)
     if not SecureServe.AutoConfig then
         logger.debug("Auto-config is disabled. Skipping auto-whitelist.")
@@ -228,9 +210,6 @@ function AutoConfig.process_auto_whitelist(src, reason, webhook, time)
     end
 end
 
----@description Check if an event is whitelisted
----@param event_name string The event name to check
----@return boolean is_whitelisted Whether the event is whitelisted
 function AutoConfig.is_event_whitelisted(event_name)
     if AutoConfig.fx_events[event_name] then
         return true
@@ -244,9 +223,6 @@ function AutoConfig.is_event_whitelisted(event_name)
     return false
 end
 
----@description Check if an entity resource is whitelisted
----@param resource_name string The resource name to check
----@return boolean is_whitelisted Whether the resource is whitelisted
 function AutoConfig.is_entity_resource_whitelisted(resource_name)
     local config = SecureServe
     
@@ -263,12 +239,6 @@ function AutoConfig.is_entity_resource_whitelisted(resource_name)
     return false
 end
 
----@description Check if event needs validation, and validate if auto-config is disabled
----@param src number The source player
----@param event_name string The event name
----@param resource_name string The resource that triggered the event
----@param webhook string Optional webhook for notifications
----@return boolean is_valid Whether the event is valid
 function AutoConfig.validate_event(src, event_name, resource_name, webhook)
     if AutoConfig.fx_events[event_name] then
         return true
@@ -282,8 +252,8 @@ function AutoConfig.validate_event(src, event_name, resource_name, webhook)
     
     if SecureServe.AutoConfig then
         local auto_handled = AutoConfig.process_auto_whitelist(
-            src, 
-            "Tried triggering a restricted event: " .. event_name .. " in resource: " .. (resource_name or "unknown"), 
+            src,
+            "Tried triggering a restricted event: " .. event_name .. " in resource: " .. (resource_name or "unknown"),
             webhook
         )
         
@@ -295,9 +265,6 @@ function AutoConfig.validate_event(src, event_name, resource_name, webhook)
     return false
 end
 
----@description Get the current whitelist for a specific protection
----@param protection_type string The type of protection to get whitelist for
----@return table The whitelist for the protection
 function AutoConfig.get_whitelist(protection_type)
     local config = SecureServe
     local whitelist = {}
@@ -311,10 +278,6 @@ function AutoConfig.get_whitelist(protection_type)
     return whitelist
 end
 
----@description Check if a resource is whitelisted for a specific protection
----@param resource_name string The resource name to check
----@param protection_type string The protection type to check whitelist for
----@return boolean is_whitelisted Whether the resource is whitelisted
 function AutoConfig.is_resource_whitelisted(resource_name, protection_type)
     local config = SecureServe
     local whitelist = AutoConfig.get_whitelist(protection_type)
@@ -332,12 +295,6 @@ function AutoConfig.is_resource_whitelisted(resource_name, protection_type)
     return false
 end
 
----@description Ban with auto-config handling
----@param src number The player source
----@param reason string The reason for the ban
----@param webhook string The webhook to send the ban notification to
----@param time number The ban duration
----@return boolean banned Whether the player was banned
 function AutoConfig.ban_with_auto_config(src, reason, webhook, time)
     if SecureServe.AutoConfig then
         logger.info(string.format("Auto-config protected player %s from ban for reason: %s", GetPlayerName(src) or src, reason))
@@ -347,4 +304,4 @@ function AutoConfig.ban_with_auto_config(src, reason, webhook, time)
     return ban_manager.ban_player(src, reason, webhook, time)
 end
 
-return AutoConfig 
+return AutoConfig

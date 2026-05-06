@@ -2,14 +2,12 @@ local ProtectionManager = require("client/protections/protection_manager")
 local ProtectionHelper  = require("client/core/protection_helper")
 local Cache = require("client/core/cache")
 
----@class AntiLoadResourceFileModule
 local AntiLoadResourceFile = {}
 local loaded_keys = {}
 local pendingResourceChecks = {}
 local playerLoaded = false
 
----@description Initialize Anti Load Resource File protection
-function AntiLoadResourceFile.initialize()    
+function AntiLoadResourceFile.initialize()
     Citizen.CreateThread(function()
         Citizen.Wait(10000)
         playerLoaded = true
@@ -54,4 +52,4 @@ end
 
 ProtectionManager.register_protection("load_resource_file", AntiLoadResourceFile.initialize)
 
-return AntiLoadResourceFile 
+return AntiLoadResourceFile

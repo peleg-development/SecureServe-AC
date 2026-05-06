@@ -2,9 +2,6 @@ import { useCallback } from 'react'
 
 declare function GetParentResourceName(): string
 
-/**
- * Fetches data from the NUI callback
- */
 export function fetchNui<T = unknown>(eventName: string, data: unknown = {}): Promise<T> {
   const resourceName = (window as unknown as { GetParentResourceName?: () => string }).GetParentResourceName?.() ?? 'secureserve'
   
@@ -15,9 +12,6 @@ export function fetchNui<T = unknown>(eventName: string, data: unknown = {}): Pr
   }).then((resp) => resp.json())
 }
 
-/**
- * Hook to use NUI callbacks
- */
 export function useNui() {
   const send = useCallback(<T = unknown>(eventName: string, data: unknown = {}): Promise<T> => {
     return fetchNui<T>(eventName, data)
@@ -25,4 +19,3 @@ export function useNui() {
 
   return { send }
 }
-

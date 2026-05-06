@@ -1,7 +1,5 @@
----@class SharedInit
 local SharedInit = {}
 
----@description Initialize all shared components
 function SharedInit.initialize()
     local Callbacks = require("shared/lib/callbacks")
     Callbacks.initialize(IsDuplicityVersion())
@@ -13,4 +11,4 @@ function SharedInit.initialize()
     end
 end
 
-return SharedInit 
+return SharedInit

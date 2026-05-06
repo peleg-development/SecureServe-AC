@@ -74,4 +74,3 @@ export function useAppStore() {
 }
 
 export type AppStore = ReturnType<typeof useAppStore>
-

@@ -1,10 +1,7 @@
 local ProtectionManager = require("client/protections/protection_manager")
 
-
----@class AntiWeaponPickupModule
 local AntiWeaponPickup = {}
 
----@description Initialize Anti Weapon Pickup protection
 function AntiWeaponPickup.initialize()
     if not ConfigLoader.get_protection_setting("Anti Weapon Pickup", "enabled") then return end
     
@@ -26,4 +23,4 @@ end
 
 ProtectionManager.register_protection("weapon_pickup", AntiWeaponPickup.initialize)
 
-return AntiWeaponPickup 
+return AntiWeaponPickup

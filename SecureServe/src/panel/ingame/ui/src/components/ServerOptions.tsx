@@ -33,4 +33,3 @@ export function ServerOptions({ onClearEntities }: ServerOptionsProps) {
     </div>
   )
 }
-

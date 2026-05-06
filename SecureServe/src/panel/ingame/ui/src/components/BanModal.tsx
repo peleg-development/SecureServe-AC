@@ -94,4 +94,3 @@ export function BanModal({ ban, onClose, onUnban, onCopy }: BanModalProps) {
     </div>
   )
 }
-

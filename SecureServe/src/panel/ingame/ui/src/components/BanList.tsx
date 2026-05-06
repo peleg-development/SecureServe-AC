@@ -81,4 +81,3 @@ export function BanList({ bans, onUnban, onShowDetails }: BanListProps) {
     </div>
   )
 }
-

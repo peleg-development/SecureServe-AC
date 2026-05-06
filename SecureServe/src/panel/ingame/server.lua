@@ -20,8 +20,6 @@ local function require_admin(src)
     return true
 end
 
-
--- //[Toggle / notify]\\ --
 RegisterNetEvent('anticheat:toggleOption', function(option, enabled)
     local src = source
     if not require_admin(src) then return end
@@ -50,8 +48,6 @@ RegisterNetEvent('anticheat:clearAllEntities', function()
     logger.info(("Admin %s cleared all entities"):format(GetPlayerName(src) or "?"))
 end)
 
-
--- //[Unban]\\ --
 RegisterNetEvent('unbanPlayer', function(banId)
     local src = source
     if not require_admin(src) then return end
@@ -69,8 +65,6 @@ RegisterNetEvent('unbanPlayer', function(banId)
     end
 end)
 
-
--- //[Player list]\\ --
 RegisterNetEvent('getPlayers', function(requestId)
     local src = source
     if not require_admin(src) then return end
@@ -90,8 +84,6 @@ RegisterNetEvent('getPlayers', function(requestId)
     TriggerClientEvent('receivePlayers', src, list, requestId)
 end)
 
-
--- //[Kick]\\ --
 RegisterNetEvent('kickPlayer', function(targetId)
     local src = source
     if not require_admin(src) then return end
@@ -104,8 +96,6 @@ RegisterNetEvent('kickPlayer', function(targetId)
     logger.info(("Player %s kicked by admin %s"):format(GetPlayerName(pid) or "?", GetPlayerName(src) or "?"))
 end)
 
-
--- //[Ban]\\ --
 RegisterNetEvent('banPlayer', function(targetId)
     local src = source
     if not require_admin(src) then return end
@@ -128,8 +118,6 @@ RegisterNetEvent('banPlayer', function(targetId)
     end
 end)
 
-
--- //[Screenshot]\\ --
 RegisterNetEvent('SecureServe:screenshotPlayer', function(targetId)
     local src = source
     if not require_admin(src) then return end
@@ -154,8 +142,6 @@ RegisterNetEvent('SecureServe:screenshotPlayer', function(targetId)
     })
 end)
 
-
--- //[Ban list]\\ --
 RegisterNetEvent('SecureServe:Panel:RequestBans', function(requestId)
     local src = source
     if not require_admin(src) then return end
@@ -179,8 +165,6 @@ RegisterNetEvent('SecureServe:Panel:RequestBans', function(requestId)
     TriggerClientEvent('SecureServe:Panel:SendBans', src, mapped, requestId)
 end)
 
-
--- //[Stats]\\ --
 local function loadStats()
     local file = LoadResourceFile(GetCurrentResourceName(), statsPath)
     return (file and json.decode(file)) or {}
@@ -238,8 +222,6 @@ RegisterNetEvent("secureServe:requestStats", function()
     TriggerClientEvent("secureServe:returnStats", src, statsCache)
 end)
 
-
--- //[Restart]\\ --
 RegisterNetEvent('executeServerOption:restartServer', function()
     local src = source
     if not require_admin(src) then return end

@@ -1,4 +1,3 @@
----@class AntiParticleEffectsModule
 local AntiParticleEffects = {
     particle_tracking = {},
     last_particle_reset = {}
@@ -7,8 +6,6 @@ local AntiParticleEffects = {
 local ban_manager = require("server/core/ban_manager")
 local config_manager = require("server/core/config_manager")
 
-
----@description Initialize anti-particle effects protection
 function AntiParticleEffects.initialize()
     AddEventHandler("ptFxEvent", function(sender, data)
         if not config_manager.is_particle_protection_enabled() then
@@ -54,10 +51,9 @@ function AntiParticleEffects.initialize()
     end)
 end
 
----@param player_id number The player ID to clear tracking for
 function AntiParticleEffects.clear_player_tracking(player_id)
     AntiParticleEffects.particle_tracking[player_id] = nil
     AntiParticleEffects.last_particle_reset[player_id] = nil
 end
 
-return AntiParticleEffects 
+return AntiParticleEffects

@@ -1,4 +1,3 @@
----@class ConfigLoaderModule
 ConfigLoader = {}
 
 local ClientLogger = require("client/core/client_logger")
@@ -10,7 +9,6 @@ local blacklist_model_hashes = {
     peds = {}
 }
 
--- Initialize global variables
 SecureServeConfig = nil
 SecureServeLoaded = false
 SecureServeProtectionSettings = {}
@@ -47,10 +45,6 @@ RegisterNetEvent("receiveConfig", function(serverConfig)
     ClientLogger.info("^5[SUCCESS] ^3Client Config^7 received from server")
 end)
 
----@description Get config value with optional default
----@param key string The config key to get
----@param default any Optional default value if key doesn't exist
----@return any The config value or default
 function ConfigLoader.get(key, default)
     if not SecureServeLoaded or not SecureServeConfig then
         return default
@@ -75,32 +69,23 @@ function ConfigLoader.get(key, default)
     return value
 end
 
----@description Check if config has been loaded
----@return boolean is_loaded Whether config has been loaded
 function ConfigLoader.is_loaded()
     return SecureServeLoaded
 end
 
----@description Get the entire config table
----@return table config The config table
 function ConfigLoader.get_config()
     return SecureServeConfig
 end
 
----@description Get the SecureServe configuration
----@return table secureserve The SecureServe configuration
 function ConfigLoader.get_secureserve()
     return SecureServe
 end
 
----@return number request_id The next menu admin request ID
 local function next_menu_admin_request_id()
     menu_admin_request_id = menu_admin_request_id + 1
     return menu_admin_request_id
 end
 
----@param list table|nil The blacklist entries
----@param target table The target lookup table
 local function add_blacklist_hashes(list, target)
     if type(list) ~= "table" then
         return
@@ -123,7 +108,6 @@ local function add_blacklist_hashes(list, target)
     end
 end
 
----@description Build model blacklist hash lookups for fast checks
 local function build_blacklist_hashes()
     blacklist_model_hashes.objects = {}
     blacklist_model_hashes.vehicles = {}
@@ -138,10 +122,6 @@ local function build_blacklist_hashes()
     add_blacklist_hashes(SecureServe.Protection.BlacklistedPeds, blacklist_model_hashes.peds)
 end
 
----@description Get protection setting directly from SecureServe.Protection.Simple
----@param name string The name of the protection
----@param property string The property to get
----@return any value The protection setting value
 local function get_from_simple_protection(name, property)
     if not SecureServe or not SecureServe.Protection or not SecureServe.Protection.Simple then
         return nil
@@ -162,13 +142,8 @@ local function get_from_simple_protection(name, property)
     return nil
 end
 
----@description Get a protection setting by name and property
----@param name string The name of the protection
----@param property string The property to get
----@return any value The protection setting value
 function ConfigLoader.get_protection_setting(name, property)
 
-    
     if not name or not property then
         return nil
     end
@@ -212,11 +187,10 @@ function ConfigLoader.get_protection_setting(name, property)
     return get_from_simple_protection(name, property)
 end
 
----@param config table The received config from server
 function ConfigLoader.process_config(config)
     if not config then return end
     
-    SecureServe = config 
+    SecureServe = config
     local SecureServe = SecureServe
     
     SecureServeProtectionSettings = {}
@@ -272,7 +246,6 @@ function ConfigLoader.process_config(config)
     build_blacklist_hashes()
 end
 
----@param category string The blacklist category to process
 function ConfigLoader.process_blacklist_category(category)
     local SecureServe = SecureServe
     if not SecureServe or not SecureServe.Protection or type(SecureServe.Protection[category]) ~= "table" then
@@ -290,14 +263,10 @@ function ConfigLoader.process_blacklist_category(category)
     end
 end
 
----@param name string The name of the protection
----@param settings table The settings to assign
 function ConfigLoader.assign_protection_settings(name, settings)
     SecureServeProtectionSettings[name] = settings
 end
 
----@param player number The player ID to check
----@return boolean is_whitelisted Whether the player is whitelisted
 function ConfigLoader.is_whitelisted(player_id)
     local player_id = player_id or GetPlayerServerId(PlayerId())
     
@@ -336,13 +305,11 @@ RegisterNetEvent('SecureServe:ReturnMenuAdminStatus', function(request_id, resul
 end)
 
 Citizen.CreateThread(function()
-    Citizen.Wait(2000) 
+    Citizen.Wait(2000)
     TriggerServerEvent("SecureServe:RequestAdminList")
     SecureServeLastAdminUpdate = GetGameTimer()
 end)
 
----@param player number The player ID to check
----@return boolean is_menu_admin Whether the player is a menu admin
 function ConfigLoader.is_menu_admin(player)
     local promise = promise.new()
     local request_id = next_menu_admin_request_id()
@@ -360,9 +327,6 @@ function ConfigLoader.is_menu_admin(player)
     return Citizen.Await(promise)
 end
 
----@description Check if a model is blacklisted
----@param model_hash string|number The model hash to check
----@return boolean is_blacklisted Whether the model is blacklisted
 function ConfigLoader.is_model_blacklisted(model_hash)
 
     if not SecureServeLoaded or not SecureServeConfig then
@@ -384,8 +348,6 @@ function ConfigLoader.is_model_blacklisted(model_hash)
     
     return false
 end
-
-
 
 RegisterClientCallback({
     eventName = 'SecureServe:RequestScreenshotUpload',
@@ -418,7 +380,6 @@ RegisterClientCallback({
         return Citizen.Await(p)
     end
 })
-
 
 RegisterClientCallback({
     eventName = 'SecureServe:CaptureClientScreenshot',

@@ -4,8 +4,8 @@ import { useNuiEvent } from './hooks/useNuiEvent'
 import { useKeyboard } from './hooks/useKeyboard'
 import { fetchNui } from './hooks/useNui'
 import type { Player, Ban, DashboardStats } from './types'
-import { 
-   Users, Settings, Ban as BanIcon, 
+import {
+   Users, Settings, Ban as BanIcon,
   Search, UserX, Camera, Eye, X, Copy, Undo2,
   ChevronRight, Clock, TrendingUp, AlertCircle,
   Car, Package, User, Wifi, Activity, Sparkles
@@ -66,11 +66,11 @@ export default function App() {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center">
-      {/* Main Panel */}
+      {}
       <div className="w-[720px] h-[540px] bg-[#12141a] rounded-2xl overflow-hidden animate-scale-in panel-shadow flex">
-        {/* Sidebar */}
+        {}
         <div className="w-[200px] bg-[#0d0f14] flex flex-col border-r border-white/[0.04]">
-          {/* Logo */}
+          {}
           <div className="p-5 border-b border-white/[0.04]">
             <div className="flex items-center gap-3">
               <div>
@@ -80,7 +80,7 @@ export default function App() {
             </div>
           </div>
           
-          {/* Navigation */}
+          {}
           <div className="flex-1 p-3">
             <div className="space-y-1">
               {[
@@ -93,8 +93,8 @@ export default function App() {
                   key={id}
                   onClick={() => store.setSection(id as typeof store.section)}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all ${
-                    store.section === id 
-                      ? 'bg-white/10 text-white' 
+                    store.section === id
+                      ? 'bg-white/10 text-white'
                       : 'text-white/50 hover:text-white/70 hover:bg-white/[0.04]'
                   }`}
                 >
@@ -108,10 +108,10 @@ export default function App() {
             </div>
           </div>
 
-          {/* Close Button */}
+          {}
           <div className="p-3 border-t border-white/[0.04]">
-            <button 
-              onClick={closePanel} 
+            <button
+              onClick={closePanel}
               className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-white/[0.04] text-white/50 text-[13px] font-medium hover:bg-white/[0.06] hover:text-white/70 transition-all"
             >
               <X className="w-4 h-4" />
@@ -120,11 +120,11 @@ export default function App() {
           </div>
         </div>
 
-        {/* Content Area */}
+        {}
         <div className="flex-1 overflow-y-auto p-5 bg-[#12141a]">
           {store.section === 'dashboard' && <DashboardView stats={store.stats} />}
           {store.section === 'players' && (
-            <PlayersView 
+            <PlayersView
               players={store.players}
               onKick={(id) => { fetchNui('kickPlayer', { playerId: id }); store.addNotification('Player kicked', 'success') }}
               onBan={(id) => { fetchNui('banPlayer', { playerId: id }); store.addNotification('Player banned', 'success') }}
@@ -133,7 +133,7 @@ export default function App() {
             />
           )}
           {store.section === 'player-options' && (
-            <OptionsView 
+            <OptionsView
               options={store.playerOptions}
               onToggle={(name, enabled) => { store.togglePlayerOption(name, enabled); fetchNui('toggleOptiona', { option: name, enabled }) }}
               onSpawnVehicle={(v) => { fetchNui('spawnVehicle', { vehicleName: v }); store.addNotification(`Spawning ${v}`, 'success') }}
@@ -143,7 +143,7 @@ export default function App() {
             />
           )}
           {store.section === 'bans' && (
-            <BansView 
+            <BansView
               bans={store.bans}
               onShowDetails={store.setSelectedBan}
             />
@@ -151,17 +151,17 @@ export default function App() {
         </div>
       </div>
 
-      {/* Ban Detail Modal */}
+      {}
       {store.selectedBan && (
-        <BanModal 
-          ban={store.selectedBan} 
+        <BanModal
+          ban={store.selectedBan}
           onClose={() => store.setSelectedBan(null)}
           onUnban={(id) => { fetchNui('unbanPlayer', { banId: id }); store.setBans(store.bans.filter(b => b.id !== id)); store.setSelectedBan(null); store.addNotification('Player unbanned', 'success') }}
           onCopy={(t) => { navigator.clipboard.writeText(t); store.addNotification('Copied to clipboard', 'success') }}
         />
       )}
 
-      {/* Screenshot Modal */}
+      {}
       {store.screenshotUrl && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50" onClick={() => store.setScreenshotUrl(null)}>
           <div className="bg-[#1a1d26] rounded-2xl p-2 shadow-2xl max-w-2xl animate-scale-in" onClick={e => e.stopPropagation()}>
@@ -170,11 +170,11 @@ export default function App() {
         </div>
       )}
 
-      {/* Notifications */}
+      {}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 flex flex-col gap-2 z-50">
         {store.notifications.map((n) => (
-          <div 
-            key={n.id} 
+          <div
+            key={n.id}
             className="px-5 py-3 bg-[#1a1d26] text-white/90 text-[13px] font-medium rounded-xl shadow-xl animate-slide-up border border-white/[0.06]"
           >
             {n.message}
@@ -185,13 +185,10 @@ export default function App() {
   )
 }
 
-/**
- * Dashboard view component displaying server statistics
- */
 function DashboardView({ stats }: { stats: DashboardStats }) {
   return (
     <div className="space-y-5">
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold text-white">Dashboard</h2>
@@ -203,35 +200,35 @@ function DashboardView({ stats }: { stats: DashboardStats }) {
         </div>
       </div>
 
-      {/* Stats Grid */}
+      {}
       <div className="grid grid-cols-2 gap-3">
-        <StatCard 
-          label="Online Players" 
-          value={stats.totalPlayers} 
+        <StatCard
+          label="Online Players"
+          value={stats.totalPlayers}
           icon={Users}
           color="blue"
         />
-        <StatCard 
-          label="Active Bans" 
-          value={stats.activeCheaters} 
+        <StatCard
+          label="Active Bans"
+          value={stats.activeCheaters}
           icon={BanIcon}
           color="rose"
         />
-        <StatCard 
-          label="Server Uptime" 
-          value={stats.serverUptime} 
+        <StatCard
+          label="Server Uptime"
+          value={stats.serverUptime}
           icon={Clock}
           color="emerald"
         />
-        <StatCard 
-          label="Peak Today" 
-          value={stats.peakPlayers} 
+        <StatCard
+          label="Peak Today"
+          value={stats.peakPlayers}
           icon={TrendingUp}
           color="amber"
         />
       </div>
 
-      {/* Recent Activity */}
+      {}
       <div className="bg-[#1a1d26] rounded-xl overflow-hidden border border-white/[0.04]">
         <div className="px-4 py-3 border-b border-white/[0.04] flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-white/40" />
@@ -259,9 +256,6 @@ function DashboardView({ stats }: { stats: DashboardStats }) {
   )
 }
 
-/**
- * Stat card component for dashboard metrics
- */
 function StatCard({ label, value, icon: Icon, color }: {
   label: string
   value: number | string
@@ -291,9 +285,6 @@ function StatCard({ label, value, icon: Icon, color }: {
   )
 }
 
-/**
- * Players list view component
- */
 function PlayersView({ players, onKick, onBan, onScreenshot, onSpectate }: {
   players: Player[]
   onKick: (id: number) => void
@@ -306,7 +297,7 @@ function PlayersView({ players, onKick, onBan, onScreenshot, onSpectate }: {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold text-white">Players</h2>
@@ -314,7 +305,7 @@ function PlayersView({ players, onKick, onBan, onScreenshot, onSpectate }: {
         </div>
       </div>
 
-      {/* Search */}
+      {}
       <div className="relative">
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
         <input
@@ -326,7 +317,7 @@ function PlayersView({ players, onKick, onBan, onScreenshot, onSpectate }: {
         />
       </div>
 
-      {/* Players List */}
+      {}
       <div className="bg-[#1a1d26] rounded-xl overflow-hidden border border-white/[0.04]">
         {filtered.length === 0 ? (
           <div className="py-12 text-center">
@@ -336,8 +327,8 @@ function PlayersView({ players, onKick, onBan, onScreenshot, onSpectate }: {
         ) : (
           <div className="divide-y divide-white/[0.04]">
             {filtered.map((player) => (
-              <div 
-                key={player.id} 
+              <div
+                key={player.id}
                 className="px-4 py-3 flex items-center gap-4 hover:bg-white/[0.02] transition-colors"
               >
                 <div className="w-2 h-2 rounded-full bg-emerald-400" />
@@ -362,9 +353,6 @@ function PlayersView({ players, onKick, onBan, onScreenshot, onSpectate }: {
   )
 }
 
-/**
- * Action button for player actions
- */
 function ActionButton({ icon: Icon, onClick, color, tooltip }: {
   icon: React.ComponentType<{ className?: string }>
   onClick: () => void
@@ -378,8 +366,8 @@ function ActionButton({ icon: Icon, onClick, color, tooltip }: {
   }
 
   return (
-    <button 
-      onClick={onClick} 
+    <button
+      onClick={onClick}
       title={tooltip}
       className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${colors[color]}`}
     >
@@ -388,9 +376,6 @@ function ActionButton({ icon: Icon, onClick, color, tooltip }: {
   )
 }
 
-/**
- * Options view for admin controls
- */
 function OptionsView({ options, onToggle, onSpawnVehicle, onSpawnObject, onChangePed, onClearEntities }: {
   options: { name: string; enabled: boolean; category: string }[]
   onToggle: (name: string, enabled: boolean) => void
@@ -405,13 +390,13 @@ function OptionsView({ options, onToggle, onSpawnVehicle, onSpawnObject, onChang
 
   return (
     <div className="space-y-4">
-      {/* Header */}
+      {}
       <div>
         <h2 className="text-xl font-semibold text-white">Options</h2>
         <p className="text-sm text-white/40 mt-0.5">Admin controls & spawners</p>
       </div>
 
-      {/* Toggle Options */}
+      {}
       <div className="bg-[#1a1d26] rounded-xl overflow-hidden border border-white/[0.04]">
         <div className="px-4 py-2.5 border-b border-white/[0.04]">
           <span className="text-xs font-medium text-white/40 uppercase tracking-wider">Player Options</span>
@@ -431,7 +416,7 @@ function OptionsView({ options, onToggle, onSpawnVehicle, onSpawnObject, onChang
         </div>
       </div>
 
-      {/* Spawners */}
+      {}
       <div className="bg-[#1a1d26] rounded-xl overflow-hidden border border-white/[0.04]">
         <div className="px-4 py-2.5 border-b border-white/[0.04]">
           <span className="text-xs font-medium text-white/40 uppercase tracking-wider">Spawners</span>
@@ -452,7 +437,7 @@ function OptionsView({ options, onToggle, onSpawnVehicle, onSpawnObject, onChang
                 onKeyDown={(e) => e.key === 'Enter' && value && spawn(value)}
                 className="flex-1 text-sm text-white placeholder:text-white/30 bg-transparent outline-none"
               />
-              <button 
+              <button
                 onClick={() => value && spawn(value)}
                 disabled={!value}
                 className="px-3 py-1.5 bg-white/10 text-white/80 text-xs font-medium rounded-lg disabled:opacity-30 hover:bg-white/15 transition-all"
@@ -464,9 +449,9 @@ function OptionsView({ options, onToggle, onSpawnVehicle, onSpawnObject, onChang
         </div>
       </div>
 
-      {/* Danger Zone */}
-      <button 
-        onClick={onClearEntities} 
+      {}
+      <button
+        onClick={onClearEntities}
         className="w-full bg-[#1a1d26] rounded-xl px-4 py-3.5 flex items-center justify-between hover:bg-rose-500/5 border border-white/[0.04] hover:border-rose-500/20 transition-all group"
       >
         <div className="flex items-center gap-3">
@@ -481,22 +466,19 @@ function OptionsView({ options, onToggle, onSpawnVehicle, onSpawnObject, onChang
   )
 }
 
-/**
- * Bans list view component
- */
 function BansView({ bans, onShowDetails }: {
   bans: Ban[]
   onShowDetails: (ban: Ban) => void
 }) {
   const [search, setSearch] = useState('')
-  const filtered = bans.filter(b => 
-    b.name.toLowerCase().includes(search.toLowerCase()) || 
+  const filtered = bans.filter(b =>
+    b.name.toLowerCase().includes(search.toLowerCase()) ||
     b.reason?.toLowerCase().includes(search.toLowerCase())
   )
 
   return (
     <div className="space-y-4">
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold text-white">Bans</h2>
@@ -504,7 +486,7 @@ function BansView({ bans, onShowDetails }: {
         </div>
       </div>
 
-      {/* Search */}
+      {}
       <div className="relative">
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
         <input
@@ -516,7 +498,7 @@ function BansView({ bans, onShowDetails }: {
         />
       </div>
 
-      {/* Bans List */}
+      {}
       <div className="bg-[#1a1d26] rounded-xl overflow-hidden border border-white/[0.04]">
         {filtered.length === 0 ? (
           <div className="py-12 text-center">
@@ -526,8 +508,8 @@ function BansView({ bans, onShowDetails }: {
         ) : (
           <div className="divide-y divide-white/[0.04]">
             {filtered.map((ban) => (
-              <div 
-                key={ban.id} 
+              <div
+                key={ban.id}
                 onClick={() => onShowDetails(ban)}
                 className="px-4 py-3 flex items-center gap-4 cursor-pointer hover:bg-white/[0.02] transition-colors"
               >
@@ -548,9 +530,6 @@ function BansView({ bans, onShowDetails }: {
   )
 }
 
-/**
- * Modal component for ban details
- */
 function BanModal({ ban, onClose, onUnban, onCopy }: {
   ban: Ban
   onClose: () => void
@@ -567,15 +546,15 @@ function BanModal({ ban, onClose, onUnban, onCopy }: {
   ]
 
   return (
-    <div 
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" 
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50"
       onClick={onClose}
     >
-      <div 
-        className="w-[380px] bg-[#1a1d26] rounded-2xl shadow-2xl overflow-hidden animate-scale-in border border-white/[0.06]" 
+      <div
+        className="w-[380px] bg-[#1a1d26] rounded-2xl shadow-2xl overflow-hidden animate-scale-in border border-white/[0.06]"
         onClick={e => e.stopPropagation()}
       >
-        {/* Header */}
+        {}
         <div className="bg-[#12141a] px-5 py-5 text-center border-b border-white/[0.04]">
           <div className="w-14 h-14 rounded-xl bg-rose-500/15 flex items-center justify-center mx-auto mb-3">
             <User className="w-7 h-7 text-rose-400" />
@@ -586,15 +565,15 @@ function BanModal({ ban, onClose, onUnban, onCopy }: {
           </span>
         </div>
 
-        {/* Fields */}
+        {}
         <div className="p-4 space-y-2 max-h-[260px] overflow-y-auto">
           {fields.map(({ label, value }) => value && (
             <div key={label} className="bg-[#12141a] rounded-lg px-3.5 py-2.5 border border-white/[0.04]">
               <p className="text-[10px] text-white/40 uppercase font-medium tracking-wider mb-1">{label}</p>
               <div className="flex items-center justify-between gap-2">
                 <p className="text-sm text-white/80 truncate font-mono">{value}</p>
-                <button 
-                  onClick={() => onCopy(value)} 
+                <button
+                  onClick={() => onCopy(value)}
                   className="text-white/60 hover:text-white transition-colors p-1 shrink-0"
                 >
                   <Copy className="w-3.5 h-3.5" />
@@ -604,16 +583,16 @@ function BanModal({ ban, onClose, onUnban, onCopy }: {
           ))}
         </div>
 
-        {/* Actions */}
+        {}
         <div className="p-4 pt-2 flex gap-2 border-t border-white/[0.04]">
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="flex-1 py-2.5 bg-white/[0.06] rounded-lg text-sm font-medium text-white/70 hover:bg-white/[0.08] transition-colors"
           >
             Close
           </button>
-          <button 
-            onClick={() => onUnban(ban.id)} 
+          <button
+            onClick={() => onUnban(ban.id)}
             className="flex-1 py-2.5 bg-emerald-500/15 rounded-lg text-sm font-medium text-emerald-400 flex items-center justify-center gap-2 hover:bg-emerald-500/25 transition-colors"
           >
             <Undo2 className="w-4 h-4" /> Unban

@@ -3,10 +3,8 @@ local ProtectionHelper = require("client/core/protection_helper")
 
 local Cache = require("client/core/cache")
 
----@class AntiNoRagdollModule
 local AntiNoRagdoll = {}
 
----@description Initialize Anti No Ragdoll protection
 function AntiNoRagdoll.initialize()
     if not ConfigLoader.get_protection_setting("Anti No Ragdoll", "enabled") then return end
     
@@ -14,7 +12,7 @@ function AntiNoRagdoll.initialize()
     
     Citizen.CreateThread(function()
         while true do
-            Citizen.Wait(5000)  
+            Citizen.Wait(5000)
             
             if Cache.Get("hasPermission", "noragdoll") or Cache.Get("hasPermission", "all") or Cache.Get("isAdmin") then
                 ragdoll_flags = 0
@@ -63,4 +61,4 @@ end
 
 ProtectionManager.register_protection("no_ragdoll", AntiNoRagdoll.initialize)
 
-return AntiNoRagdoll 
+return AntiNoRagdoll

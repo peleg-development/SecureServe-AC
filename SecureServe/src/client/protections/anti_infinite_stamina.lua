@@ -3,17 +3,15 @@ local ProtectionHelper = require("client/core/protection_helper")
 
 local Cache = require("client/core/cache")
 
----@class AntiInfiniteStaminaModule
 local AntiInfiniteStamina = {}
 
----@description Initialize Anti Infinite Stamina protection
 function AntiInfiniteStamina.initialize()
     if not ConfigLoader.get_protection_setting("Anti Infinite Stamina", "enabled") then return end
     
     local stamina_flags = 0
     local consecutive_checks = 0
     local sprint_start_time = 0
-    local SPRINT_THRESHOLD = 15000 
+    local SPRINT_THRESHOLD = 15000
     
     Citizen.CreateThread(function()
         while true do
@@ -75,4 +73,4 @@ end
 
 ProtectionManager.register_protection("infinite_stamina", AntiInfiniteStamina.initialize)
 
-return AntiInfiniteStamina 
+return AntiInfiniteStamina

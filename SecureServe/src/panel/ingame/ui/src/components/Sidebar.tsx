@@ -30,8 +30,8 @@ export function Sidebar({ section, onSelect }: SidebarProps) {
               onClick={() => onSelect(id)}
               className={`
                 relative w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-200
-                ${isActive 
-                  ? 'bg-white/12 text-white shadow-lg shadow-white/5' 
+                ${isActive
+                  ? 'bg-white/12 text-white shadow-lg shadow-white/5'
                   : 'text-white/40 hover:text-white/70 hover:bg-white/6'
                 }
               `}
@@ -50,4 +50,3 @@ export function Sidebar({ section, onSelect }: SidebarProps) {
     </div>
   )
 }
-

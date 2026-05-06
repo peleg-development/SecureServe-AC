@@ -1,4 +1,3 @@
----@class Cache
 local Cache = {}
 
 Cache.Values = {
@@ -23,19 +22,18 @@ Cache.Values = {
 Cache.bootstrapping = true
 
 Cache.UpdateIntervals = {
-    coords = 1000,       
-    selectedWeapon = 2500, 
+    coords = 1000,
+    selectedWeapon = 2500,
     ped = 5000,
-    permissions = 30000,  -- Check permissions every 30 seconds    
-    default = 3000    
+    permissions = 30000,
+    default = 3000
 }
 
 Cache.LastUpdated = {}
-Cache.LastValues = {}   
+Cache.LastValues = {}
 
 local updateThreads = {}
----@param currentTime number The current game timer
----@return number ped The current player ped
+
 local function get_ped(currentTime)
     local ped = Cache.Values.ped
     if not Cache.LastUpdated["ped"] or (currentTime - Cache.LastUpdated["ped"]) > Cache.UpdateIntervals.ped then
@@ -46,7 +44,6 @@ local function get_ped(currentTime)
     return ped
 end
 
----@description Initialize the cache
 function Cache.initialize()
     for _, threadId in pairs(updateThreads) do
         if threadId then
@@ -58,7 +55,6 @@ function Cache.initialize()
     Cache.UpdateAll()
     Cache.StartUpdateThreads()
     
-    -- Request permission check on initialization
     Cache.RequestPermissionCheck()
 
     Citizen.CreateThread(function()
@@ -116,9 +112,6 @@ function Cache.Get(key, subKey)
     return Cache.Values[key]
 end
 
----@param key string The cache key to force update
----@param currentTime number|nil The current game timer
----@param ped number|nil The player ped to reuse
 function Cache.ForceUpdate(key, currentTime, ped)
     local currentTime = currentTime or GetGameTimer()
     local ped = ped or get_ped(currentTime)
@@ -176,7 +169,7 @@ function Cache.StartUpdateThreads()
             keys = {"isSwimming", "isSwimmingUnderWater", "isInvisible", "isAdmin"}
         },
         permission = {
-            interval = 30000, -- Every 30 seconds
+            interval = 30000,
             keys = {"permissions"}
         }
     }
@@ -202,7 +195,6 @@ function Cache.StartUpdateThreads()
     end
 end
 
----@description Request permission check from server
 function Cache.RequestPermissionCheck()
     TriggerServerEvent("SecureServe:RequestPermissions")
     local currentTime = GetGameTimer()
@@ -210,17 +202,14 @@ function Cache.RequestPermissionCheck()
     Cache.LastUpdated["permissions"] = currentTime
 end
 
----@description Check if player has specific permission
----@param permission string The permission to check
 function Cache.CheckPermission(permission)
     local currentTime = GetGameTimer()
-    -- If permissions haven't been checked recently, request an update
+    
     if currentTime - Cache.Values.permissionsLastUpdate > Cache.UpdateIntervals.permissions then
         Cache.RequestPermissionCheck()
     end
 end
 
--- Event handler for receiving permissions from server
 RegisterNetEvent("SecureServe:ReceivePermissions", function(permissions)
     Cache.Values.permissions = permissions or {}
     Cache.Values.permissionsLastUpdate = GetGameTimer()

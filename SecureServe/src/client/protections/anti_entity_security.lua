@@ -3,11 +3,10 @@ local ProtectionManager = require("client/protections/protection_manager")
 local Utils = require("shared/lib/utils")
 local Cache = require("client/core/cache")
 
----@class AntiEntitySecurityModule
 local AntiEntitySecurity = {
     active_handlers = {},
     entity_cache = {},
-    cleanup_interval = 120000, 
+    cleanup_interval = 120000,
     last_cache_cleanup = 0,
     entity_check_count = 0,
     playerLoaded = false
@@ -20,13 +19,12 @@ AddEventHandler('playerSpawned', function()
     end)
 end)
 
----@description Initialize Entity Security protection
 function AntiEntitySecurity.initialize()
     AntiEntitySecurity.cleanup()
 
     local whitelisted_resources = {}
     local last_check_times = {}
-    local CHECK_COOLDOWN = 1000 
+    local CHECK_COOLDOWN = 1000
     
     local secureServe = ConfigLoader.get_secureserve()
     if not secureServe or not secureServe.Module or not secureServe.Module.Entity then
@@ -43,8 +41,8 @@ function AntiEntitySecurity.initialize()
 
     local function checkEntityResource(entity, entityType, modelHash)
         AntiEntitySecurity.entity_check_count = AntiEntitySecurity.entity_check_count + 1
-        if AntiEntitySecurity.entity_check_count % 3 ~= 0 then 
-            return 
+        if AntiEntitySecurity.entity_check_count % 3 ~= 0 then
+            return
         end
         
         if not entity or not DoesEntityExist(entity) then return end
@@ -63,7 +61,7 @@ function AntiEntitySecurity.initialize()
         if not entityScript then entityScript = "unknown" end
         
         if whitelisted_resources[entityScript] then
-            return 
+            return
         end
         
         if DoesEntityExist(entity) and AntiEntitySecurity.playerLoaded then
@@ -75,7 +73,7 @@ function AntiEntitySecurity.initialize()
             end
         end
         
-        local detectionMessage = string.format("Created blacklisted %s (hash: %s) from unauthorized resource: %s", 
+        local detectionMessage = string.format("Created blacklisted %s (hash: %s) from unauthorized resource: %s",
             entityType, modelHash, entityScript)
             
         TriggerServerEvent("SecureServe:Server:Methods:ModulePunish", nil, detectionMessage, "entity_security", 2147483647)
@@ -83,11 +81,11 @@ function AntiEntitySecurity.initialize()
 
     Citizen.CreateThread(function()
         while true do
-            Citizen.Wait(30000) 
+            Citizen.Wait(30000)
             
             local current_time = GetGameTimer()
             if (current_time - AntiEntitySecurity.last_cache_cleanup) < AntiEntitySecurity.cleanup_interval then
-                goto continue 
+                goto continue
             end
             
             local count = 0
@@ -137,7 +135,7 @@ function AntiEntitySecurity.initialize()
             local isWhitelisted = false
             if whitelisted_resources[entityScript] then
                 isWhitelisted = true
-                return 
+                return
             end
             
             if not isWhitelisted and AntiEntitySecurity.playerLoaded then
@@ -150,7 +148,7 @@ function AntiEntitySecurity.initialize()
                     end
                 end
                                 
-                local detectionMessage = string.format("Created blacklisted %s (hash: %s) from unauthorized resource: %s", 
+                local detectionMessage = string.format("Created blacklisted %s (hash: %s) from unauthorized resource: %s",
                     entityType, modelHash, entityScript)
                 TriggerServerEvent("SecureServe:Server:Methods:ModulePunish", nil, detectionMessage, "entity_security", 2147483647)
             end
@@ -185,19 +183,19 @@ function AntiEntitySecurity.initialize()
     end
 
     AntiEntitySecurity.active_handlers.vehicle = AddStateBagChangeHandler("VehicleCreate", "entity:", function(bagName, key, value)
-        handleEntityStateBag("Vehicle", bagName, value, 
+        handleEntityStateBag("Vehicle", bagName, value,
             function(bag) return GetEntityFromStateBagName(bag) end,
             "vehicleHash", blacklisted_vehicles)
     end)
     
     AntiEntitySecurity.active_handlers.ped = AddStateBagChangeHandler("PedCreate", "entity:", function(bagName, key, value)
-        handleEntityStateBag("Ped", bagName, value, 
+        handleEntityStateBag("Ped", bagName, value,
             function(bag) return GetEntityFromStateBagName(bag) end,
             "pedHash", blacklisted_peds)
     end)
     
     AntiEntitySecurity.active_handlers.object = AddStateBagChangeHandler("ObjectCreate", "entity:", function(bagName, key, value)
-        handleEntityStateBag("Object", bagName, value, 
+        handleEntityStateBag("Object", bagName, value,
             function(bag) return GetEntityFromStateBagName(bag) end,
             "objectHash", blacklisted_objects)
     end)

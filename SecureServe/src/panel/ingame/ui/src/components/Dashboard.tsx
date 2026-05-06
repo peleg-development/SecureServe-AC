@@ -65,4 +65,3 @@ export function Dashboard({ stats }: DashboardProps) {
     </div>
   )
 }
-
