@@ -45,9 +45,9 @@ function AntiResourceStop.initialize()
         checkResource("Stop", resource_name)
     end)
 
-    -- Verificacion cruzada: keep-alive debe seguir cargado.
-    -- Esto pilla al cheater que sobreescribe AddEventHandler para anular
-    -- onClientResourceStop, porque GetResourceState lee directo del runtime.
+    -- Cross-check: keep-alive must still be loaded.
+    -- This catches a cheater who overwrites AddEventHandler to bypass
+    -- onClientResourceStop, because GetResourceState reads directly from runtime.
     CreateThread(function()
         Wait(20000)
 

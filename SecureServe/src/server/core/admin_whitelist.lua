@@ -2,11 +2,11 @@ local AdminWhitelist = {}
 
 local logger = require("server/core/logger")
 
--- Cache por source. Cada entrada tiene los flags de admin/whitelist y un timestamp
--- para invalidar de forma blanda si pasa demasiado tiempo. El borrado real se hace
--- en playerDropped, pero conviene tener TTL por si en algun momento el ACE cambia
--- en runtime (por ejemplo el admin recibe un permiso nuevo).
-local CACHE_TTL = 60 -- segundos
+-- Cache per source. Each entry has admin/whitelist flags and a timestamp
+-- to softly invalidate if too much time passes. The real deletion happens
+-- in playerDropped, but having a TTL is useful if ACE changes at runtime
+-- (for example, the admin receives a new permission).
+local CACHE_TTL = 60
 
 local source_cache = {}
 local pending_admin_checks = {}
@@ -65,7 +65,7 @@ local function get_or_init_cache(src)
             identifiers     = nil,   -- lazy
             is_admin        = nil,
             is_whitelisted  = nil,
-            permissions     = nil,   -- tabla de permisos resuelta
+            permissions     = nil,   -- resolved permissions table
         }
         source_cache[src] = entry
     end
@@ -80,7 +80,7 @@ local function get_identifiers(src)
 end
 
 
--- //[Permisos ACE]\\ --
+-- //[ACE Permissions]\ --
 
 function AdminWhitelist.hasAcePermission(source, permission)
     if not source or source <= 0 or not IsPlayerAceAllowed then
@@ -90,7 +90,7 @@ function AdminWhitelist.hasAcePermission(source, permission)
 end
 
 
--- //[Admin manual (lista de licencias y admins)]\\ --
+-- //[Manual Admin (license list and admins)]\ --
 
 function AdminWhitelist.getManualAdmin(source)
     if not _G.SecureServe then return false end
@@ -130,7 +130,7 @@ function AdminWhitelist.getTxAdminPerm(source)
 end
 
 
--- //[Resolucion de admin/whitelist (con cache)]\\ --
+-- //[Admin/whitelist resolution (with cache)]\ --
 
 function AdminWhitelist.isAdmin(source)
     if not source or source <= 0 or not GetPlayerName(source) then
@@ -232,7 +232,7 @@ function AdminWhitelist.getPlayerPermissions(source)
 end
 
 
--- //[Sincronizacion del listado]\\ --
+-- //[List synchronization]\ --
 
 function AdminWhitelist.checkAndAddAdmin(source)
     if not source or source <= 0 then return end

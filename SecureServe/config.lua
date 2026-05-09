@@ -12,7 +12,7 @@ Config.MinimumOnlineSecondsBeforeBan = 55
 
 
 -- //[Admin Menu]\\ --
--- Comando para abrir el panel: /ssm
+-- Command to open the panel: /ssm
 Config.AdminLicenses = {
     --"license:xxxxxxxxxxxxxxxxxxxxxxxx", 
     --"license:xxxxxxxxxxxxxxxxxxxx", 
@@ -26,8 +26,8 @@ Config.AdminMenuRefresh = {
 
 
 -- //[Ban Times]\\ --
--- Tiempos preconfigurados que puedes usar en EnforcementActions.
--- Tambien puedes poner numeros directamente (minutos).
+-- Preconfigured times you can use in EnforcementActions.
+-- You can also use numbers directly (minutes).
 Config.BanTimes = {
     ["Ban"]  = 2147483647,
     ["Kick"] = -1,
@@ -49,15 +49,15 @@ Config.Protections = {
     ["Anti Infinite Stamina"]  = true,
     ["Anti Bigger Hitbox"]     = true,
 
-    -- //[Combate / Armas]\\ --
+    -- //[Combat / Weapons]\\ --
     ["Anti Give Weapon"]       = true,
     ["Anti Weapon Pickup"]     = true,
     ["Anti Damage Modifier"]   = true,
     ["Anti No Recoil"]         = true,
     ["Anti No Reload"]         = true,
-    ["Anti Explosion Bullet"]  = false, -- AVISO: si lo activas, banea a quien use RPG/Granada/Molotov/Lanzagranadas (damage_type 4/5 son legitimos)
+    ["Anti Explosion Bullet"]  = false, -- WARNING: if enabled, this can ban players using RPG/Grenade/Molotov/Grenade Launcher (damage_type 4/5 are legitimate)
     ["Anti Magic Bullet"]      = true,
-    ["Anti Aim Assist"]        = false, -- Desactivado: el apuntado asistido es config legitima del juego (mando)
+    ["Anti Aim Assist"]        = false, -- Disabled: aim assist is a legitimate game setting (controller)
     ["Anti AI"]                = true,
 
     -- //[Visuales]\\ --
@@ -79,7 +79,7 @@ Config.Protections = {
 
 
 -- //[Enforcement Actions]\\ --
--- Que hace cuando se detecta cada cheat: "Ban", "Kick", "Warn" o un numero (minutos).
+-- What to do when each cheat is detected: "Ban", "Kick", "Warn" or a number (minutes).
 Config.EnforcementActions = {
     ["Anti Noclip"]            = "Ban",
     ["Anti Godmode"]           = "Ban",
@@ -112,7 +112,7 @@ Config.EnforcementActions = {
 }
 
 
--- //[Tunings de detecciones]\\ --
+-- //[Detection Tunings]\\ --
 Config.Tunings = {
     ["Anti Speed Hack"]   = { max_speed = 8.0, tolerance = 4.5 },
     ["Anti Magic Bullet"] = { tolerance = 3 },
@@ -122,10 +122,10 @@ Config.Tunings = {
 }
 
 
--- //[Damage baseline por arma]\\ --
--- Las armas que NO esten aqui no se chequean (no causaran falsos baneos).
--- El daño real reportado se compara contra el valor x1.5 (x2 si es headshot).
--- Anhade aqui mas armas si quieres cobertura mas amplia.
+-- //[Weapon damage baseline]\\ --
+-- Weapons NOT listed here are not checked (will not cause false bans).
+-- Reported damage is compared against the value x1.5 (x2 if headshot).
+-- Add more weapons here for broader coverage.
 Config.WeaponDamages = {
     [GetHashKey("WEAPON_PISTOL")]        = 26,
     [GetHashKey("WEAPON_PISTOL_MK2")]    = 33,
@@ -164,7 +164,7 @@ Config.WeaponDamages = {
 
 
 -- //[Heartbeat]\\ --
--- Sistema que verifica que el cliente sigue ejecutando el anticheat.
+-- System that checks the client is still running the anticheat.
 Config.Heartbeat = {
     Enabled = true,
     BanOnViolation = true,
@@ -180,7 +180,7 @@ Config.Heartbeat = {
 -- //[Module: Entity Security]\\ --
 Config.EntityModule = {
     Enabled = false,
-    LockdownMode = "inactive",      -- "relaxed", "strict" o "inactive"
+    LockdownMode = "inactive",      -- "relaxed", "strict" or "inactive"
     TakeScreenshot = true,
 
     SecurityWhitelist = {
@@ -196,8 +196,8 @@ Config.EntityModule = {
 }
 
 
--- //[Eventos en whitelist]\\ --
--- Evita falsos positivos cuando un evento es legitimo.
+-- //[Whitelist Events]\\ --
+-- Prevents false positives when an event is legitimate.
 Config.WhitelistEvents = {
     "playerJoining",
     "esx:playerLoaded",
@@ -209,8 +209,8 @@ Config.WhitelistEvents = {
 }
 
 
--- //[Recursos en whitelist]\\ --
--- Recursos que pueden crear entidades sin disparar la deteccion.
+-- //[Whitelist Resources]\\ --
+-- Resources that can create entities without triggering detection.
 Config.SafeResources = {
     "bob74_ipl",
     "ox_inventory",
@@ -218,8 +218,8 @@ Config.SafeResources = {
 }
 
 
--- //[Ejecutores y menus blacklisted]\\ --
--- Si un cliente registra un comando con uno de estos nombres, se le banea.
+-- //[Blacklisted Executors and Menus]\\ --
+-- If a client registers a command with one of these names, they are banned.
 Config.BlockedMenus = {
     "rootMenu", "rootMenuv2", "rootMenuv3", "Wugr4yfgb",
 }
@@ -240,8 +240,8 @@ Config.BlacklistedExecutors = {
 }
 
 
--- //[Comandos blacklisted]\\ --
--- Si un cliente registra alguno de estos comandos en su lado, ban.
+-- //[Blacklisted Commands]\\ --
+-- If a client registers any of these commands on their side, they will be banned.
 Config.BlacklistedCommands = {
     "jd", "KP", "opk", "ham", "lol", "hoax", "vibes", "haha", "panik", "brutan",
     "panic", "hyra", "hydro", "lynx", "tiago", "desudo", "ssssss", "redstonia",
@@ -254,7 +254,7 @@ Config.BlacklistedCommands = {
 
 
 -- //[Sprites blacklisted]\\ --
--- Sprites de menus de cheat conocidos.
+-- Sprites of known cheat menu assets.
 Config.BlacklistedSprites = {
     { sprite = "deadline",           name = "Dopamine" },
     { sprite = "Dopameme",           name = "Dopamine Menu" },
@@ -319,7 +319,7 @@ Config.BlacklistedAnimDicts = {
 }
 
 
--- //[Armas blacklisted]\\ --
+-- //[Blacklisted Weapons]\\ --
 Config.BlacklistedWeapons = {
     "weapon_rayminigun",
     "weapon_raycarbine",
@@ -377,11 +377,11 @@ Config.BlacklistedObjects = {
 }
 
 
--- //[Explosiones blacklisted]\\ --
--- id = numero de tipo de explosion (ver lista en https://docs.fivem.net)
--- limit = cuantas se permiten antes de banear
--- audio = true para banear si la explosion es inaudible
--- invisible = true para banear si la explosion es invisible
+-- //[Blacklisted Explosions]\\ --
+-- id = explosion type number (see list at https://docs.fivem.net)
+-- limit = how many are allowed before banning
+-- audio = true to ban if the explosion is inaudible
+-- invisible = true to ban if the explosion is invisible
 Config.BlacklistedExplosions = {
     { id = 0,  limit = 1, audio = true, invisible = false }, -- Grenades
     { id = 1,  limit = 1, audio = true, invisible = false }, -- Sticky Bombs
@@ -438,7 +438,7 @@ Config.CancelOtherExplosions = false
 
 
 -- //[OCR]\\ --
--- Palabras que aparecen en pantalla y disparan baneo (capturas).
+-- Words that appear on screen and trigger a ban (screenshots).
 Config.OCR = {
     ScreenshotInterval = 8500,
     Words = {
@@ -459,26 +459,26 @@ Config.OCR = {
 
 
 -- //[Discord Webhooks]\\ --
--- Deja vacio para desactivar logs.
+-- Leave empty to disable logs.
 Config.Webhooks = {
     Enabled    = true,
 
-    -- Categorias principales
-    System     = "https://discord.com/api/webhooks/",   -- Arranque/parada del sistema
-    Detection  = "https://discord.com/api/webhooks/",   -- Detecciones de cheat
+    -- Main categories
+    System     = "https://discord.com/api/webhooks/",   -- System start/stop
+    Detection  = "https://discord.com/api/webhooks/",   -- Cheat detections
     Ban        = "https://discord.com/api/webhooks/",   -- Bans
     Kick       = "https://discord.com/api/webhooks/",   -- Kicks
-    Screenshot = "https://discord.com/api/webhooks/",   -- Capturas de pantalla
-    Admin      = "https://discord.com/api/webhooks/",   -- Acciones de admins
+    Screenshot = "https://discord.com/api/webhooks/",   -- Screenshots
+    Admin      = "https://discord.com/api/webhooks/",   -- Admin actions
     Debug      = "https://discord.com/api/webhooks/",
 
-    -- Eventos del servidor
+    -- Server events
     Join       = "https://discord.com/api/webhooks/",
     Leave      = "https://discord.com/api/webhooks/",
     Kill       = "https://discord.com/api/webhooks/",
     Resource   = "https://discord.com/api/webhooks/",
 
-    -- Webhooks por categoria de blacklist (se usan si los individuales estan vacios)
+    -- Webhooks by blacklist category (used if individual webhooks are empty)
     Simple                = "",
     BlacklistedExplosions = "",
     BlacklistedCommands   = "",
@@ -515,8 +515,8 @@ Config.ServerSecurity = {
 }
 
 
--- //[Lista de armas conocidas (anti spawn)]\\ --
--- Si tu servidor usa armas custom, anñadelas aqui.
+-- //[Known Weapons (anti spawn)]\\ --
+-- If your server uses custom weapons, add them here.
 Config.KnownWeapons = {
     [GetHashKey("WEAPON_FLASHLIGHT")]          = "WEAPON_FLASHLIGHT",
     [GetHashKey("WEAPON_KNIFE")]               = "WEAPON_KNIFE",
@@ -567,8 +567,8 @@ Config.KnownWeapons = {
 
 
 -- ////////////////////////////////////////////////////////////////
--- A partir de aqui se construye la estructura interna que utilizan
--- las protecciones. NO toques nada debajo a no ser que sepas lo que haces.
+-- From here the internal structure used by protections is built.
+-- Do not touch anything below unless you know what you are doing.
 -- ////////////////////////////////////////////////////////////////
 
 SecureServe = {}
