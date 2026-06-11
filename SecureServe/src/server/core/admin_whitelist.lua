@@ -125,8 +125,8 @@ end
 
 function AdminWhitelist.getTxAdminPerm(source)
     if not source or source <= 0 then return false end
+    -- Fix: remove the "command" ACE check (granted to anyone who can run a command = full elevation/bypass). Keep only the txAdmin-specific ACE.
     return IsPlayerAceAllowed(source, "command.tx")
-        or IsPlayerAceAllowed(source, "command")
 end
 
 

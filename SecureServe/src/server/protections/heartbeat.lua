@@ -10,6 +10,7 @@ local Heartbeat = {
     failureCount            = {},
     silentStrikes           = {},
     playerJoinTime          = {},
+    aliveNonce              = {},
     checkInterval           = 3000,
     maxFailures             = 7,
     heartbeatCheckInterval  = 5000,
@@ -31,6 +32,14 @@ local function cleanup_player(pid)
     Heartbeat.failureCount[pid]     = nil
     Heartbeat.silentStrikes[pid]    = nil
     Heartbeat.playerJoinTime[pid]   = nil
+    Heartbeat.aliveNonce[pid]       = nil
+end
+
+-- Fix: unpredictable per-challenge nonce; a client must echo it back to prove it is alive (anti-spoof for "addalive").
+local nonce_counter = 0
+local function make_nonce()
+    nonce_counter = nonce_counter + 1
+    return string.format("%x-%x-%x", os.time(), nonce_counter, math.random(1, 0x7fffffff))
 end
 
 local function mark_joined(pid, at)
@@ -79,8 +88,8 @@ local function is_ready_for_alive_check(pid, now)
         return false
     end
 
-    return Heartbeat.allowedStop[pid] == true
-        and Heartbeat.playerHeartbeats[pid] ~= nil
+    -- Fix: fail-closed. Every connected player past the grace period is challenged. Before, requiring allowedStop+heartbeat let a client that never became "ready" (blocked/removed) escape the check entirely.
+    return true
 end
 
 local function can_punish_now(playerId, reason)
@@ -146,10 +155,15 @@ function Heartbeat.setupEventHandlers()
         mark_heartbeat(pid, seconds())
     end)
 
-    RegisterNetEvent("addalive", function()
+    RegisterNetEvent("addalive", function(nonce)
         local pid = tonumber(source)
         if not pid then return end
 
+        -- Fix: we only accept the alive proof if the nonce matches the current challenge; otherwise a client could spam "addalive" to declare itself alive without running.
+        local expected = Heartbeat.aliveNonce[pid]
+        if not expected or nonce ~= expected then return end
+
+        Heartbeat.aliveNonce[pid] = nil
         Heartbeat.alive[pid] = true
         Heartbeat.failureCount[pid] = 0
     end)
@@ -212,8 +226,11 @@ function Heartbeat.startMonitoringThreads()
                 local pid = tonumber(playerId)
                 if pid and is_ready_for_alive_check(pid, now) then
                     Heartbeat.alive[pid] = false
+                    -- Fix: we emit a unique nonce per challenge; only a running client can echo it back.
+                    local nonce = make_nonce()
+                    Heartbeat.aliveNonce[pid] = nonce
                     challenged[#challenged + 1] = pid
-                    TriggerClientEvent("checkalive", pid)
+                    TriggerClientEvent("checkalive", pid, nonce)
                 end
             end
 
@@ -223,19 +240,13 @@ function Heartbeat.startMonitoringThreads()
             for _, pid in ipairs(challenged) do
                 if is_ready_for_alive_check(pid, checked_at) then
                     if not Heartbeat.alive[pid] then
+                        Heartbeat.aliveNonce[pid] = nil
                         Heartbeat.failureCount[pid] = (Heartbeat.failureCount[pid] or 0) + 1
 
-                        local last = Heartbeat.playerHeartbeats[pid]
-                        local heartbeat_stale = not last or (checked_at - last) > Heartbeat.timeoutThreshold
-
+                        -- Fix: we no longer rely on heartbeat freshness (spoofable); repeated nonce-challenge failures are the reliable proof that no SecureServe client is running.
                         if Heartbeat.failureCount[pid] >= Heartbeat.maxFailures then
-                            if heartbeat_stale then
-                                Heartbeat.banPlayer(pid, "Failed alive checks")
-                                Heartbeat.failureCount[pid] = 0
-                            else
-                                Heartbeat.failureCount[pid] = Heartbeat.maxFailures - 1
-                                logger.debug(("Alive check missed for %s, but heartbeat is fresh"):format(tostring(pid)))
-                            end
+                            Heartbeat.banPlayer(pid, "Failed alive checks")
+                            Heartbeat.failureCount[pid] = 0
                         end
                     else
                         Heartbeat.failureCount[pid] = 0

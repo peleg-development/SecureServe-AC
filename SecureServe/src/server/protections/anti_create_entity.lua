@@ -67,20 +67,25 @@ function AntiCreateEntity.initialize()
     RegisterNetEvent("SecureServe:Server:Methods:ModulePunish", function(screenshot, reason, webhook, time)
         local src = source
         if not src or src <= 0 then return end
-        
-        logger.warn(string.format("[SecureServe] Entity Security: Player %s (%s) %s", 
-            GetPlayerName(src) or "Unknown", 
-            GetPlayerIdentifier(src, 0) or "Unknown", 
+
+        -- Fix: reason comes from the client, so we bound it and force a string (anti-injection, and limits abuse of the auto-whitelist via a forged reason).
+        if type(reason) ~= "string" or reason == "" then reason = "Entity Security Detection" end
+        if #reason > 200 then reason = reason:sub(1, 200) end
+
+        logger.warn(string.format("[SecureServe] Entity Security: Player %s (%s) %s",
+            GetPlayerName(src) or "Unknown",
+            GetPlayerIdentifier(src, 0) or "Unknown",
             reason))
 
         if auto_config.process_auto_whitelist(src, reason) then
             logger.info("Auto-config handled entity security detection: " .. reason)
             return
         end
-        
+
+        -- Fix: ban duration is resolved server-side (the client must not be able to shorten its own ban via time).
         local details = {
             detection = reason,
-            time = time or 0,
+            time = config_manager.resolve_ban_time(reason),
             screenshot = screenshot
         }
         
@@ -134,27 +139,27 @@ function AntiCreateEntity.initialize()
 
     RegisterNetEvent("SecureServe:Server:Methods:Entity:Create", function(entityId, resourceName, modelHash)
         local src = source
-        if GetPlayerPing(tonumber(src)) <= tonumber(0) then return end
+        if not src or src <= 0 then return end
+        if GetPlayerPing(src) <= 0 then return end
         if not AntiCreateEntity.entityRegistry[src] then
             AntiCreateEntity.entityRegistry[src] = {}
         end
-        
+
+        -- Fix: we no longer trust the modelHash announced by the client (it allowed pre-whitelisting any blacklisted hash). We resolve the real entity and read its actual model server-side; if it does not exist yet we register nothing (the entityCreated check takes over).
         local serverEntityId = NetworkGetEntityFromNetworkId(entityId)
-        if serverEntityId and DoesEntityExist(serverEntityId) then
-            AntiCreateEntity.entityRegistry[src][serverEntityId] = {
-                hash = modelHash,
-                resource = resourceName,
-                time = os.time()
-            }
-        end
-        
-        if not AntiCreateEntity.entityRegistry[src][modelHash] then
-            AntiCreateEntity.entityRegistry[src][modelHash] = {
-                hash = modelHash,
-                resource = resourceName,
-                time = os.time()
-            }
-        end
+        if not serverEntityId or not DoesEntityExist(serverEntityId) then return end
+
+        local realHash = GetEntityModel(serverEntityId)
+        AntiCreateEntity.entityRegistry[src][serverEntityId] = {
+            hash = realHash,
+            resource = resourceName,
+            time = os.time()
+        }
+        AntiCreateEntity.entityRegistry[src][realHash] = {
+            hash = realHash,
+            resource = resourceName,
+            time = os.time()
+        }
     end)
 
     AddEventHandler('entityCreated', function(entity)

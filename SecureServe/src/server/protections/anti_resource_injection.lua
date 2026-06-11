@@ -1,5 +1,6 @@
 local AntiResourceInjection = {
     whitelisted_server_resources = {},
+    startup_complete = false,
 }
 
 local logger = require("server/core/logger")
@@ -12,11 +13,15 @@ function AntiResourceInjection.initialize()
             AntiResourceInjection.whitelisted_server_resources[name] = true
         end
     end
+    -- Fix: from here on, resources from the startup snapshot are trusted; any resource started afterwards is logged as a warning (before: silent auto-whitelist, so an injected resource went unnoticed).
+    AntiResourceInjection.startup_complete = true
 
     AddEventHandler("onResourceStart", function(resourceName)
         if resourceName then
+            if AntiResourceInjection.startup_complete and not AntiResourceInjection.whitelisted_server_resources[resourceName] then
+                logger.warn("Resource started at runtime (verify it is legitimate): " .. resourceName)
+            end
             AntiResourceInjection.whitelisted_server_resources[resourceName] = true
-            logger.debug("Resource added to whitelist: " .. resourceName)
         end
     end)
 

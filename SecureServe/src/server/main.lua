@@ -601,6 +601,13 @@ RegisterNetEvent("SecureServe:Server:Methods:PunishPlayer", function(id, reason,
         return
     end
 
+    -- Fix: reason comes from the client, so we bound it and force a string (anti-injection / avoids a huge payload in bans.json and logs).
+    if type(reason) ~= "string" or reason == "" then reason = "Anti-Cheat Detection" end
+    if #reason > 200 then reason = reason:sub(1, 200) end
+
+    -- Fix: duration and webhook must NEVER come from the client (it could shorten its own ban / inject a webhook). We resolve the time server-side and ignore the client webhook.
+    time = config_manager.resolve_ban_time(reason)
+
     local min_seconds = tonumber(SecureServe.MinimumOnlineSecondsBeforeBan) or 0
     if min_seconds > 0 and _G.SecureServe_PlayerJoinedAt then
         local joined_at = _G.SecureServe_PlayerJoinedAt[source]
@@ -620,14 +627,14 @@ RegisterNetEvent("SecureServe:Server:Methods:PunishPlayer", function(id, reason,
     end
 
     logger.warn("Player " .. source .. " triggered anti-cheat: " .. reason)
+    -- Fix: we no longer pass the client webhook; the logger uses its own server-configured webhook.
     DiscordLogger.log_detection(source, reason, {
-        time = time or 2147483647,
-        webhook = webhook
+        time = time
     })
 
     ban_manager.ban_player(source, reason, {
         admin = "Anti-Cheat System",
-        time = time or 2147483647,
+        time = time,
         detection = reason,
         screenshot = screenshot_url
     })
