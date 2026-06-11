@@ -17,18 +17,15 @@ function AntiVisions.initialize()
                 or Cache.Get("hasPermission", "all")
                 or Cache.Get("isAdmin")
             then
-                goto continue
-            end
+            else
+                if GetUsingseethrough() then
+                    ProtectionHelper.punish("Anti Thermal Vision", "Anti Thermal Vision")
+                end
 
-            if GetUsingseethrough() then
-                ProtectionHelper.punish("Anti Thermal Vision", "Anti Thermal Vision")
+                if GetUsingnightvision() then
+                    ProtectionHelper.punish("Anti Night Vision", "Anti Night Vision")
+                end
             end
-
-            if GetUsingnightvision() then
-                ProtectionHelper.punish("Anti Night Vision", "Anti Night Vision")
-            end
-
-            ::continue::
         end
     end)
 end

@@ -20,7 +20,6 @@ RegisterNetEvent("keepalive:assign", function(token)
         TriggerServerEvent("keepalive:tick", session_token, ping_counter)
     end
 end)
-
 CreateThread(function()
     Wait(2000)
     while not session_token do
@@ -29,7 +28,6 @@ CreateThread(function()
         Wait(backoff)
     end
 end)
-
 CreateThread(function()
     while true do
         local jitter = math.random(3500, 4500)
@@ -59,13 +57,4 @@ CreateThread(function()
             ss_missing_strikes = 0
         end
     end
-end)
-
-AddEventHandler("playerSpawned", function()
-    TriggerServerEvent("allowedStop")
-end)
-
-CreateThread(function()
-    Wait(2000)
-    TriggerServerEvent("allowedStop")
 end)

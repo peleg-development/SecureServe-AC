@@ -1,4 +1,3 @@
-local Utils          = require("shared/lib/utils")
 local logger         = require("server/core/logger")
 local ban_manager    = require("server/core/ban_manager")
 local config_manager = require("server/core/config_manager")
@@ -7,6 +6,7 @@ local Heartbeat = {
     playerHeartbeats        = {},
     alive                   = {},
     allowedStop             = {},
+    pendingReady            = {},
     failureCount            = {},
     silentStrikes           = {},
     playerJoinTime          = {},
@@ -16,20 +16,108 @@ local Heartbeat = {
     timeoutThreshold        = 30,
     gracePeriod             = 30,
     silenceStrikes          = 2,
+    initialized             = false,
 }
 
-function Heartbeat.initialize()
-    logger.info("Initializing Heartbeat protection module")
+local function seconds()
+    return os.time()
+end
 
+local function cleanup_player(pid)
+    Heartbeat.playerHeartbeats[pid] = nil
+    Heartbeat.alive[pid]            = nil
+    Heartbeat.allowedStop[pid]      = nil
+    Heartbeat.pendingReady[pid]     = nil
+    Heartbeat.failureCount[pid]     = nil
+    Heartbeat.silentStrikes[pid]    = nil
+    Heartbeat.playerJoinTime[pid]   = nil
+end
+
+local function mark_joined(pid, at)
+    if not pid then return end
+    if not Heartbeat.playerJoinTime[pid] then
+        Heartbeat.playerJoinTime[pid] = at or seconds()
+    end
+end
+
+local function mark_ready(pid, at)
+    if not pid then return end
+
+    mark_joined(pid, at)
+    Heartbeat.pendingReady[pid] = true
+
+    if Heartbeat.playerHeartbeats[pid] then
+        Heartbeat.allowedStop[pid] = true
+        Heartbeat.pendingReady[pid] = nil
+    end
+end
+
+local function mark_heartbeat(pid, at)
+    if not pid then return end
+
+    local now = at or seconds()
+    mark_joined(pid, now)
+
+    Heartbeat.playerHeartbeats[pid] = now
+    Heartbeat.silentStrikes[pid] = 0
+
+    if Heartbeat.pendingReady[pid] then
+        Heartbeat.allowedStop[pid] = true
+        Heartbeat.pendingReady[pid] = nil
+    end
+end
+
+local function is_connected(pid)
+    return pid and GetPlayerName(pid) ~= nil
+end
+
+local function is_ready_for_alive_check(pid, now)
+    if not is_connected(pid) then return false end
+
+    local joined_at = Heartbeat.playerJoinTime[pid]
+    if not joined_at or (now - joined_at) < Heartbeat.gracePeriod then
+        return false
+    end
+
+    return Heartbeat.allowedStop[pid] == true
+        and Heartbeat.playerHeartbeats[pid] ~= nil
+end
+
+local function can_punish_now(playerId, reason)
+    local min_seconds = tonumber(SecureServe and SecureServe.MinimumOnlineSecondsBeforeBan) or 0
+    if min_seconds <= 0 then return true end
+
+    local joined_at = Heartbeat.playerJoinTime[playerId]
+        or (_G.SecureServe_PlayerJoinedAt and _G.SecureServe_PlayerJoinedAt[playerId])
+
+    if not joined_at then return true end
+
+    local online_seconds = seconds() - joined_at
+    if online_seconds >= min_seconds then return true end
+
+    logger.warn(("Heartbeat punish ignored for %s; online %ds below %ds: %s")
+        :format(tostring(playerId), online_seconds, min_seconds, tostring(reason)))
+    return false
+end
+
+local function load_config()
     local config = (SecureServe and SecureServe.Module and SecureServe.Module.Heartbeat) or {}
 
-    Heartbeat.checkInterval          = config.CheckInterval          or 3000
-    Heartbeat.maxFailures            = config.MaxFailures            or 7
-    Heartbeat.heartbeatCheckInterval = config.HeartbeatCheckInterval or 5000
-    Heartbeat.timeoutThreshold       = config.TimeoutThreshold       or 30
-    Heartbeat.gracePeriod            = config.GracePeriod            or 30
-    Heartbeat.silenceStrikes         = config.SilenceStrikes         or 2
+    Heartbeat.checkInterval          = tonumber(config.CheckInterval)          or 3000
+    Heartbeat.maxFailures            = tonumber(config.MaxFailures)            or 7
+    Heartbeat.heartbeatCheckInterval = tonumber(config.HeartbeatCheckInterval) or 5000
+    Heartbeat.timeoutThreshold       = tonumber(config.TimeoutThreshold)       or 30
+    Heartbeat.gracePeriod            = tonumber(config.GracePeriod)            or 30
+    Heartbeat.silenceStrikes         = tonumber(config.SilenceStrikes)         or 2
+end
 
+function Heartbeat.initialize()
+    if Heartbeat.initialized then return end
+    Heartbeat.initialized = true
+
+    logger.info("Initializing Heartbeat protection module")
+
+    load_config()
     Heartbeat.setupEventHandlers()
     Heartbeat.startMonitoringThreads()
 
@@ -37,15 +125,13 @@ function Heartbeat.initialize()
 end
 
 function Heartbeat.setupEventHandlers()
+    AddEventHandler("playerJoining", function()
+        mark_joined(tonumber(source), seconds())
+    end)
+
     AddEventHandler("playerDropped", function()
         local pid = tonumber(source)
-        if not pid then return end
-        Heartbeat.playerHeartbeats[pid] = nil
-        Heartbeat.alive[pid]            = nil
-        Heartbeat.allowedStop[pid]      = nil
-        Heartbeat.failureCount[pid]     = nil
-        Heartbeat.silentStrikes[pid]    = nil
-        Heartbeat.playerJoinTime[pid]   = nil
+        if pid then cleanup_player(pid) end
     end)
 
     RegisterNetEvent("mMkHcvct3uIg04STT16I:cbnF2cR9ZTt8NmNx2jQS", function(key)
@@ -57,36 +143,32 @@ function Heartbeat.setupEventHandlers()
             return
         end
 
-        Heartbeat.playerHeartbeats[pid] = os.time()
-        Heartbeat.silentStrikes[pid]    = 0
-        if not Heartbeat.playerJoinTime[pid] then
-            Heartbeat.playerJoinTime[pid] = os.time()
-        end
+        mark_heartbeat(pid, seconds())
     end)
 
-    RegisterNetEvent('addalive', function()
-        local pid = tonumber(source)
-        if pid then Heartbeat.alive[pid] = true end
-    end)
-
-    RegisterNetEvent('allowedStop', function()
-        local pid = tonumber(source)
-        if pid then Heartbeat.allowedStop[pid] = true end
-    end)
-
-    RegisterNetEvent('playerLoaded', function()
+    RegisterNetEvent("addalive", function()
         local pid = tonumber(source)
         if not pid then return end
-        Heartbeat.playerHeartbeats[pid] = os.time()
-        Heartbeat.silentStrikes[pid]    = 0
-        if not Heartbeat.playerJoinTime[pid] then
-            Heartbeat.playerJoinTime[pid] = os.time()
-        end
+
+        Heartbeat.alive[pid] = true
+        Heartbeat.failureCount[pid] = 0
     end)
 
-    RegisterNetEvent('playerSpawneda', function()
+    RegisterNetEvent("allowedStop", function()
+        mark_ready(tonumber(source), seconds())
+    end)
+
+    RegisterNetEvent("playerLoaded", function()
         local pid = tonumber(source)
-        if pid then Heartbeat.allowedStop[pid] = true end
+        if not pid then return end
+
+        mark_heartbeat(pid, seconds())
+        Heartbeat.allowedStop[pid] = true
+        Heartbeat.pendingReady[pid] = nil
+    end)
+
+    RegisterNetEvent("playerSpawneda", function()
+        mark_ready(tonumber(source), seconds())
     end)
 end
 
@@ -94,26 +176,24 @@ function Heartbeat.startMonitoringThreads()
     Citizen.CreateThread(function()
         while true do
             Citizen.Wait(Heartbeat.heartbeatCheckInterval)
-            local now = os.time()
+            local now = seconds()
 
             for _, playerId in ipairs(GetPlayers()) do
                 local pid = tonumber(playerId)
                 if pid then
+                    mark_joined(pid, now)
+
                     local last = Heartbeat.playerHeartbeats[pid]
-
-                    if not Heartbeat.playerJoinTime[pid] then
-                        Heartbeat.playerJoinTime[pid] = now
-                    end
-
                     local timeSinceJoin = now - Heartbeat.playerJoinTime[pid]
-                    if timeSinceJoin >= Heartbeat.gracePeriod and last
+
+                    if last and timeSinceJoin >= Heartbeat.gracePeriod
                         and (now - last) > Heartbeat.timeoutThreshold
                     then
                         Heartbeat.silentStrikes[pid] = (Heartbeat.silentStrikes[pid] or 0) + 1
                         if Heartbeat.silentStrikes[pid] >= Heartbeat.silenceStrikes then
                             Heartbeat.banPlayer(pid, "No heartbeat received")
                             Heartbeat.playerHeartbeats[pid] = nil
-                            Heartbeat.silentStrikes[pid]    = 0
+                            Heartbeat.silentStrikes[pid] = 0
                         end
                     else
                         Heartbeat.silentStrikes[pid] = 0
@@ -125,26 +205,37 @@ function Heartbeat.startMonitoringThreads()
 
     Citizen.CreateThread(function()
         while true do
-            local players = GetPlayers()
+            local now = seconds()
+            local challenged = {}
 
-            for _, playerId in ipairs(players) do
+            for _, playerId in ipairs(GetPlayers()) do
                 local pid = tonumber(playerId)
-                if pid then
+                if pid and is_ready_for_alive_check(pid, now) then
                     Heartbeat.alive[pid] = false
-                    TriggerClientEvent('checkalive', pid)
+                    challenged[#challenged + 1] = pid
+                    TriggerClientEvent("checkalive", pid)
                 end
             end
 
             Citizen.Wait(Heartbeat.checkInterval)
 
-            for _, playerId in ipairs(players) do
-                local pid = tonumber(playerId)
-                if pid and Heartbeat.allowedStop[pid] then
+            local checked_at = seconds()
+            for _, pid in ipairs(challenged) do
+                if is_ready_for_alive_check(pid, checked_at) then
                     if not Heartbeat.alive[pid] then
                         Heartbeat.failureCount[pid] = (Heartbeat.failureCount[pid] or 0) + 1
+
+                        local last = Heartbeat.playerHeartbeats[pid]
+                        local heartbeat_stale = not last or (checked_at - last) > Heartbeat.timeoutThreshold
+
                         if Heartbeat.failureCount[pid] >= Heartbeat.maxFailures then
-                            Heartbeat.banPlayer(pid, "Failed alive checks")
-                            Heartbeat.failureCount[pid] = 0
+                            if heartbeat_stale then
+                                Heartbeat.banPlayer(pid, "Failed alive checks")
+                                Heartbeat.failureCount[pid] = 0
+                            else
+                                Heartbeat.failureCount[pid] = Heartbeat.maxFailures - 1
+                                logger.debug(("Alive check missed for %s, but heartbeat is fresh"):format(tostring(pid)))
+                            end
                         end
                     else
                         Heartbeat.failureCount[pid] = 0
@@ -156,6 +247,8 @@ function Heartbeat.startMonitoringThreads()
 end
 
 function Heartbeat.banPlayer(playerId, reason)
+    if not can_punish_now(playerId, reason) then return end
+
     logger.warn("Heartbeat violation for player " .. tostring(playerId) .. ": " .. reason)
 
     local cfg = config_manager.get_config()

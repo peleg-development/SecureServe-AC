@@ -45,9 +45,6 @@ function AntiResourceStop.initialize()
         checkResource("Stop", resource_name)
     end)
 
-    -- Cross-check: keep-alive must still be loaded.
-    -- This catches a cheater who overwrites AddEventHandler to bypass
-    -- onClientResourceStop, because GetResourceState reads directly from runtime.
     CreateThread(function()
         Wait(20000)
 
@@ -56,22 +53,20 @@ function AntiResourceStop.initialize()
 
         while true do
             Wait(5000)
-            if not playerLoaded then goto continue end
+            if playerLoaded then
+                local state = GetResourceState("keep-alive")
 
-            local state = GetResourceState("keep-alive")
-
-            if state == "stopped" or state == "missing" then
-                strikes = strikes + 1
-                if strikes >= THRESHOLD then
-                    ProtectionHelper.punish('Anti Resource Stop',
-                        "keep-alive missing or stopped (state=" .. tostring(state) .. ")")
-                    return
+                if state == "stopped" or state == "missing" then
+                    strikes = strikes + 1
+                    if strikes >= THRESHOLD then
+                        ProtectionHelper.punish('Anti Resource Stop',
+                            "keep-alive missing or stopped (state=" .. tostring(state) .. ")")
+                        return
+                    end
+                elseif state == "started" then
+                    strikes = 0
                 end
-            elseif state == "started" then
-                strikes = 0
             end
-
-            ::continue::
         end
     end)
 end

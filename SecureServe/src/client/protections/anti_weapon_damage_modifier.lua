@@ -18,31 +18,24 @@ function AntiWeaponDamageModifier.initialize()
                 or Cache.Get("isAdmin")
             then
                 suspiciousModifiers = 0
-                goto continue
-            end
-
-            local currentWeapon = Cache.Get("selectedWeapon")
-            if not currentWeapon or currentWeapon == GetHashKey("WEAPON_UNARMED") then
-                goto continue
-            end
-
-            local modifier = GetWeaponDamageModifier(currentWeapon)
-            if modifier and modifier > 1.5 then
-                suspiciousModifiers = suspiciousModifiers + 1
-
-                if suspiciousModifiers >= 3 then
-                    SetWeaponDamageModifier(currentWeapon, 1.0)
-                    ProtectionHelper.punish('Anti Weapon Damage Modifier',
-                        ("Weapon damage modifier detected: %.2f"):format(modifier))
-                    suspiciousModifiers = 0
-                end
             else
-                if suspiciousModifiers > 0 then
-                    suspiciousModifiers = suspiciousModifiers - 1
+                local currentWeapon = Cache.Get("selectedWeapon")
+                if currentWeapon and currentWeapon ~= GetHashKey("WEAPON_UNARMED") then
+                    local modifier = GetWeaponDamageModifier(currentWeapon)
+                    if modifier and modifier > 1.5 then
+                        suspiciousModifiers = suspiciousModifiers + 1
+
+                        if suspiciousModifiers >= 3 then
+                            SetWeaponDamageModifier(currentWeapon, 1.0)
+                            ProtectionHelper.punish('Anti Weapon Damage Modifier',
+                                ("Weapon damage modifier detected: %.2f"):format(modifier))
+                            suspiciousModifiers = 0
+                        end
+                    elseif suspiciousModifiers > 0 then
+                        suspiciousModifiers = suspiciousModifiers - 1
+                    end
                 end
             end
-
-            ::continue::
         end
     end)
 end

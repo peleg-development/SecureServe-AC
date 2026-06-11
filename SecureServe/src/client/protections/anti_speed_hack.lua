@@ -57,65 +57,57 @@ function AntiSpeedHack.initialize()
 
             if is_exempt then
                 strikes = 0
-                goto continue
-            end
+            else
+                local ped = Cache.Get("ped")
+                local now = GetGameTimer()
+                local in_grace = (now - last_damage_event) < KNOCKBACK_GRACE
+                    or (now - last_explosion) < KNOCKBACK_GRACE
+                    or (now - last_vehicle_exit) < KNOCKBACK_GRACE
 
-            local ped = Cache.Get("ped")
-            if not ped or not DoesEntityExist(ped) then
-                goto continue
-            end
+                if ped and DoesEntityExist(ped) and not in_grace then
+                    local in_vehicle = Cache.Get("isInVehicle")
+                    local detected_reason = nil
 
-            local now = GetGameTimer()
-            if (now - last_damage_event) < KNOCKBACK_GRACE
-                or (now - last_explosion) < KNOCKBACK_GRACE
-                or (now - last_vehicle_exit) < KNOCKBACK_GRACE
-            then
-                goto continue
-            end
+                    if in_vehicle then
+                        local vehicle = Cache.Get("vehicle")
+                        if vehicle and DoesEntityExist(vehicle) then
+                            if GetVehicleTopSpeedModifier(vehicle) > 1.1
+                                or GetVehicleCheatPowerIncrease(vehicle) > 1.1
+                            then
+                                detected_reason = "Anti Speed Hack (Multiplier)"
+                            end
+                        end
+                    else
+                        local is_ignorable = IsPedFalling(ped)
+                            or IsPedInParachuteFreeFall(ped)
+                            or IsPedSwimming(ped)
+                            or IsPedRagdoll(ped)
+                            or IsPedJumping(ped)
+                            or IsPedClimbing(ped)
+                            or IsPedDiving(ped)
+                            or IsPedOnVehicle(ped)
+                            or IsPedJumpingOutOfVehicle(ped)
+                            or GetIsTaskActive(ped, 2)
 
-            local in_vehicle = Cache.Get("isInVehicle")
-            local detected_reason = nil
+                        if not is_ignorable then
+                            local speed = GetEntitySpeed(ped)
+                            if speed > threshold then
+                                detected_reason = ("Anti Speed Hack (Foot Speed: %.2f)"):format(speed)
+                            end
+                        end
+                    end
 
-            if in_vehicle then
-                local vehicle = Cache.Get("vehicle")
-                if vehicle and DoesEntityExist(vehicle) then
-                    if GetVehicleTopSpeedModifier(vehicle) > 1.1
-                        or GetVehicleCheatPowerIncrease(vehicle) > 1.1
-                    then
-                        detected_reason = "Anti Speed Hack (Multiplier)"
+                    if detected_reason then
+                        strikes = strikes + 1
+                        if strikes >= STRIKE_LIMIT then
+                            strikes = 0
+                            ProtectionHelper.punish("Anti Speed Hack", detected_reason)
+                        end
+                    else
+                        if strikes > 0 then strikes = strikes - 1 end
                     end
                 end
-            else
-                local is_ignorable = IsPedFalling(ped)
-                    or IsPedInParachuteFreeFall(ped)
-                    or IsPedSwimming(ped)
-                    or IsPedRagdoll(ped)
-                    or IsPedJumping(ped)
-                    or IsPedClimbing(ped)
-                    or IsPedDiving(ped)
-                    or IsPedOnVehicle(ped)
-                    or IsPedJumpingOutOfVehicle(ped)
-                    or GetIsTaskActive(ped, 2)
-
-                if not is_ignorable then
-                    local speed = GetEntitySpeed(ped)
-                    if speed > threshold then
-                        detected_reason = ("Anti Speed Hack (Foot Speed: %.2f)"):format(speed)
-                    end
-                end
             end
-
-            if detected_reason then
-                strikes = strikes + 1
-                if strikes >= STRIKE_LIMIT then
-                    strikes = 0
-                    ProtectionHelper.punish("Anti Speed Hack", detected_reason)
-                end
-            else
-                if strikes > 0 then strikes = strikes - 1 end
-            end
-
-            ::continue::
         end
     end)
 end

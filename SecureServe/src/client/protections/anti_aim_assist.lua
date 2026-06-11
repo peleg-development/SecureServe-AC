@@ -22,24 +22,21 @@ function AntiAimAssist.initialize()
 
             if is_exempt then
                 strikes = 0
-                goto continue
-            end
-
-            SetPlayerTargetingMode(3)
-
-            local aim_state = GetLocalPlayerAimState()
-            if aim_state ~= 3 then
-                strikes = strikes + 1
-                if strikes >= STRIKE_LIMIT then
-                    strikes = 0
-                    ProtectionHelper.punish("Anti Aim Assist",
-                        ("Anti Aim Assist (Mode: %s)"):format(tostring(aim_state)))
-                end
             else
-                if strikes > 0 then strikes = strikes - 1 end
-            end
+                SetPlayerTargetingMode(3)
 
-            ::continue::
+                local aim_state = GetLocalPlayerAimState()
+                if aim_state ~= 3 then
+                    strikes = strikes + 1
+                    if strikes >= STRIKE_LIMIT then
+                        strikes = 0
+                        ProtectionHelper.punish("Anti Aim Assist",
+                            ("Anti Aim Assist (Mode: %s)"):format(tostring(aim_state)))
+                    end
+                else
+                    if strikes > 0 then strikes = strikes - 1 end
+                end
+            end
         end
     end)
 end

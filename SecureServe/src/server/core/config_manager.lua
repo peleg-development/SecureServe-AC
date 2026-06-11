@@ -144,10 +144,65 @@ function ConfigManager.whitelist_event(event_name)
     local whitelist = get_event_whitelist()
     if not ConfigManager.is_event_whitelisted(event_name) then
         whitelist[event_name] = true
+        if type(config.SafeEvents) == "table" then
+            config.SafeEvents[#config.SafeEvents + 1] = event_name
+        end
+        if _G.SecureServe and type(_G.SecureServe.SafeEvents) == "table" then
+            _G.SecureServe.SafeEvents[#_G.SecureServe.SafeEvents + 1] = event_name
+        end
         sanitized_config_cache = build_sanitized_config()
         return true
     end
     return false
+end
+
+function ConfigManager.is_entity_resource_whitelisted(resource_name)
+    if not resource_name then return false end
+
+    local entity = config.Module and config.Module.Entity
+    local whitelist = entity and entity.SecurityWhitelist
+    if type(whitelist) == "table" then
+        for _, entry in ipairs(whitelist) do
+            if entry and entry.resource == resource_name and entry.whitelist ~= false then
+                return true
+            end
+        end
+    end
+
+    local safe_resources = config.SafeResources
+    if type(safe_resources) == "table" then
+        for _, safe_resource in ipairs(safe_resources) do
+            if safe_resource == resource_name then return true end
+        end
+    end
+
+    return false
+end
+
+function ConfigManager.whitelist_entity_resource(resource_name)
+    if not resource_name or resource_name == "" then return false end
+    if ConfigManager.is_entity_resource_whitelisted(resource_name) then return false end
+
+    config.Module = config.Module or {}
+    config.Module.Entity = config.Module.Entity or {}
+    config.Module.Entity.SecurityWhitelist = config.Module.Entity.SecurityWhitelist or {}
+    config.Module.Entity.SecurityWhitelist[#config.Module.Entity.SecurityWhitelist + 1] = {
+        resource = resource_name,
+        whitelist = true,
+    }
+
+    config.SafeResources = config.SafeResources or {}
+    config.SafeResources[#config.SafeResources + 1] = resource_name
+
+    if _G.SecureServe then
+        _G.SecureServe.Module = _G.SecureServe.Module or {}
+        _G.SecureServe.Module.Entity = _G.SecureServe.Module.Entity or {}
+        _G.SecureServe.Module.Entity.SecurityWhitelist = config.Module.Entity.SecurityWhitelist
+        _G.SecureServe.SafeResources = config.SafeResources
+    end
+
+    sanitized_config_cache = build_sanitized_config()
+    return true
 end
 
 function ConfigManager.is_menu_detection_enabled()         return true end

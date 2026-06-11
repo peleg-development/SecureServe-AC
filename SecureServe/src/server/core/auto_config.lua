@@ -1,6 +1,5 @@
----@class AutoConfigModule
 local AutoConfig = {
-    is_modifying_config = false,
+    writing = false,
     fx_events = {
         ["onResourceStart"] = true,
         ["onResourceStarting"] = true,
@@ -35,316 +34,259 @@ local AutoConfig = {
 local config_manager = require("server/core/config_manager")
 local ban_manager = require("server/core/ban_manager")
 local logger = require("server/core/logger")
-local debug_module = require("server/core/debug_module")
 
----@description Initialize the auto-config module
+local CONFIG_FILE = "config.lua"
+
+local function get_settings()
+    local settings = SecureServe and SecureServe.AutoConfig
+    if type(settings) ~= "table" then return { Enabled = false } end
+    return settings
+end
+
+local function is_enabled()
+    return get_settings().Enabled == true
+end
+
+local function trim(value)
+    if type(value) ~= "string" then return nil end
+    value = value:gsub("^%s+", ""):gsub("%s+$", "")
+    value = value:gsub("%.$", "")
+    value = value:gsub("^%s+", ""):gsub("%s+$", "")
+    if value == "" then return nil end
+    return value
+end
+
+local function is_safe_name(value)
+    value = trim(value)
+    if not value or #value > 160 then return false end
+    return not value:find("[%z\r\n\"'{}]")
+end
+
+local function lua_pattern_escape(value)
+    return (value:gsub("([^%w])", "%%%1"))
+end
+
+local function lua_quote(value)
+    return ("%q"):format(value)
+end
+
+local function find_table_close(content, open_pos)
+    local depth = 0
+    local quote = nil
+    local escaped = false
+
+    for i = open_pos, #content do
+        local char = content:sub(i, i)
+
+        if quote then
+            if escaped then
+                escaped = false
+            elseif char == "\\" then
+                escaped = true
+            elseif char == quote then
+                quote = nil
+            end
+        elseif char == "\"" or char == "'" then
+            quote = char
+        elseif char == "{" then
+            depth = depth + 1
+        elseif char == "}" then
+            depth = depth - 1
+            if depth == 0 then return i end
+        end
+    end
+
+    return nil
+end
+
+local function find_named_table(content, name_pattern)
+    local start_pos, open_pos = content:find(name_pattern .. "%s*=%s*{")
+    if not start_pos then return nil end
+
+    local close_pos = find_table_close(content, open_pos)
+    if not close_pos then return nil end
+
+    return start_pos, open_pos, close_pos, content:sub(open_pos + 1, close_pos - 1)
+end
+
+local function insert_entry(content, close_pos, line)
+    local before = content:sub(1, close_pos - 1)
+    local after = content:sub(close_pos)
+    local trailing = before:match("([ \t\r\n]*)$") or ""
+    local insert_at = close_pos - #trailing
+    local prefix = content:sub(1, insert_at - 1)
+    local suffix = content:sub(insert_at, close_pos - 1)
+
+    if prefix:sub(-1) ~= "\n" then
+        line = "\n" .. line
+    end
+
+    return prefix .. line .. suffix .. after
+end
+
+local function append_string_value(content, table_pattern, value)
+    local _, _, close_pos, table_content = find_named_table(content, table_pattern)
+    if not close_pos then
+        return content, false, "table_not_found"
+    end
+
+    if table_content:find("\"" .. value .. "\"", 1, true) or table_content:find("'" .. value .. "'", 1, true) then
+        return content, false, "already_exists"
+    end
+
+    return insert_entry(content, close_pos, "    " .. lua_quote(value) .. ",\n"), true
+end
+
+local function append_entity_resource(content, resource_name)
+    local _, _, close_pos, table_content = find_named_table(content, "SecurityWhitelist")
+    if not close_pos then
+        return content, false, "table_not_found"
+    end
+
+    local escaped = lua_pattern_escape(resource_name)
+    if table_content:find("resource%s*=%s*['\"]" .. escaped .. "['\"]") then
+        return content, false, "already_exists"
+    end
+
+    local entry = ("        { resource = %s, whitelist = true },\n"):format(lua_quote(resource_name))
+    return insert_entry(content, close_pos, entry), true
+end
+
+local function save_config(content)
+    local saved = SaveResourceFile(GetCurrentResourceName(), CONFIG_FILE, content, -1)
+    if saved then return true end
+    logger.error("Auto-config failed to save " .. CONFIG_FILE)
+    return false
+end
+
+local function parse_reason(reason)
+    reason = trim(reason)
+    if not reason then return nil end
+
+    local event_name, resource_name = reason:match("Tried triggering a restricted event:%s*(.-)%s+in resource:%s*(.+)$")
+    if event_name then
+        return "event", trim(event_name), trim(resource_name)
+    end
+
+    event_name = reason:match("Triggered an event without proper registration:%s*(.+)$")
+    if event_name then
+        return "event", trim(event_name)
+    end
+
+    event_name = reason:match("Unauthorized network event:%s*(.+)$")
+    if event_name then
+        return "event", trim(event_name)
+    end
+
+    resource_name = reason:match("Created Suspicious Entity %[.+%] at script:%s*(.+)$")
+    if not resource_name then
+        resource_name = reason:match("Illegal entity created by resource:%s*(.+)$")
+    end
+    if not resource_name then
+        resource_name = reason:match("Entity spam detected from resource:%s*(.+)$")
+    end
+
+    if resource_name then
+        return "entity", trim(resource_name)
+    end
+
+    return nil
+end
+
+local function update_runtime(kind, value)
+    if kind == "event" then
+        return config_manager.whitelist_event(value)
+    end
+
+    if kind == "entity" and config_manager.whitelist_entity_resource then
+        return config_manager.whitelist_entity_resource(value)
+    end
+
+    return false
+end
+
+local function patch_config(kind, value)
+    while AutoConfig.writing do
+        Wait(100)
+    end
+
+    AutoConfig.writing = true
+
+    local content = LoadResourceFile(GetCurrentResourceName(), CONFIG_FILE)
+    if not content or content == "" then
+        AutoConfig.writing = false
+        logger.error("Auto-config could not load " .. CONFIG_FILE)
+        return false
+    end
+
+    local updated, changed, status
+    if kind == "event" then
+        updated, changed, status = append_string_value(content, "Config%.WhitelistEvents", value)
+    else
+        updated, changed, status = append_entity_resource(content, value)
+    end
+
+    if not changed then
+        AutoConfig.writing = false
+        return status == "already_exists"
+    end
+
+    local saved = save_config(updated)
+    AutoConfig.writing = false
+
+    if saved then
+        update_runtime(kind, value)
+        logger.info(("Auto-config added %s whitelist entry: %s"):format(kind, value))
+        return true
+    end
+
+    return false
+end
+
 function AutoConfig.initialize()
     logger.info("Auto-config module initialized")
 end
 
----@description Append a value to a table in the config file
----@param config_content string The content of the config file
----@param table_name string The name of the table to append to
----@param value_to_add string The value to add to the table
----@return string, boolean The updated config content and success status
-function AutoConfig.append_to_table(config_content, table_name, value_to_add)
-    if not config_content or not table_name or not value_to_add then
-        logger.error("Invalid parameters for append_to_table")
-        return config_content, false
-    end
-
-    local pattern = table_name .. "%s*=%s*{([^}]*)}"
-    local table_start, table_end, table_content = config_content:find(pattern)
-    
-    if not table_start then
-        logger.error("Could not find table " .. table_name .. " in config")
-        return config_content, false
-    end
-    
-    local value_pattern = string.format('["\']*%s["\']*', value_to_add:gsub('%-', '%%-'):gsub('%.', '%%%.'))
-    if table_content:find(value_pattern) then
-        logger.debug("Value " .. value_to_add .. " already exists in table " .. table_name)
-        return config_content, false
-    end
-    
-    local updated_content
-    if table_content:match("[^%s,]$") then
-        updated_content = config_content:sub(1, table_end - 1) .. ', "' .. value_to_add .. '"' .. config_content:sub(table_end)
-    else
-        updated_content = config_content:sub(1, table_end - 1) .. '"' .. value_to_add .. '"' .. config_content:sub(table_end)
-    end
-    
-    logger.debug("Updated config: Added " .. value_to_add .. " to " .. table_name)
-    return updated_content, true
+function AutoConfig.is_fx_event(event_name)
+    return AutoConfig.fx_events[event_name] == true
 end
 
----@description Add entity data to the config
----@param config_content string The content of the config file
----@param table_name string The name of the table to append to
----@param resource_name string The resource name to whitelist
----@return string, boolean The updated config content and success status
-function AutoConfig.add_entity_resource(config_content, table_name, resource_name)
-    if not config_content or not table_name or not resource_name then
-        logger.error("Invalid parameters for add_entity_resource")
-        return config_content, false
-    end
-
-    local pattern = table_name .. "%s*=%s*{([^}]*)}"
-    local table_start, table_end, table_content = config_content:find(pattern)
-    
-    if not table_start then
-        logger.error("Could not find table " .. table_name .. " in config")
-        return config_content, false
-    end
-    
-    local resource_pattern = string.format('resource%s*=%s*["\']*%s["\']*', resource_name:gsub('%-', '%%-'):gsub('%.', '%%%.'))
-    if table_content:find(resource_pattern) then
-        logger.debug("Resource " .. resource_name .. " already exists in table " .. table_name)
-        return config_content, false
-    end
-    
-    local entity_entry = '{ resource = "' .. resource_name .. '" }'
-    local updated_content
-    
-    if table_content:match("[^%s,]$") then
-        updated_content = config_content:sub(1, table_end - 1) .. ', ' .. entity_entry .. config_content:sub(table_end)
-    else
-        updated_content = config_content:sub(1, table_end - 1) .. entity_entry .. config_content:sub(table_end)
-    end
-    
-    logger.debug("Updated config: Added " .. resource_name .. " to " .. table_name)
-    return updated_content, true
-end
-
----@description Process a potential auto-whitelist for an event or entity
----@param src number The source of the detection
----@param reason string The detection reason
----@param webhook string The webhook to send notifications to
----@param time number The ban duration
----@return boolean handled Whether the detection was handled by auto-config
-function AutoConfig.process_auto_whitelist(src, reason, webhook, time)
-    if not SecureServe.AutoConfig then
-        logger.debug("Auto-config is disabled. Skipping auto-whitelist.")
-        return false
-    end
-    
-    local isEvent, detectedResource = reason:match("Tried triggering a restricted event: (.+) in resource: (.+)")
-    local isUnregisteredEvent = reason:match("Triggered an event without proper registration: (.+)")
-    local isSuspiciousEntity, entityResource = reason:match("Created Suspicious Entity %[.+%] at script: (.+)")
-    
-    if detectedResource and detectedResource == "SecureServe" then
-        logger.debug("Detection from SecureServe itself. Ignoring.")
-        return true
-    end
-    
-    while AutoConfig.is_modifying_config do
-        Citizen.Wait(100)
-    end
-    
-    AutoConfig.is_modifying_config = true
-    
-    local configFile = LoadResourceFile(GetCurrentResourceName(), "config.lua")
-    if not configFile then
-        logger.error("Could not load config.lua")
-        AutoConfig.is_modifying_config = false
-        return false
-    end
-    
-    local updated = false
-    
-    if isEvent and detectedResource then
-        logger.debug("Processing event whitelist for event: " .. isEvent)
-        
-        if AutoConfig.is_event_whitelisted(isEvent) then
-            logger.debug("Event " .. isEvent .. " is already whitelisted")
-            AutoConfig.is_modifying_config = false
-            return true
-        end
-        
-        local newConfig, success = AutoConfig.append_to_table(configFile, "SecureServe.Module.Events.Whitelist", isEvent)
-        if success then
-            SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
-            logger.info("Added event " .. isEvent .. " to the whitelist")
-            updated = true
-        end
-    
-    elseif isUnregisteredEvent then
-        logger.debug("Processing unregistered event: " .. isUnregisteredEvent)
-        
-        if AutoConfig.is_event_whitelisted(isUnregisteredEvent) then
-            logger.debug("Event " .. isUnregisteredEvent .. " is already whitelisted")
-            AutoConfig.is_modifying_config = false
-            return true
-        end
-        
-        local newConfig, success = AutoConfig.append_to_table(configFile, "SecureServe.Module.Events.Whitelist", isUnregisteredEvent)
-        if success then
-            SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
-            logger.info("Added unregistered event " .. isUnregisteredEvent .. " to the whitelist")
-            updated = true
-        end
-    
-    elseif isSuspiciousEntity then
-        logger.debug("Processing suspicious entity from resource: " .. isSuspiciousEntity)
-        
-        if AutoConfig.is_entity_resource_whitelisted(isSuspiciousEntity) then
-            logger.debug("Resource " .. isSuspiciousEntity .. " is already whitelisted for entities")
-            AutoConfig.is_modifying_config = false
-            return true
-        end
-        
-        local newConfig, success = AutoConfig.add_entity_resource(configFile, "SecureServe.EntitySecurity", isSuspiciousEntity)
-        if success then
-            SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
-            logger.info("Added resource " .. isSuspiciousEntity .. " to entity whitelist")
-            updated = true
-        end
-    
-    elseif detectedResource then
-        logger.debug("Processing detected resource: " .. detectedResource)
-        
-        if AutoConfig.is_entity_resource_whitelisted(detectedResource) then
-            logger.debug("Resource " .. detectedResource .. " is already whitelisted")
-            AutoConfig.is_modifying_config = false
-            return true
-        end
-        
-        local newConfig, success = AutoConfig.add_entity_resource(configFile, "SecureServe.EntitySecurity", detectedResource)
-        if success then
-            SaveResourceFile(GetCurrentResourceName(), "config.lua", newConfig, -1)
-            logger.info("Added resource " .. detectedResource .. " to whitelist")
-            updated = true
-        end
-    end
-    
-    AutoConfig.is_modifying_config = false
-    
-    if updated then
-        logger.info("Config updated successfully")
-        return true
-    else
-        logger.debug("No changes made to config.lua")
-        return false
-    end
-end
-
----@description Check if an event is whitelisted
----@param event_name string The event name to check
----@return boolean is_whitelisted Whether the event is whitelisted
 function AutoConfig.is_event_whitelisted(event_name)
-    if AutoConfig.fx_events[event_name] then
-        return true
-    end
-    
-    local config = SecureServe
-    if config and config.Module and config.Module.Events and config.Module.Events.Whitelist and config.Module.Events.Whitelist[event_name] then
-        return true
-    end
-    
-    return false
+    if AutoConfig.is_fx_event(event_name) then return true end
+    return config_manager.is_event_whitelisted(event_name)
 end
 
----@description Check if an entity resource is whitelisted
----@param resource_name string The resource name to check
----@return boolean is_whitelisted Whether the resource is whitelisted
 function AutoConfig.is_entity_resource_whitelisted(resource_name)
-    local config = SecureServe
-    
-    if not config or not config.Module or not config.Module.Entity or not config.Module.Entity.SecurityWhitelist then
-        return false
+    if resource_name == GetCurrentResourceName() then return true end
+    if config_manager.is_entity_resource_whitelisted then
+        return config_manager.is_entity_resource_whitelisted(resource_name)
     end
-    
-    for _, entry in ipairs(config.Module.Entity.SecurityWhitelist) do
-        if entry.resource == resource_name then
-            return true
-        end
-    end
-    
     return false
 end
 
----@description Check if event needs validation, and validate if auto-config is disabled
----@param src number The source player
----@param event_name string The event name
----@param resource_name string The resource that triggered the event
----@param webhook string Optional webhook for notifications
----@return boolean is_valid Whether the event is valid
+function AutoConfig.process_auto_whitelist(src, reason)
+    if not is_enabled() then return false end
+
+    local kind, value, resource_name = parse_reason(reason)
+    if not kind or not value or not is_safe_name(value) then return false end
+
+    if kind == "event" and AutoConfig.is_event_whitelisted(value) then return true end
+    if kind == "entity" and AutoConfig.is_entity_resource_whitelisted(value) then return true end
+    if resource_name and trim(resource_name) == GetCurrentResourceName() then return true end
+
+    return patch_config(kind, value)
+end
+
 function AutoConfig.validate_event(src, event_name, resource_name, webhook)
-    if AutoConfig.fx_events[event_name] then
-        return true
-    end
-    
-    if config_manager.is_event_whitelisted(event_name) then
-        return true
-    end
-    
-    logger.debug("Event validation failed for: " .. event_name .. " from resource: " .. (resource_name or "unknown"))
-    
-    if SecureServe.AutoConfig then
-        local auto_handled = AutoConfig.process_auto_whitelist(
-            src, 
-            "Tried triggering a restricted event: " .. event_name .. " in resource: " .. (resource_name or "unknown"), 
-            webhook
-        )
-        
-        if auto_handled then
-            return true
-        end
-    end
-    
-    return false
+    if AutoConfig.is_event_whitelisted(event_name) then return true end
+    local reason = ("Tried triggering a restricted event: %s in resource: %s")
+        :format(tostring(event_name), tostring(resource_name or "unknown"))
+    return AutoConfig.process_auto_whitelist(src, reason, webhook)
 end
 
----@description Get the current whitelist for a specific protection
----@param protection_type string The type of protection to get whitelist for
----@return table The whitelist for the protection
-function AutoConfig.get_whitelist(protection_type)
-    local config = SecureServe
-    local whitelist = {}
-    
-    if protection_type == "events" then
-        whitelist = config.Module and config.Module.Events and config.Module.Events.Whitelist or {}
-    elseif protection_type == "entity" then
-        whitelist = config.Module and config.Module.Entity and config.Module.Entity.SecurityWhitelist or {}
-    end
-    
-    return whitelist
+function AutoConfig.ban_with_auto_config(src, reason, details)
+    if AutoConfig.process_auto_whitelist(src, reason) then return false end
+    return ban_manager.ban_player(src, reason, details)
 end
 
----@description Check if a resource is whitelisted for a specific protection
----@param resource_name string The resource name to check
----@param protection_type string The protection type to check whitelist for
----@return boolean is_whitelisted Whether the resource is whitelisted
-function AutoConfig.is_resource_whitelisted(resource_name, protection_type)
-    local config = SecureServe
-    local whitelist = AutoConfig.get_whitelist(protection_type)
-    
-    if protection_type == "events" then
-        return whitelist[resource_name] == true
-    elseif protection_type == "entity" then
-        for _, entry in pairs(whitelist) do
-            if entry.resource == resource_name and entry.whitelist then
-                return true
-            end
-        end
-    end
-    
-    return false
-end
-
----@description Ban with auto-config handling
----@param src number The player source
----@param reason string The reason for the ban
----@param webhook string The webhook to send the ban notification to
----@param time number The ban duration
----@return boolean banned Whether the player was banned
-function AutoConfig.ban_with_auto_config(src, reason, webhook, time)
-    if SecureServe.AutoConfig then
-        logger.info(string.format("Auto-config protected player %s from ban for reason: %s", GetPlayerName(src) or src, reason))
-        return false
-    end
-    
-    return ban_manager.ban_player(src, reason, webhook, time)
-end
-
-return AutoConfig 
+return AutoConfig

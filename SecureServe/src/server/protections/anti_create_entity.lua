@@ -8,6 +8,7 @@ local AntiCreateEntity = {
 local config_manager = require("server/core/config_manager")
 local ban_manager = require("server/core/ban_manager")
 local logger = require("server/core/logger")
+local auto_config = require("server/core/auto_config")
 
 ---@param modelHash number Hash of the model to check
 ---@return boolean isAllowed Whether the model hash is allowed
@@ -27,9 +28,18 @@ function AntiCreateEntity.isResourceWhitelisted(resourceName, modelHash)
     if resourceName == GetCurrentResourceName() then
         return true
     end
+
+    if config_manager.is_entity_resource_whitelisted and config_manager.is_entity_resource_whitelisted(resourceName) then
+        return true
+    end
     
-    if AntiCreateEntity.resourceWhitelist[resourceName] then
-        for _, hash in pairs(AntiCreateEntity.resourceWhitelist[resourceName]) do
+    local resourceRules = AntiCreateEntity.resourceWhitelist[resourceName]
+    if resourceRules == true then
+        return true
+    end
+
+    if type(resourceRules) == "table" then
+        for _, hash in pairs(resourceRules) do
             if hash == modelHash then
                 return true
             end
@@ -62,6 +72,11 @@ function AntiCreateEntity.initialize()
             GetPlayerName(src) or "Unknown", 
             GetPlayerIdentifier(src, 0) or "Unknown", 
             reason))
+
+        if auto_config.process_auto_whitelist(src, reason) then
+            logger.info("Auto-config handled entity security detection: " .. reason)
+            return
+        end
         
         local details = {
             detection = reason,

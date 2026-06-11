@@ -55,21 +55,18 @@ function AntiAI.initialize()
                 or Cache.Get("hasPermission", "all")
                 or Cache.Get("isAdmin")
             then
-                goto continue
-            end
+            else
+                for i = 1, #weapons do
+                    local dmg_mod = GetWeaponComponentDamageModifier(weapons[i])
+                    local accuracy_mod = GetWeaponComponentAccuracyModifier(weapons[i])
+                    local range_mod = GetWeaponComponentRangeModifier(weapons[i])
 
-            for i = 1, #weapons do
-                local dmg_mod = GetWeaponComponentDamageModifier(weapons[i])
-                local accuracy_mod = GetWeaponComponentAccuracyModifier(weapons[i])
-                local range_mod = GetWeaponComponentRangeModifier(weapons[i])
-
-                if dmg_mod > default or accuracy_mod > default or range_mod > default then
-                    ProtectionHelper.punish('Anti AI', "Anti AI (Component Modifier)")
-                    break
+                    if dmg_mod > default or accuracy_mod > default or range_mod > default then
+                        ProtectionHelper.punish('Anti AI', "Anti AI (Component Modifier)")
+                        break
+                    end
                 end
             end
-
-            ::continue::
         end
     end)
 end

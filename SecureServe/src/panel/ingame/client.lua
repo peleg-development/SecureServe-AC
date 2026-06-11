@@ -10,9 +10,9 @@ RegisterCommand('ssm', function()
     end
 end, false)
 
-function ac_notify(message) 
+function ac_notify(message)
     SendNUIMessage({ action = 'notification', message = message })
-end 
+end
 
 RegisterNUICallback('close', function(data, cb)
     SetNuiFocus(false, false)
@@ -40,7 +40,7 @@ RegisterNUICallback('toggleOptiona', function(data, cb)
 
     playerOptions[option] = enabled
     TriggerServerEvent('anticheat:toggleOption', option, enabled)
-    
+
     if option == "ESP" then
         toggleESP(enabled)
     elseif option == "Player Names" then
@@ -93,7 +93,6 @@ function toggleESP(enable)
                                 color.r, color.g, color.b, 200)
                             DrawRect(_x - width / 2 / Distance, _y + height / 2 / Distance, 0.001, height / Distance,
                                 color.r, color.g, color.b, 200)
-                            -- DrawText3Ds(x,y,z-0.5,("%s"):format("hello"))
                             local health = GetEntityHealth(curplayerped)
                             if health > 200 then
                                 health = 200
@@ -129,7 +128,6 @@ function DrawText3Ds(x, y, z, text)
     SetDrawOrigin(x, y, z, 0)
     DrawText(0.0, 0.0)
     local factor = (string.len(text)) / 370
-    -- DrawRect(0.0, 0.0+0.0125, 0.017+ factor, 0.03, 0, 0, 0, 75)
     ClearDrawOrigin()
 end
 
@@ -248,43 +246,43 @@ function toggleNoClip(enable)
 
                 SetEntityVelocity(me, 0.0001, 0.0001, 0.0001)
 
-                if IsControlPressed(0, 21) then 
+                if IsControlPressed(0, 21) then
                     speed = speed + 1
                 end
 
-                if IsControlPressed(0, 19) then 
+                if IsControlPressed(0, 19) then
                     speed = 0.25
                 end
 
-                if IsControlPressed(0, 32) then 
+                if IsControlPressed(0, 32) then
                     x = x + speed * dx
                     y = y + speed * dy
                     z = z + speed * dz
                 end
 
-                if IsControlPressed(0, 34) then 
+                if IsControlPressed(0, 34) then
                     local leftVector = vector3(-dy, dx, 0.0)
                     x = x + speed * leftVector.x
                     y = y + speed * leftVector.y
                 end
 
-                if IsControlPressed(0, 269) then 
+                if IsControlPressed(0, 269) then
                     x = x - speed * dx
                     y = y - speed * dy
                     z = z - speed * dz
                 end
 
-                if IsControlPressed(0, 9) then 
+                if IsControlPressed(0, 9) then
                     local rightVector = vector3(dy, -dx, 0.0)
                     x = x + speed * rightVector.x
                     y = y + speed * rightVector.y
                 end
 
-                if IsControlPressed(0, 22) then 
+                if IsControlPressed(0, 22) then
                     z = z + speed
                 end
 
-                if IsControlPressed(0, 62) then 
+                if IsControlPressed(0, 62) then
                     z = z - speed
                 end
 
@@ -308,11 +306,11 @@ function toggleNoClip(enable)
 
                 local speed = 0.5
 
-                if IsControlPressed(0, 21) then 
+                if IsControlPressed(0, 21) then
                     speed = speed + 1
                 end
 
-                if IsControlPressed(0, 19) then 
+                if IsControlPressed(0, 19) then
                     speed = 0.25
                 end
 
@@ -322,19 +320,19 @@ function toggleNoClip(enable)
                     z = z + speed * dz
                 end
 
-                if IsControlPressed(0, 34) then 
+                if IsControlPressed(0, 34) then
                     local leftVector = vector3(-dy, dx, 0.0)
                     x = x + speed * leftVector.x
                     y = y + speed * leftVector.y
                 end
 
-                if IsControlPressed(0, 269) then 
+                if IsControlPressed(0, 269) then
                     x = x - speed * dx
                     y = y - speed * dy
                     z = z - speed * dz
                 end
 
-                if IsControlPressed(0, 9) then 
+                if IsControlPressed(0, 9) then
                     local rightVector = vector3(dy, -dx, 0.0)
                     x = x + speed * rightVector.x
                     y = y + speed * rightVector.y
@@ -344,7 +342,7 @@ function toggleNoClip(enable)
                     z = z + speed
                 end
 
-                if IsControlPressed(0, 62) then 
+                if IsControlPressed(0, 62) then
                     z = z - speed
                 end
 
@@ -460,16 +458,16 @@ RegisterNUICallback('spawnVehicle', function(data, cb)
         cb('ok')
         return
     end
-    
+
     local vehicleHash = GetHashKey(vehicleName)
     RequestModel(vehicleHash)
-    
+
     local timeout = 0
     while not HasModelLoaded(vehicleHash) and timeout < 1000 do
         Citizen.Wait(10)
         timeout = timeout + 10
     end
-    
+
     if HasModelLoaded(vehicleHash) then
         local playerPed = PlayerPedId()
         local coords = GetEntityCoords(playerPed)
@@ -481,7 +479,7 @@ RegisterNUICallback('spawnVehicle', function(data, cb)
     else
         ac_notify('Failed to spawn vehicle: ' .. vehicleName)
     end
-    
+
     cb('ok')
 end)
 
@@ -491,16 +489,16 @@ RegisterNUICallback('spawnObject', function(data, cb)
         cb('ok')
         return
     end
-    
+
     local objectHash = GetHashKey(objectName)
     RequestModel(objectHash)
-    
+
     local timeout = 0
     while not HasModelLoaded(objectHash) and timeout < 1000 do
         Citizen.Wait(10)
         timeout = timeout + 10
     end
-    
+
     if HasModelLoaded(objectHash) then
         local playerPed = PlayerPedId()
         local coords = GetEntityCoords(playerPed)
@@ -512,7 +510,7 @@ RegisterNUICallback('spawnObject', function(data, cb)
     else
         ac_notify('Failed to spawn object: ' .. objectName)
     end
-    
+
     cb('ok')
 end)
 
@@ -522,16 +520,16 @@ RegisterNUICallback('changePed', function(data, cb)
         cb('ok')
         return
     end
-    
+
     local pedHash = GetHashKey(pedModel)
     RequestModel(pedHash)
-    
+
     local timeout = 0
     while not HasModelLoaded(pedHash) and timeout < 1000 do
         Citizen.Wait(10)
         timeout = timeout + 10
     end
-    
+
     if HasModelLoaded(pedHash) then
         SetPlayerModel(PlayerId(), pedHash)
         SetModelAsNoLongerNeeded(pedHash)
@@ -539,7 +537,7 @@ RegisterNUICallback('changePed', function(data, cb)
     else
         ac_notify('Failed to change ped: ' .. pedModel)
     end
-    
+
     cb('ok')
 end)
 
@@ -561,6 +559,12 @@ RegisterNUICallback('getPlayers', function(data, cb)
     local p = promise.new()
     pendingPlayersPromise = { id = reqId, resolve = function(result) p:resolve(result) end }
     TriggerServerEvent('getPlayers', reqId)
+    SetTimeout(5000, function()
+        if pendingPlayersPromise and pendingPlayersPromise.id == reqId then
+            pendingPlayersPromise.resolve({})
+            pendingPlayersPromise = nil
+        end
+    end)
     local ok, result = pcall(function() return Citizen.Await(p) end)
     if ok then
         cb({ players = result })
@@ -584,7 +588,7 @@ end)
 RegisterNUICallback('spectatePlayer', function(data, cb)
     local playerId = data.playerId
     local targetPed = GetPlayerPed(GetPlayerFromServerId(playerId))
-    
+
     if DoesEntityExist(targetPed) then
         local playerPed = PlayerPedId()
         local targetCoords = GetEntityCoords(targetPed)
@@ -597,7 +601,7 @@ RegisterNUICallback('spectatePlayer', function(data, cb)
         Citizen.CreateThread(function()
             while NetworkIsInSpectatorMode() do
                 Citizen.Wait(0)
-                if IsControlJustReleased(0, 177) then -- 177 = Backspace
+                if IsControlJustReleased(0, 177) then
                     NetworkSetInSpectatorMode(false, playerPed)
                     ac_notify("Exited spectating mode.")
                     break
@@ -610,12 +614,6 @@ RegisterNUICallback('spectatePlayer', function(data, cb)
         cb({ success = false })
     end
 end)
-
--- old receivePlayers kept for backward compatibility in case server doesn't send requestId
-RegisterNetEvent('receivePlayers', function(playerList)
-    SendNUIMessage({ action = 'players', players = playerList })
-end)
-
 
 local pendingStatsPromise = nil
 RegisterNetEvent("secureServe:returnStats", function(stats)
@@ -636,6 +634,12 @@ RegisterNUICallback("getDashboardStats", function(data, cb)
     local p = promise.new()
     pendingStatsPromise = p
     TriggerServerEvent("secureServe:requestStats")
+    SetTimeout(5000, function()
+        if pendingStatsPromise == p then
+            pendingStatsPromise = nil
+            p:resolve({})
+        end
+    end)
     local stats = Citizen.Await(p)
     cb({
         totalPlayers    = stats.totalPlayers or 0,
@@ -644,7 +648,7 @@ RegisterNUICallback("getDashboardStats", function(data, cb)
         peakPlayers     = stats.peakPlayers or 0
     })
 end)
-    
+
 
 RegisterNUICallback('screenshotPlayer', function(data, cb)
     local playerId = data.playerId
@@ -669,27 +673,33 @@ end)
 
 local pendingBansPromiseMap = {}
 RegisterNetEvent('SecureServe:Panel:SendBans', function(bans, requestId)
-    
+
     local entry = pendingBansPromiseMap[requestId]
     if entry then
         entry:resolve(bans)
         pendingBansPromiseMap[requestId] = nil
     else
     end
-    
+
     SendNUIMessage({ action = 'bans', bans = bans })
 end)
 
 RegisterNUICallback('getBans', function(data, cb)
     local reqId = math.random(100000, 999999)
-    
+
     local p = promise.new()
     pendingBansPromiseMap[reqId] = p
     TriggerServerEvent('SecureServe:Panel:RequestBans', reqId)
-    
-    local bans = Citizen.Await(p)
-    
+    SetTimeout(5000, function()
+        if pendingBansPromiseMap[reqId] == p then
+            pendingBansPromiseMap[reqId] = nil
+            p:resolve({})
+        end
+    end)
 
-    
+    local bans = Citizen.Await(p)
+
+
+
     cb({ bans = bans })
 end)

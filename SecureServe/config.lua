@@ -176,6 +176,16 @@ Config.Heartbeat = {
     SilenceStrikes = 2,
 }
 
+Config.AutoConfig = {
+    Enabled = false,
+}
+
+Config.EventProtector = {
+    Enabled = true,
+    Mode = "log", -- "log" or "enforce"
+    GraceSeconds = 30,
+}
+
 
 -- //[Module: Entity Security]\\ --
 Config.EntityModule = {
@@ -583,6 +593,8 @@ SecureServe.RequireSteam     = Config.RequireSteam
 SecureServe.IdentifierCheck  = Config.IdentifierCheck
 SecureServe.Debug            = Config.Debug
 SecureServe.MinimumOnlineSecondsBeforeBan = Config.MinimumOnlineSecondsBeforeBan
+SecureServe.AutoConfig = Config.AutoConfig or { Enabled = false }
+SecureServe.EventProtector = Config.EventProtector or { Enabled = true, Mode = "log", GraceSeconds = 30 }
 
 SecureServe.AdminMenu = {
     Webhook   = Config.Webhooks.Admin or "",

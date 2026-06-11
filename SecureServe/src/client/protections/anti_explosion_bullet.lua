@@ -17,18 +17,15 @@ function AntiExplosionBullet.initialize()
                 or Cache.Get("hasPermission", "all")
                 or Cache.Get("isAdmin")
             then
-                goto continue
-            end
-
-            local weapon = Cache.Get("selectedWeapon")
-            if weapon and weapon ~= 0 then
-                local damage_type = GetWeaponDamageType(weapon)
-                if damage_type == 4 or damage_type == 5 then
-                    ProtectionHelper.punish("Anti Explosion Bullet", "Explosive ammo")
+            else
+                local weapon = Cache.Get("selectedWeapon")
+                if weapon and weapon ~= 0 then
+                    local damage_type = GetWeaponDamageType(weapon)
+                    if damage_type == 4 or damage_type == 5 then
+                        ProtectionHelper.punish("Anti Explosion Bullet", "Explosive ammo")
+                    end
                 end
             end
-
-            ::continue::
         end
     end)
 end

@@ -101,4 +101,6 @@ lua54 "yes"
 
 server_exports {
     "module_punish",
+    "get_event_protector_config",
+    "is_event_protector_exempt",
 }

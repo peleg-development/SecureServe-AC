@@ -3,6 +3,7 @@ local ban_manager = require("server/core/ban_manager")
 local logger = require("server/core/logger")
 local debug_module = require("server/core/debug_module")
 local admin_whitelist = require("server/core/admin_whitelist")
+local auto_config = require("server/core/auto_config")
 
 local resource_manager = require("server/protections/resource_manager")
 local anti_execution = require("server/protections/anti_execution")
@@ -341,6 +342,10 @@ local function main()
     ban_manager.initialize()
     print("^2│ ^2✓^7 Ban Manager^7 initialized")
 
+    print("^2│ ^5⏳^7 Auto Config^7")
+    auto_config.initialize()
+    print("^2│ ^2✓^7 Auto Config^7 initialized")
+
     print("^2│ ^5⏳^7 Admin Whitelist^7")
     admin_whitelist.initialize()
     print("^2│ ^2✓^7 Admin Whitelist^7 initialized")
@@ -465,6 +470,22 @@ CreateThread(function()
     main()
 end)
 
+exports("get_event_protector_config", function()
+    local settings = SecureServe and SecureServe.EventProtector or {}
+    local mode = settings.Mode == "enforce" and "enforce" or "log"
+
+    return {
+        Enabled = settings.Enabled ~= false,
+        Mode = mode,
+        GraceSeconds = tonumber(settings.GraceSeconds) or 30,
+    }
+end)
+
+exports("is_event_protector_exempt", function(event_name)
+    if auto_config.is_fx_event(event_name) then return true end
+    return config_manager.is_event_whitelisted(event_name)
+end)
+
 exports("module_punish", function(source, reason, webhook, time)
     if SecureServe and SecureServe.Module and SecureServe.Module.ModuleEnabled == false then
         return true
@@ -477,6 +498,11 @@ exports("module_punish", function(source, reason, webhook, time)
     if not tonumber(source) or tonumber(source) <= 0 then
         logger.error("Invalid source in module_punish: " .. tostring(source))
         return false
+    end
+
+    if auto_config.process_auto_whitelist(source, reason) then
+        logger.info("Auto-config handled module detection: " .. reason)
+        return true
     end
 
     local event_name, resource_name
@@ -514,8 +540,15 @@ exports("module_punish", function(source, reason, webhook, time)
     local resource_to_check = resource_name or entity_resource
 
     if resource_to_check then
+        resource_to_check = resource_to_check:gsub("%.$", "")
+
         if resource_to_check == GetCurrentResourceName() then
             logger.debug("Detection from SecureServe itself, ignoring")
+            return true
+        end
+
+        if config_manager.is_entity_resource_whitelisted and config_manager.is_entity_resource_whitelisted(resource_to_check) then
+            logger.debug("Resource " .. resource_to_check .. " is whitelisted for entity security, ignoring detection")
             return true
         end
 

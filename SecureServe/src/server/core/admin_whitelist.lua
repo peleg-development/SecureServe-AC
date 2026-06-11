@@ -327,7 +327,7 @@ function AdminWhitelist.initialize()
         local src = source
         local adminList = {}
 
-        if _G.SecureServe and _G.SecureServe.Whitelisted then
+        if AdminWhitelist.isWhitelisted(src) and _G.SecureServe and _G.SecureServe.Whitelisted then
             for _, adminId in ipairs(_G.SecureServe.Whitelisted) do
                 adminList[tostring(adminId)] = true
             end

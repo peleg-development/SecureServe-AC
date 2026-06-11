@@ -47,41 +47,38 @@ function AntiPlayerBlips.initialize()
                 or Cache.Get("isAdmin")
             then
                 strikes = 0
-                goto continue
-            end
+            else
+                local pid = PlayerId()
+                local active_players = GetActivePlayers()
+                local detected_blip_sprite = nil
 
-            local pid = PlayerId()
-            local active_players = GetActivePlayers()
-            local detected_blip_sprite = nil
+                for i = 1, #active_players do
+                    local player_idx = active_players[i]
+                    if player_idx ~= pid then
+                        local player_ped = GetPlayerPed(player_idx)
+                        local blip = GetBlipFromEntity(player_ped)
 
-            for i = 1, #active_players do
-                local player_idx = active_players[i]
-                if player_idx ~= pid then
-                    local player_ped = GetPlayerPed(player_idx)
-                    local blip = GetBlipFromEntity(player_ped)
-
-                    if DoesBlipExist(blip) then
-                        local sprite = GetBlipSprite(blip)
-                        if not WHITELISTED_SPRITES[sprite] then
-                            detected_blip_sprite = sprite
-                            break
+                        if DoesBlipExist(blip) then
+                            local sprite = GetBlipSprite(blip)
+                            if not WHITELISTED_SPRITES[sprite] then
+                                detected_blip_sprite = sprite
+                                break
+                            end
                         end
                     end
                 end
-            end
 
-            if detected_blip_sprite then
-                strikes = strikes + 1
-                if strikes >= STRIKE_LIMIT then
-                    ProtectionHelper.punish('Anti Player Blips',
-                        ("Anti Player Blips (sprite: %s)"):format(tostring(detected_blip_sprite)))
-                    strikes = 0
+                if detected_blip_sprite then
+                    strikes = strikes + 1
+                    if strikes >= STRIKE_LIMIT then
+                        ProtectionHelper.punish('Anti Player Blips',
+                            ("Anti Player Blips (sprite: %s)"):format(tostring(detected_blip_sprite)))
+                        strikes = 0
+                    end
+                else
+                    if strikes > 0 then strikes = strikes - 1 end
                 end
-            else
-                if strikes > 0 then strikes = strikes - 1 end
             end
-
-            ::continue::
         end
     end)
 end
