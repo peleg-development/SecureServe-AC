@@ -13,7 +13,6 @@
 </p>
 
 <b>SecureServe-AC is only free version containing basic checks if you want FULL PROTECTION you need to purchase this <a href="https://fiveguard.net/" rel="dofollow">FiveM Anticheat</a>
----
 
 ## 🚀 **Getting Started**
 
