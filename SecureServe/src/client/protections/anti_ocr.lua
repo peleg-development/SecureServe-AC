@@ -37,7 +37,7 @@ function AntiOcr.initialize()
         if data.image and data.text then
             for index, word in next, ocrWords, nil do
                 if string.find(string.lower(data.text), string.lower(word)) then
-                    -- Fix: hardcoded Discord webhook removed (it shipped to every client = leak). The screenshot is now taken server-side via the PunishPlayer flow.
+                    -- Fix: hardcoded Discord webhook removed (it shipped to every client = leak). The OCR screenshot is no longer captured at all (PunishPlayer does not take one): assumed loss of evidence, not a move server-side.
                     TriggerServerEvent("SecureServe:Server:Methods:PunishPlayer", nil, "Found word on screen [OCR]: " .. word)
                     break
                 end

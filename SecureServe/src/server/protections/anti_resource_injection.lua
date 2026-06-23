@@ -13,7 +13,7 @@ function AntiResourceInjection.initialize()
             AntiResourceInjection.whitelisted_server_resources[name] = true
         end
     end
-    -- Fix: from here on, resources from the startup snapshot are trusted; any resource started afterwards is logged as a warning (before: silent auto-whitelist, so an injected resource went unnoticed).
+    -- Fix: monitoring/forensics only. A resource started after startup is logged once, then still auto-whitelisted below and left running; nothing is blocked or banned. This is not an anti-injection protection.
     AntiResourceInjection.startup_complete = true
 
     AddEventHandler("onResourceStart", function(resourceName)

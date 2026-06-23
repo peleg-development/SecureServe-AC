@@ -62,7 +62,8 @@ function Cache.initialize()
     Cache.RequestPermissionCheck()
 
     Citizen.CreateThread(function()
-        Citizen.Wait(60000)
+        -- Fallback kept deliberately below MinimumOnlineSecondsBeforeBan (55s) so bootstrapping never lingers past the server's ban-suppression window.
+        Citizen.Wait(45000)
         Cache.bootstrapping = false
     end)
 end
