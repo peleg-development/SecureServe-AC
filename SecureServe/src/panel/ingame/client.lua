@@ -14,7 +14,7 @@ function ac_notify(message)
     SendNUIMessage({ action = 'notification', message = message })
 end
 
--- Fix: admin guard for purely client-side NUI callbacks (spawn/spectate/toggles) that have no server check. Prevents a non-admin from triggering these callbacks directly.
+-- Defense-in-depth only: this is a client-side guard, bypassable if the resource is removed or the NUI is hooked, and it covers only client-local callbacks (spawn/spectate/toggles). The real anti-elevation guard is server-side (requireAdmin in panel/ingame/server.lua). Not an elevation fix on its own.
 local function panelIsAdmin()
     local P = Perms or require("client/core/perms")
     return P.IsMenuAdmin(GetPlayerServerId(PlayerId()))

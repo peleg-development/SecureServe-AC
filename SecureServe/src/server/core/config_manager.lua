@@ -321,7 +321,7 @@ function ConfigManager.is_blacklisted_particle(effect_hash)
     return false
 end
 
--- Fix: resolves the ban duration SERVER-side from the config (never from the client-sent value, which could shorten its own ban).
+-- Fix: resolves the ban duration SERVER-side, read per protection via entry.protection (not entry.name), so the client cannot shorten its own ban.
 function ConfigManager.resolve_ban_time(reason)
     local default_time = (config.BanTimes and config.BanTimes.Ban) or 2147483647
     if type(reason) ~= "string" then return default_time end
@@ -329,7 +329,8 @@ function ConfigManager.resolve_ban_time(reason)
     local simple = config.Protection and config.Protection.Simple
     if type(simple) == "table" then
         for _, entry in ipairs(simple) do
-            if type(entry) == "table" and entry.name and reason:sub(1, #entry.name) == entry.name then
+            local name = entry and (entry.protection or entry.name)
+            if type(name) == "string" and name ~= "" and reason:sub(1, #name) == name then
                 local t = entry.time
                 if type(t) == "string" then
                     t = (config.BanTimes and config.BanTimes[t]) or default_time
