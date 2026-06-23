@@ -20,10 +20,13 @@ local function normalizeVehicleDamage()
 end
 
 local function normalizePedProofs(ped)
-    local _, fireProof, explosionProof, _, _, steamProof, p7, drownProof = GetEntityProofs(ped)
-    if fireProof == 1 or explosionProof == 1 or steamProof == 1 or p7 == 1 or drownProof == 1 then
-        SetEntityProofs(ped, false, false, false, false, false, false, false, false)
+    -- Fix: GetEntityProofs returns booleans (not 1), so the old == 1 test never matched; we only check bulletProof because SecureServe intentionally sets explosionProof every 5s (false positive otherwise).
+    local _, bulletProof = GetEntityProofs(ped)
+    if bulletProof then
+        SetEntityProofs(ped, false, false, true, false, false, false, false, false)
+        return true
     end
+    return false
 end
 
 local function detectGodmode(ped)
@@ -42,7 +45,10 @@ local function detectGodmode(ped)
         detected = true
     end
 
-    normalizePedProofs(ped)
+    -- Fix: the result was ignored, so a detected bulletproof did not count as godmode.
+    if normalizePedProofs(ped) then
+        detected = true
+    end
 
     return detected
 end

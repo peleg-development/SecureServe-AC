@@ -14,6 +14,12 @@ function ac_notify(message)
     SendNUIMessage({ action = 'notification', message = message })
 end
 
+-- Fix: admin guard for purely client-side NUI callbacks (spawn/spectate/toggles) that have no server check. Prevents a non-admin from triggering these callbacks directly.
+local function panelIsAdmin()
+    local P = Perms or require("client/core/perms")
+    return P.IsMenuAdmin(GetPlayerServerId(PlayerId()))
+end
+
 RegisterNUICallback('close', function(data, cb)
     SetNuiFocus(false, false)
     cb('ok')
@@ -35,6 +41,7 @@ local playerOptions = {
 }
 
 RegisterNUICallback('toggleOptiona', function(data, cb)
+    if not panelIsAdmin() then cb('denied') return end
     local option = data.option
     local enabled = data.enabled
 
@@ -453,6 +460,7 @@ RegisterNUICallback('unbanPlayer', function(data, cb)
 end)
 
 RegisterNUICallback('spawnVehicle', function(data, cb)
+    if not panelIsAdmin() then cb('denied') return end
     local vehicleName = data.vehicleName
     if not vehicleName or vehicleName == '' then
         cb('ok')
@@ -484,6 +492,7 @@ RegisterNUICallback('spawnVehicle', function(data, cb)
 end)
 
 RegisterNUICallback('spawnObject', function(data, cb)
+    if not panelIsAdmin() then cb('denied') return end
     local objectName = data.objectName
     if not objectName or objectName == '' then
         cb('ok')
@@ -515,6 +524,7 @@ RegisterNUICallback('spawnObject', function(data, cb)
 end)
 
 RegisterNUICallback('changePed', function(data, cb)
+    if not panelIsAdmin() then cb('denied') return end
     local pedModel = data.pedModel
     if not pedModel or pedModel == '' then
         cb('ok')
@@ -586,6 +596,7 @@ RegisterNUICallback('banPlayer', function(data, cb)
 end)
 
 RegisterNUICallback('spectatePlayer', function(data, cb)
+    if not panelIsAdmin() then cb('denied') return end
     local playerId = data.playerId
     local targetPed = GetPlayerPed(GetPlayerFromServerId(playerId))
 

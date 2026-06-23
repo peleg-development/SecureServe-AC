@@ -1,13 +1,9 @@
+-- Fix: dead module (empty initialize(), never required or initialized in main.lua) and redundant with anti_weapon_damage_modifier which already caps damage via weaponDamageEvent. Kept as a no-op stub.
 ---@class AntiExplosiveDamageModule
 local AntiExplosiveDamage = {}
----@todo remove this
 
-local ban_manager = require("server/core/ban_manager")
-local config_manager = require("server/core/config_manager")
-
----@description Initialize anti-explosive damage protection
 function AntiExplosiveDamage.initialize()
     return
 end
 
-return AntiExplosiveDamage 
+return AntiExplosiveDamage

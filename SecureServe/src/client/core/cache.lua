@@ -105,7 +105,8 @@ function Cache.Get(key, subKey)
     
     if key == "hasPermission" and subKey then
         Cache.CheckPermission(subKey)
-        if Cache.bootstrapping then return true end
+        -- Fix: fail-closed during bootstrap (before perms are received) instead of exempting everyone; a real admin is still covered by isAdmin and the server does not ban before MinimumOnlineSecondsBeforeBan.
+        if Cache.bootstrapping then return false end
         return Cache.Values.permissions[subKey] or false
     end
     

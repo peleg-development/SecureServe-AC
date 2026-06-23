@@ -31,6 +31,8 @@ function AntiNoRecoil.initialize()
     if not ConfigLoader.get_protection_setting("Anti No Recoil", "enabled") then return end
 
     local detections = 0
+    -- Fix: we remember the max recoil already observed per weapon so we only flag it dropping to zero (real signature), instead of an absolute threshold that banned low-recoil weapons.
+    local seen_amplitude = {}
 
     Citizen.CreateThread(function()
         while true do
@@ -47,18 +49,26 @@ function AntiNoRecoil.initialize()
                 if not is_exempt and not Cache.Get("isInVehicle") then
                     local weapon_hash = Cache.Get("selectedWeapon")
 
-                    if weapon_hash and not WhitelistedWeapons[weapon_hash] then
-                        local recoil_shake = GetWeaponRecoilShakeAmplitude(weapon_hash)
+                    -- Fix: guarded call because the native may be absent depending on the build (otherwise error and dead thread).
+                    local recoil_shake = GetWeaponRecoilShakeAmplitude and GetWeaponRecoilShakeAmplitude(weapon_hash)
 
-                        if recoil_shake < AntiNoRecoil.min_recoil_value then
+                    if weapon_hash and not WhitelistedWeapons[weapon_hash] and type(recoil_shake) == "number" then
+                        local baseline = seen_amplitude[weapon_hash] or 0.0
+                        if recoil_shake > baseline then
+                            seen_amplitude[weapon_hash] = recoil_shake
+                            baseline = recoil_shake
+                        end
+
+                        -- Fix: we only punish if the weapon clearly had recoil then drops to zero (tampering), never on a legitimately low value.
+                        if baseline > AntiNoRecoil.min_recoil_value and recoil_shake <= 0.0 then
                             detections = detections + 1
                             if detections > AntiNoRecoil.max_detections then
                                 ProtectionHelper.punish('Anti No Recoil',
-                                    ("Anti No Recoil (Shake: %.2f)"):format(recoil_shake))
+                                    ("Anti No Recoil (Shake: %.2f, Baseline: %.2f)"):format(recoil_shake, baseline))
                                 detections = 0
                             end
-                        else
-                            if detections > 0 then detections = detections - 1 end
+                        elseif detections > 0 then
+                            detections = detections - 1
                         end
                     end
                 end
